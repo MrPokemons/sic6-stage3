@@ -15,6 +15,7 @@ class BaseState(BaseModel):
     topic: str
     subtopic: str
     description: str
+    language: str = "Indonesian"
     TOTAL_QUESTIONS: PositiveInt = 10
 
 
@@ -23,7 +24,7 @@ class InputState(BaseState):
 
 
 class ConversationUserAnswer(BaseModel):
-    answer: str = Field(description="user's answer")
+    answer: str = Field(description="user's answer; just set as empty string if you aren't sure.")
     correct: bool = Field(description="user's answer accuracy towards the given question")
     feedback: str = Field(description="feedback towards user's answer")
 

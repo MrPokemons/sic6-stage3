@@ -25,7 +25,7 @@ class PawPal:
                 {"type": "text", "text": GUIDELINE_PROMPT}
             ]),
             SystemMessage(content=[
-                {"type": "text", "text": GENERATE_QUESTION_PROMPT.format(total_questions=state.TOTAL_QUESTIONS)}
+                {"type": "text", "text": GENERATE_QUESTION_PROMPT.format(total_questions=state.TOTAL_QUESTIONS, language=state.language)}
             ])
         ]
         new_questions: Questions = state.llm.with_structured_output(Questions).invoke(messages)
@@ -43,20 +43,21 @@ class PawPal:
         # interrupt for sending question to answer and getting the answer from user
         user_answer = interrupt("what is the answer?")
         messages = [
-            SystemMessage(content=[
-                {"type": "text", "text": BASE_PROMPT}
-            ]),
-            SystemMessage(content=[
-                {"type": "text", "text": SCOPE_PROMPT.format(topic=state.topic, subtopic=state.subtopic, description=state.description)}
-            ]),
-            SystemMessage(content=[
-                {"type": "text", "text": GUIDELINE_PROMPT}
-            ]),
+            # SystemMessage(content=[
+            #     {"type": "text", "text": BASE_PROMPT}
+            # ]),
+            # SystemMessage(content=[
+            #     {"type": "text", "text": SCOPE_PROMPT.format(topic=state.topic, subtopic=state.subtopic, description=state.description)}
+            # ]),
+            # SystemMessage(content=[
+            #     {"type": "text", "text": GUIDELINE_PROMPT}
+            # ]),
             HumanMessage(content=[
-                {"type": "text", "text": VERIFY_ANSWER_PROMPT.format(question=next_question.question, correct_answer=next_question.answer, user_answer=user_answer)}
+                {"type": "text", "text": VERIFY_ANSWER_PROMPT.format(question=next_question.question, correct_answer=next_question.answer, user_answer=user_answer, language=state.language)}
             ])
         ]
         evaluated_user_answer: ConversationUserAnswer = state.llm.with_structured_output(ConversationUserAnswer).invoke(messages)
+        evaluated_user_answer.answer = user_answer
         next_question.done = evaluated_user_answer.correct
         next_question.user_answers.append(evaluated_user_answer)
         return Command(update={"messages": messages[3:]}, goto="wait_and_evaluate_answer")
