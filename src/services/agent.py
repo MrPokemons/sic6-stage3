@@ -3,6 +3,7 @@ from langchain_core.messages import SystemMessage
 
 from langgraph.types import Command
 from langgraph.graph import StateGraph, CompiledStateGraph, START, END
+from langgraph.checkpoint.memory import MemorySaver
 
 from src.schemas.state import InputState, ConversationState, OutputState
 
@@ -53,5 +54,5 @@ class PawPal:
 
         builder.add_edge(START, "start_training")
 
-        workflow = builder.compile()
+        workflow = builder.compile(checkpointer=MemorySaver())
         return workflow  # when doing invoke or stream, remember to set thread_id in config 
