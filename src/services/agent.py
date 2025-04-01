@@ -49,7 +49,7 @@ class Agent(ABC):
     def create_config(chat_id: str) -> dict:
         config = {"configurable": {"thread_id": chat_id}}
         return config
-    
+
     @staticmethod
     async def resume_workflow(workflow: CompiledStateGraph, value: Any, config: dict):
         resume_command = Command(resume=value)
@@ -90,7 +90,9 @@ class PawPal(Agent):
             ),
         ]
         new_generated_questions: GenerateQuestionsPrompt = (
-            await state.model.with_structured_output(GenerateQuestionsPrompt).ainvoke(messages)
+            await state.model.with_structured_output(GenerateQuestionsPrompt).ainvoke(
+                messages
+            )
         )
         questions_state: Sequence[ConversationQnA] = [
             ConversationQnA(question=q) for q in new_generated_questions.questions
@@ -148,9 +150,9 @@ class PawPal(Agent):
             ),
         ]
         evaluated_answer: AnswerWithEvaluation = (
-            await state.settings.model.with_structured_output(AnswerWithEvaluation).ainvoke(
-                messages
-            )
+            await state.settings.model.with_structured_output(
+                AnswerWithEvaluation
+            ).ainvoke(messages)
         )
         evaluated_answer.answer = Answer(type="user", content=user_answer)
         next_question.done = evaluated_answer.correct
