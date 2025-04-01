@@ -1,7 +1,6 @@
 import uuid
 
 from typing import Literal
-from pydantic import Field
 from fastapi import APIRouter, WebSocket, HTTPException
 
 from langchain_core.language_models import BaseChatModel
@@ -10,21 +9,20 @@ from langgraph.graph.state import CompiledStateGraph
 from ..utils.typex import ExcludedField
 from ..services.agent import Agent
 from ..schemas.conversation import Conversation, ConversationSettings
-# from ..schemas.state import ConversationState, ConversationQuestion
 
 
 class StartConversationInput(ConversationSettings):
     model: Literal["qwen2.5:3b"]
 
+
 class ConversationOutput(Conversation):
     messages: ExcludedField
 
 
-def pawpal_conversation_router(pawpal_workflow: CompiledStateGraph, model: BaseChatModel):
-    router = APIRouter(
-        prefix="/api/v1/pawpal",
-        tags=["pawpal"]
-    )
+def pawpal_conversation_router(
+    pawpal_workflow: CompiledStateGraph, model: BaseChatModel
+):
+    router = APIRouter(prefix="/api/v1/pawpal", tags=["pawpal"])
 
     @router.get("/conversation/{chat_id}")
     async def get_conversation(chat_id: str) -> ConversationOutput:
@@ -36,13 +34,14 @@ def pawpal_conversation_router(pawpal_workflow: CompiledStateGraph, model: BaseC
         return convo
 
     @router.post("/conversation/start")
-    async def start_conversation(conversation_input: StartConversationInput) -> ConversationOutput:
+    async def start_conversation(
+        conversation_input: StartConversationInput,
+    ) -> ConversationOutput:
         new_chat_id = str(uuid.uuid1())
         new_config = Agent.create_config(chat_id=new_chat_id)
-        resp_state = await pawpal_workflow.ainvoke({
-            "model": model,
-            **conversation_input.model_dump()
-        }, config=new_config)
+        resp_state = await pawpal_workflow.ainvoke(
+            {"model": model, **conversation_input.model_dump()}, config=new_config
+        )
         convo: Conversation = Conversation.model_validate(resp_state)
         return convo
 
@@ -55,7 +54,6 @@ def pawpal_conversation_router(pawpal_workflow: CompiledStateGraph, model: BaseC
             user_answer = audio_data
 
             # llm
-
 
             # tts
 

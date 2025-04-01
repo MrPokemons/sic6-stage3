@@ -13,10 +13,15 @@ class Question(BaseModel):
 
 class Answer(BaseModel):
     type: Literal["user"] = "user"
-    content: str = Field(description="The provided answer; just set as empty string if you aren't sure.")
-    
+    content: str = Field(
+        description="The provided answer; just set as empty string if you aren't sure."
+    )
+
+
 class AnswerWithEvaluation(Answer):
-    correct: bool = Field(description="The provided answer accuracy towards the given question")
+    correct: bool = Field(
+        description="The provided answer accuracy towards the given question"
+    )
     feedback: str = Field(description="feedback towards the provided answer")
 
 
@@ -28,10 +33,12 @@ class ConversationSettings(BaseModel):
     language: Literal["Indonesian", "English"] = "Indonesian"
     total_questions: PositiveInt = 10
 
+
 class ConversationQnA(BaseModel):
     finish: bool = False
     question: Question
     answers: List[AnswerWithEvaluation] = []
+
 
 class Conversation(BaseModel):
     chat_id: str
@@ -50,7 +57,7 @@ class Conversation(BaseModel):
             return next(q for q in self.questions if not q.finish)
         except StopIteration:
             ...
-    
+
     @property
     def last_answered_question(self) -> Optional[ConversationQnA]:
         last_q: Optional[ConversationQnA] = None

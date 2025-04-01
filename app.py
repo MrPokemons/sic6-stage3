@@ -9,14 +9,13 @@ from src.controllers.conversation import pawpal_conversation_router
 
 pawpal = PawPal()
 pawpal_workflow = pawpal.build_workflow()
-model = ChatOllama(model="qwen2.5:3b", num_ctx=2048*3, keep_alive=False)
+model = ChatOllama(model="qwen2.5:3b", num_ctx=2048 * 3, keep_alive=False)
 
 
 app = FastAPI()
-app.include_router(pawpal_conversation_router(
-    pawpal_workflow=pawpal_workflow,
-    model=model
-))
+app.include_router(
+    pawpal_conversation_router(pawpal_workflow=pawpal_workflow, model=model)
+)
 
 
 if __name__ == "__main__":

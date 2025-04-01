@@ -11,6 +11,6 @@ with (
 ):
     BASE_PROMPT: str = fbase.read()
     SCOPE_PROMPT: str = fscope.read()
-    GUIDELINE_PROMPT: str  = fguideline.read()
+    GUIDELINE_PROMPT: str = fguideline.read()
     GENERATE_QUESTION_PROMPT: str = fgenerate_question.read()
     VERIFY_ANSWER_PROMPT: str = fverify_answer.read()
