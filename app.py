@@ -1,11 +1,21 @@
 import uvicorn
 from fastapi import FastAPI
 
-app = FastAPI()
+from langchain_ollama import ChatOllama
 
-@app.get("/")
-def home():
-    return {"message": "Hello World"}
+from src.services.agent import PawPal
+from src.controllers.conversation import pawpal_conversation_router
+
+
+pawpal = PawPal()
+pawpal_workflow = pawpal.build_workflow()
+model = ChatOllama(model="qwen2.5:3b", num_ctx=2048 * 3, keep_alive=False)
+
+
+app = FastAPI()
+app.include_router(
+    pawpal_conversation_router(pawpal_workflow=pawpal_workflow, model=model)
+)
 
 
 if __name__ == "__main__":
