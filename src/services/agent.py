@@ -1,8 +1,10 @@
+from abc import ABC, abstractmethod
 from typing import Literal, Sequence
-from langchain_core.messages import SystemMessage, HumanMessage
 
+from langchain_core.messages import SystemMessage, HumanMessage
 from langgraph.types import Command, interrupt
 from langgraph.graph import StateGraph, START, END
+from langgraph.graph.state import CompiledStateGraph
 from langgraph.checkpoint.memory import MemorySaver
 
 from ..schemas.question import Questions
@@ -10,7 +12,22 @@ from ..schemas.state import InputState, ConversationState, OutputState, Conversa
 from ..utils.prompt_loader import BASE_PROMPT, SCOPE_PROMPT, GUIDELINE_PROMPT, GENERATE_QUESTION_PROMPT, VERIFY_ANSWER_PROMPT
 
 
-class PawPal:
+class Agent(ABC):
+    @abstractmethod
+    def build_workflow(self) -> CompiledStateGraph:
+        ...
+
+    @staticmethod
+    def create_config(chat_id: str):
+        config = {
+            "configurable": {
+                "thread_id": chat_id
+            }
+        }
+        return config
+
+
+class PawPal(Agent):
     @staticmethod
     def _start_training(state: InputState) -> Command[Literal["wait_and_evaluate_answer"]]:
         # message for what material should ask, what topic and maybe RAG for wanted material as referencee (?)
@@ -43,15 +60,15 @@ class PawPal:
         # interrupt for sending question to answer and getting the answer from user
         user_answer = interrupt("what is the answer?")
         messages = [
-            # SystemMessage(content=[
-            #     {"type": "text", "text": BASE_PROMPT}
-            # ]),
-            # SystemMessage(content=[
-            #     {"type": "text", "text": SCOPE_PROMPT.format(topic=state.topic, subtopic=state.subtopic, description=state.description)}
-            # ]),
-            # SystemMessage(content=[
-            #     {"type": "text", "text": GUIDELINE_PROMPT}
-            # ]),
+            SystemMessage(content=[
+                {"type": "text", "text": BASE_PROMPT}
+            ]),
+            SystemMessage(content=[
+                {"type": "text", "text": SCOPE_PROMPT.format(topic=state.topic, subtopic=state.subtopic, description=state.description)}
+            ]),
+            SystemMessage(content=[
+                {"type": "text", "text": GUIDELINE_PROMPT}
+            ]),
             HumanMessage(content=[
                 {"type": "text", "text": VERIFY_ANSWER_PROMPT.format(question=next_question.question, correct_answer=next_question.answer, user_answer=user_answer, language=state.language)}
             ])
@@ -62,7 +79,7 @@ class PawPal:
         next_question.user_answers.append(evaluated_user_answer)
         return Command(update={"messages": messages[3:]}, goto="wait_and_evaluate_answer")
 
-    def build_workflow(self):
+    def build_workflow(self) -> CompiledStateGraph:
         builder = StateGraph(ConversationState, input=InputState, output=OutputState)
 
         builder.add_node("start_training", self._start_training)
