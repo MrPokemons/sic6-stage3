@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Literal, Sequence, Annotated
+from typing import Literal, Sequence, Annotated, Any
 from pydantic import BaseModel
 
 from langchain_core.messages import BaseMessage, SystemMessage, HumanMessage
@@ -46,9 +46,14 @@ class Agent(ABC):
     def build_workflow(self) -> CompiledStateGraph: ...
 
     @staticmethod
-    def create_config(chat_id: str):
+    def create_config(chat_id: str) -> dict:
         config = {"configurable": {"thread_id": chat_id}}
         return config
+    
+    @staticmethod
+    async def resume_workflow(workflow: CompiledStateGraph, value: Any, config: dict):
+        resume_command = Command(resume=value)
+        return await workflow.ainvoke(resume_command, config=config)
 
 
 class PawPal(Agent):

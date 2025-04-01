@@ -1,7 +1,11 @@
 import uuid
+import functools
 
-from typing import Literal
-from fastapi import APIRouter, WebSocket, HTTPException, status
+from typing import Literal, Callable
+from fastapi import status
+from fastapi.routing import APIRouter
+from fastapi.websockets import WebSocket
+from fastapi.exceptions import HTTPException
 
 from langchain_core.language_models import BaseChatModel
 from langgraph.graph.state import CompiledStateGraph
@@ -45,16 +49,37 @@ def pawpal_conversation_router(
         convo: Conversation = Conversation.model_validate(resp_state)
         return convo
 
-    @router.websocket("/conversation")
-    async def conversation(websocket: WebSocket):
+    @router.websocket("/conversation/{chat_id}")
+    async def conversation(websocket: WebSocket, chat_id: str):
+        curr_config = Agent.create_config(chat_id=chat_id)
+        state_snapshot = pawpal_workflow.get_state(config=curr_config)
+        if not state_snapshot.values:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="invalid chat_id")
+        
         await websocket.accept()
-        while True:
+        while state_snapshot.next:
             audio_data = await websocket.receive_bytes()
             # stt
-            user_answer = audio_data
+            user_answer = str(audio_data)  # must change
 
             # llm
-
+            resp_state = Agent.resume_workflow(
+                workflow=pawpal_workflow,
+                value=user_answer,
+                config=curr_config
+            )
+            convo: Conversation = Conversation.model_validate(resp_state)
+            last_question = convo.last_answered_question
+            if last_question is None:
+                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="invalid flow logic, please review")
+            last_answer = last_question.answers[-1]
+            
+            model_response = last_answer.feedback
+            
             # tts
+
+            await websocket.send_bytes(model_response.encode())  # must change
+        else:
+            raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="conversation ended")
 
     return router
