@@ -1,7 +1,7 @@
 import uuid
 
 from typing import Literal
-from fastapi import APIRouter, WebSocket, HTTPException
+from fastapi import APIRouter, WebSocket, HTTPException, status
 
 from langchain_core.language_models import BaseChatModel
 from langgraph.graph.state import CompiledStateGraph
@@ -29,7 +29,7 @@ def pawpal_conversation_router(
         curr_config = Agent.create_config(chat_id=chat_id)
         state_snapshot = pawpal_workflow.get_state(config=curr_config)
         if not state_snapshot.values:
-            raise HTTPException(status_code=404, detail="invalid chat_id")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="invalid chat_id")
         convo: Conversation = Conversation.model_validate(state_snapshot.values)
         return convo
 

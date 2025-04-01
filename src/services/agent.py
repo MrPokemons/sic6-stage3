@@ -53,7 +53,7 @@ class Agent(ABC):
 
 class PawPal(Agent):
     @staticmethod
-    def _start_training(
+    async def _start_training(
         state: InputState,
     ) -> Command[Literal["wait_and_evaluate_answer"]]:
         # message for what material should ask, what topic and maybe RAG for wanted material as referencee (?)
@@ -85,7 +85,7 @@ class PawPal(Agent):
             ),
         ]
         new_generated_questions: GenerateQuestionsPrompt = (
-            state.model.with_structured_output(GenerateQuestionsPrompt).invoke(messages)
+            await state.model.with_structured_output(GenerateQuestionsPrompt).ainvoke(messages)
         )
         questions_state: Sequence[ConversationQnA] = [
             ConversationQnA(question=q) for q in new_generated_questions.questions
@@ -102,7 +102,7 @@ class PawPal(Agent):
         )
 
     @staticmethod
-    def _wait_and_evaluate_answer(state: ConversationState) -> Command[Literal["wait_and_evaluate_answer", END]]:  # type: ignore
+    async def _wait_and_evaluate_answer(state: ConversationState) -> Command[Literal["wait_and_evaluate_answer", END]]:  # type: ignore
         next_question = state.last_answered_question
         if next_question is None or next_question.done:
             next_question = state.next_question
@@ -143,7 +143,7 @@ class PawPal(Agent):
             ),
         ]
         evaluated_answer: AnswerWithEvaluation = (
-            state.settings.model.with_structured_output(AnswerWithEvaluation).invoke(
+            await state.settings.model.with_structured_output(AnswerWithEvaluation).ainvoke(
                 messages
             )
         )
@@ -163,6 +163,4 @@ class PawPal(Agent):
         builder.add_edge(START, "start_training")
 
         workflow = builder.compile(checkpointer=MemorySaver())
-        return (
-            workflow  # when doing invoke or stream, remember to set thread_id in config
-        )
+        return workflow
