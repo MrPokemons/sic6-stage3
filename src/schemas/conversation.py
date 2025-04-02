@@ -12,7 +12,7 @@ class Question(BaseModel):
 
 
 class Answer(BaseModel):
-    type: Literal["user"] = "user"
+    role: Literal["user"] = "user"
     content: str = Field(
         description="The provided answer; just set as empty string if you aren't sure."
     )
