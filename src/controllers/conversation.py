@@ -44,7 +44,7 @@ def pawpal_conversation_router(
         new_chat_id = str(uuid.uuid1())
         new_config = Agent.create_config(chat_id=new_chat_id)
         resp_state = await pawpal_workflow.ainvoke(
-            {**conversation_input.model_dump(), "model": model}, 
+            {**conversation_input.model_dump(), "model": model, "chat_id": new_chat_id}, 
             config=new_config
         )
         convo: Conversation = Conversation.model_validate(resp_state)
