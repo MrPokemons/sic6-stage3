@@ -154,7 +154,7 @@ class PawPal(Agent):
                 AnswerWithEvaluation
             ).ainvoke(messages)
         )
-        evaluated_answer.answer = Answer(type="user", content=user_answer)
+        evaluated_answer.answer = Answer(role="user", content=user_answer)
         next_question.done = evaluated_answer.correct
         next_question.user_answers.append(evaluated_answer)
         return Command(
