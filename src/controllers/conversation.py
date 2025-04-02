@@ -11,6 +11,8 @@ from langgraph.graph.state import CompiledStateGraph
 from ..utils.typex import ExcludedField
 from ..services.agent import Agent
 from ..schemas.conversation import Conversation, ConversationSettings
+from ..services.stt import SpeechToText
+from ..services.tts import TextToSpeech
 
 
 class StartConversationInput(ConversationSettings):
@@ -25,6 +27,9 @@ def pawpal_conversation_router(
     pawpal_workflow: CompiledStateGraph, model: BaseChatModel
 ):
     router = APIRouter(prefix="/api/v1/pawpal", tags=["pawpal"])
+
+    stt = SpeechToText()
+    tts = TextToSpeech()
 
     @router.get("/conversation/{chat_id}")
     async def get_conversation(chat_id: str) -> ConversationOutput:
@@ -61,28 +66,36 @@ def pawpal_conversation_router(
 
         await websocket.accept()
         while state_snapshot.next:
-            audio_data = await websocket.receive_bytes()
-            # stt
-            user_answer = str(audio_data)  # must change
+            try:
+                # 1. Receive audio
+                audio_data = await websocket.receive_bytes()
 
-            # llm
-            resp_state = Agent.resume_workflow(
-                workflow=pawpal_workflow, value=user_answer, config=curr_config
-            )
-            convo: Conversation = Conversation.model_validate(resp_state)
-            last_question = convo.last_answered_question
-            if last_question is None:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="invalid flow logic, please review",
+                # 2. STT
+                user_answer = stt.transcribe(audio_data)
+
+                # 3. LLM
+                resp_state = Agent.resume_workflow(
+                    workflow=pawpal_workflow, value=user_answer, config=curr_config
                 )
-            last_answer = last_question.answers[-1]
+                convo: Conversation = Conversation.model_validate(resp_state)
+                last_question = convo.last_answered_question
+                if last_question is None:
+                    raise HTTPException(
+                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        detail="invalid flow logic, please review",
+                    )
+                last_answer = last_question.answers[-1]
+                model_response = last_answer.feedback
 
-            model_response = last_answer.feedback
+                # 4. TTS
+                tts_audio = tts.synthesize(model_response)
 
-            # tts
+                # 5. Send audio response
+                await websocket.send_bytes(tts_audio)
 
-            await websocket.send_bytes(model_response.encode())  # must change
+            except Exception as e:
+                await websocket.close(code=1011, reason=str(e))
+                break
         else:
             raise HTTPException(
                 status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="conversation ended"
