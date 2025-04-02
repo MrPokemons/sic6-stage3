@@ -24,12 +24,12 @@ class ConversationOutput(Conversation):
 
 
 def pawpal_conversation_router(
-    pawpal_workflow: CompiledStateGraph, model: BaseChatModel
+    pawpal_workflow: CompiledStateGraph,
+    model: BaseChatModel,
+    stt: SpeechToText,
+    tts: TextToSpeech,
 ):
     router = APIRouter(prefix="/api/v1/pawpal", tags=["pawpal"])
-
-    stt = SpeechToText()
-    tts = TextToSpeech()
 
     @router.get("/conversation/{chat_id}")
     async def get_conversation(chat_id: str) -> ConversationOutput:
@@ -49,8 +49,8 @@ def pawpal_conversation_router(
         new_chat_id = str(uuid.uuid1())
         new_config = Agent.create_config(chat_id=new_chat_id)
         resp_state = await pawpal_workflow.ainvoke(
-            {**conversation_input.model_dump(), "model": model, "chat_id": new_chat_id}, 
-            config=new_config
+            {**conversation_input.model_dump(), "model": model, "chat_id": new_chat_id},
+            config=new_config,
         )
         convo: Conversation = Conversation.model_validate(resp_state)
         return convo

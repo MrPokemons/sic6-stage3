@@ -1,7 +1,8 @@
-from transformers import AutoTokenizer, VitsModel
-import torch
-import soundfile as sf
 import io
+import soundfile as sf
+import torch
+from transformers import AutoTokenizer, VitsModel
+
 
 class TextToSpeech:
     def __init__(self):

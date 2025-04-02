@@ -1,2 +1,11 @@
 fastapi
 uvicorn
+pytorch
+torchvision
+torchaudio
+transformers
+soundfile
+langchain
+langchain-ollama
+langchain-core
+langgraph
