@@ -1,6 +1,5 @@
 import uuid
 
-from typing import Literal
 from fastapi import status
 from fastapi.routing import APIRouter
 from fastapi.websockets import WebSocket
@@ -15,7 +14,7 @@ from ..schemas.conversation import Conversation, ConversationSettings
 
 
 class StartConversationInput(ConversationSettings):
-    model: Literal["qwen2.5:3b"]
+    model: ExcludedField
 
 
 class ConversationOutput(Conversation):
@@ -45,7 +44,8 @@ def pawpal_conversation_router(
         new_chat_id = str(uuid.uuid1())
         new_config = Agent.create_config(chat_id=new_chat_id)
         resp_state = await pawpal_workflow.ainvoke(
-            {"model": model, **conversation_input.model_dump()}, config=new_config
+            {**conversation_input.model_dump(), "model": model}, 
+            config=new_config
         )
         convo: Conversation = Conversation.model_validate(resp_state)
         return convo
