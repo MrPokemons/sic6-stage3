@@ -3,9 +3,13 @@ from fastapi import FastAPI
 
 from langchain_ollama import ChatOllama
 
+from src.schemas.config import Config
 from src.services.agent import PawPal
 from src.controllers.conversation import pawpal_conversation_router
+from config.settings import load_config
 
+
+CONFIG = Config.model_validate(load_config())
 
 pawpal = PawPal()
 pawpal_workflow = pawpal.build_workflow()
@@ -19,4 +23,4 @@ app.include_router(
 
 
 if __name__ == "__main__":
-    uvicorn.run(app=app, host="0.0.0.0", port=6789)
+    uvicorn.run(app=app, host=CONFIG.app.host, port=CONFIG.app.port)
