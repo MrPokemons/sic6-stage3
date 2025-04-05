@@ -103,7 +103,7 @@ class PawPal(Agent):
                 "messages": messages,
                 "active": True,
                 "questions": questions_state,
-                "settings": state,
+                "settings": ConversationSettings.model_validate(state),
             },
             goto="wait_and_evaluate_answer",
         )
