@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Literal, Sequence, Annotated, Any
 from pydantic import BaseModel
 
+from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import BaseMessage, SystemMessage, HumanMessage
 from langgraph.types import Command, interrupt
 from langgraph.graph import StateGraph, START, END
@@ -31,7 +32,8 @@ class InputState(ConversationSettings):
     messages: Annotated[Sequence[BaseMessage], add_messages] = []
 
 
-class ConversationState(Conversation): ...
+class ConversationState(Conversation):
+    model: BaseChatModel
 
 
 class OutputState(Conversation): ...
@@ -103,7 +105,8 @@ class PawPal(Agent):
                 "messages": messages,
                 "active": True,
                 "questions": questions_state,
-                "settings": ConversationSettings.model_validate(state),
+                "settings": ConversationSettings.model_validate(state, strict=True),
+                "model": state.model
             },
             goto="wait_and_evaluate_answer",
         )
@@ -150,7 +153,7 @@ class PawPal(Agent):
             ),
         ]
         evaluated_answer: AnswerWithEvaluation = (
-            await state.settings.model.with_structured_output(
+            await state.model.with_structured_output(
                 AnswerWithEvaluation
             ).ainvoke(messages)
         )
