@@ -1,5 +1,6 @@
 import uuid
 import logging
+import traceback
 
 from fastapi import status
 from fastapi.routing import APIRouter
@@ -69,13 +70,8 @@ def pawpal_conversation_router(
         await websocket.accept()
         while state_snapshot.next:
             try:
-                # 1. Receive audio
                 audio_data = await websocket.receive_bytes()
-
-                # 2. STT
                 user_answer = stt.transcribe(audio_data)
-
-                # 3. LLM
                 resp_state = await Agent.resume_workflow(
                     workflow=pawpal_workflow, value=user_answer, config=curr_config
                 )
@@ -90,15 +86,12 @@ def pawpal_conversation_router(
                 model_response = last_answer.feedback
                 logger.info(f"Websocket - Model Response: {model_response}")
 
-                # 4. TTS
                 tts_audio = tts.synthesize(model_response)
-
-                # 5. Send audio response
                 await websocket.send_bytes(tts_audio)
 
             except Exception as e:
                 await websocket.close(code=1011, reason=str(e))
-                break
+                logger.error(f"Conversation Error\n{traceback.format_exc()}")
         else:
             raise HTTPException(
                 status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="conversation ended"
