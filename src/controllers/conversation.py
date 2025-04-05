@@ -1,4 +1,5 @@
 import uuid
+import logging
 
 from fastapi import status
 from fastapi.routing import APIRouter
@@ -28,6 +29,7 @@ def pawpal_conversation_router(
     model: BaseChatModel,
     stt: SpeechToText,
     tts: TextToSpeech,
+    logger: logging.Logger,
 ):
     router = APIRouter(prefix="/api/v1/pawpal", tags=["pawpal"])
 
@@ -86,6 +88,7 @@ def pawpal_conversation_router(
                     )
                 last_answer = last_question.answers[-1]
                 model_response = last_answer.feedback
+                logger.debug(f"Websocket - Model Response: {model_response}")
 
                 # 4. TTS
                 tts_audio = tts.synthesize(model_response)
