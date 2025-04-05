@@ -88,7 +88,7 @@ def pawpal_conversation_router(
                     )
                 last_answer = last_question.answers[-1]
                 model_response = last_answer.feedback
-                logger.debug(f"Websocket - Model Response: {model_response}")
+                logger.info(f"Websocket - Model Response: {model_response}")
 
                 # 4. TTS
                 tts_audio = tts.synthesize(model_response)

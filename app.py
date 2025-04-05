@@ -1,3 +1,5 @@
+import logging
+
 import uvicorn
 from fastapi import FastAPI
 
@@ -10,6 +12,18 @@ from src.services.tts import TextToSpeech
 from src.controllers.conversation import pawpal_conversation_router
 from config.settings import load_config
 
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    force=True,
+    handlers=[
+        logging.FileHandler("logs/pawpal.log"),
+        logging.StreamHandler(),
+    ],
+)
+
+app_logger = logging.Logger(__name__)
 
 CONFIG = Config.model_validate(load_config())
 
@@ -24,7 +38,7 @@ tts = TextToSpeech()
 app = FastAPI()
 app.include_router(
     pawpal_conversation_router(
-        pawpal_workflow=pawpal_workflow, model=model, stt=stt, tts=tts
+        pawpal_workflow=pawpal_workflow, model=model, stt=stt, tts=tts, logger=app_logger
     )
 )
 
