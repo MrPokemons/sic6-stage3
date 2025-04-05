@@ -74,7 +74,7 @@ def pawpal_conversation_router(
                 user_answer = stt.transcribe(audio_data)
 
                 # 3. LLM
-                resp_state = Agent.resume_workflow(
+                resp_state = await Agent.resume_workflow(
                     workflow=pawpal_workflow, value=user_answer, config=curr_config
                 )
                 convo: Conversation = Conversation.model_validate(resp_state)
