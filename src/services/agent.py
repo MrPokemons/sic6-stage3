@@ -33,7 +33,7 @@ class InputState(ConversationSettings):
 
 
 class ConversationState(Conversation):
-    model: BaseChatModel
+    model: BaseChatModel   # the .settings.model doesn't persist, so this is the alternative
 
 
 class OutputState(Conversation): ...
