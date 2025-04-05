@@ -111,7 +111,7 @@ class PawPal(Agent):
     @staticmethod
     async def _wait_and_evaluate_answer(state: ConversationState) -> Command[Literal["wait_and_evaluate_answer", END]]:  # type: ignore
         next_question = state.last_answered_question
-        if next_question is None or next_question.done:
+        if next_question is None or next_question.finish:
             next_question = state.next_question
             if next_question is None:
                 return Command(update={"active": False}, goto=END)
@@ -140,8 +140,8 @@ class PawPal(Agent):
                     {
                         "type": "text",
                         "text": VERIFY_ANSWER_PROMPT.format(
-                            question=next_question.question,
-                            correct_answer=next_question.answer,
+                            question=next_question.question.content,
+                            correct_answer=next_question.question.answer,
                             user_answer=user_answer,
                             language=state.settings.language,
                         ),
@@ -154,9 +154,9 @@ class PawPal(Agent):
                 AnswerWithEvaluation
             ).ainvoke(messages)
         )
-        evaluated_answer.answer = Answer(role="user", content=user_answer)
-        next_question.done = evaluated_answer.correct
-        next_question.user_answers.append(evaluated_answer)
+        evaluated_answer.content = Answer(role="user", content=user_answer)
+        next_question.finish = evaluated_answer.correct
+        next_question.answers.append(evaluated_answer)
         return Command(
             update={"messages": messages[3:]}, goto="wait_and_evaluate_answer"
         )
