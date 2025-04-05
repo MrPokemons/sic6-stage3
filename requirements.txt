@@ -1,4 +1,5 @@
 fastapi
+pydantic
 uvicorn
 pytorch
 torchvision
@@ -9,3 +10,4 @@ langchain
 langchain-ollama
 langchain-core
 langgraph
+python-dotenv
