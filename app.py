@@ -23,7 +23,9 @@ tts = TextToSpeech()
 
 app = FastAPI()
 app.include_router(
-    pawpal_conversation_router(pawpal_workflow=pawpal_workflow, model=model)
+    pawpal_conversation_router(
+        pawpal_workflow=pawpal_workflow, model=model, stt=stt, tts=tts
+    )
 )
 
 

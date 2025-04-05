@@ -2,7 +2,7 @@ from typing import TypeAlias, Literal, Union, Dict
 from pydantic import BaseModel, Field, AliasChoices
 
 
-OllamaModels: TypeAlias = Literal["qwen2.5:3b"]
+OllamaModels: TypeAlias = Literal["qwen2.5:3b", "qwen2.5:7b"]
 
 
 class OllamaSettings(BaseModel):
