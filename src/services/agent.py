@@ -33,7 +33,9 @@ class InputState(ConversationSettings):
 
 
 class ConversationState(Conversation):
-    model: BaseChatModel   # the .settings.model doesn't persist, so this is the alternative
+    model: (
+        BaseChatModel  # the .settings.model doesn't persist, so this is the alternative
+    )
 
 
 class OutputState(Conversation): ...
@@ -106,7 +108,7 @@ class PawPal(Agent):
                 "active": True,
                 "questions": questions_state,
                 "settings": ConversationSettings.model_validate(state, strict=True),
-                "model": state.model
+                "model": state.model,
             },
             goto="wait_and_evaluate_answer",
         )
@@ -153,9 +155,9 @@ class PawPal(Agent):
             ),
         ]
         evaluated_answer: AnswerWithEvaluation = (
-            await state.model.with_structured_output(
-                AnswerWithEvaluation
-            ).ainvoke(messages)
+            await state.model.with_structured_output(AnswerWithEvaluation).ainvoke(
+                messages
+            )
         )
         evaluated_answer.content = Answer(role="user", content=user_answer)
         next_question.finish = evaluated_answer.correct
