@@ -3,11 +3,19 @@ import os
 PROMPT_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data", "prompt")
 
 with (
+<<<<<<< HEAD
     open(os.path.join(PROMPT_DIR, "base.md"), "r", encoding="utf-8") as fbase,
     open(os.path.join(PROMPT_DIR, "scope.md"), "r", encoding="utf-8") as fscope,
     open(os.path.join(PROMPT_DIR, "guideline.md"), "r", encoding="utf-8") as fguideline,
     open(os.path.join(PROMPT_DIR, "generate-questions.md"), "r", encoding="utf-8") as fgenerate_question,
     open(os.path.join(PROMPT_DIR, "verify-answer.md"), "r", encoding="utf-8") as fverify_answer,
+=======
+    open(os.path.join(PROMPT_DIR, "base.md"), "r", encoding="utf8") as fbase,
+    open(os.path.join(PROMPT_DIR, "scope.md"), "r", encoding="utf8") as fscope,
+    open(os.path.join(PROMPT_DIR, "guideline.md"), "r", encoding="utf8") as fguideline,
+    open(os.path.join(PROMPT_DIR, "generate-questions.md"), "r", encoding="utf8") as fgenerate_question,
+    open(os.path.join(PROMPT_DIR, "verify-answer.md"), "r", encoding="utf8") as fverify_answer,
+>>>>>>> bf695382d9d58085115b82c50656828a6b73f567
 ):
     BASE_PROMPT: str = fbase.read()
     SCOPE_PROMPT: str = fscope.read()
