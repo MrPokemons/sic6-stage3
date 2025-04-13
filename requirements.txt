@@ -12,3 +12,4 @@ langchain-ollama==0.3.0
 langchain-core==0.3.49
 langgraph==0.2.69
 python-dotenv==1.0.1
+pymongo==4.11.3
