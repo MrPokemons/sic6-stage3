@@ -13,17 +13,17 @@ st.title("Mulai Percakapan 🤖")
 
 st.subheader("Konfigurasi Percakapan")
 with st.form("child_profile_form"):
-    duration = st.number_input("⏰ Durasi", min_value=5, max_value=12, step=1)
-    topic = st.text_area("💬 Topik Percakapan")
+    duration = st.number_input("⏰ Durasi", min_value=3, step=2)
+    topic = st.text_area("💬 Topik Percakapan (Opsional)")
 
     startConvo = st.form_submit_button("Mulai")
 
-if startConvo:
+if startConvo:       
     print("convo started")
 
 # -------------------
 st.subheader("Transkrip")
-with st.expander("💬 Transkrip Percakapan Terakhir"):
+with st.expander("💬 Transkrip Percakapan"):
     if(dummyMsg):
         for msg in dummyMsg:
             with st.chat_message(msg["sender"]):
