@@ -21,7 +21,12 @@ class Settings(BaseSettings):
         ENV_NAME: str
         CONTAINER_NAME: str
 
+    class _MongoDB(BaseModel):
+        CONN_URI: str
+        DB_NAME: str
+
     ENV_TYPE: Literal["local", "development", "production"]
     APP: _App
+    MONGODB: _MongoDB
 
     model_config = SettingsConfigDict(env_file=ENV_FILE, env_nested_delimiter="__")
