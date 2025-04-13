@@ -1,12 +1,10 @@
 import streamlit as st
 import requests
 
-st.title("PawPal 🐾")
+st.title("Biodata Anak 🧒")
 # st.header("One Voice, Many Stories, Endless Smiles!")
-st.header("Satu Suara, Seribu Cerita, Senyum Tiada Henti!")
+# st.header("Satu Suara, Seribu Cerita, Senyum Tiada Henti!")
 child_profile = []
-
-
 
 with st.form("child_profile_form"):
     name = st.text_input("🧒 Nama")
@@ -57,3 +55,4 @@ if submitted:
 
         # Simpan ke session_state jika mau dipakai di page lain
         st.session_state["child_profile"] = child_profile
+    
