@@ -61,40 +61,9 @@ with col2:
 # -------------------
 st.subheader("Transkrip")
 with st.expander("💬 Transkrip Percakapan Terakhir"):
-    st.markdown("""
-    <style>
-        .message-container {
-            padding: 10px;
-            margin-bottom: 8px;
-            border-radius: 10px;
-            max-width: 70%;
-            word-wrap: break-word;
-        }
-        .user {
-            background-color: #3c77d6;
-            align-self: flex-end;
-            margin-left: auto;
-        }
-        .bot {
-            background-color: #04123d;
-            align-self: flex-start;
-            margin-right: auto;
-        }
-        .chat-box {
-            display: flex;
-            flex-direction: column;
-        }
-    </style>
-    """, unsafe_allow_html=True)
-        # Render messages
-    st.markdown('<div class="chat-box">', unsafe_allow_html=True)
     for msg in dummyMsg:
-      role_class = "user" if msg["sender"] == "user" else "bot"
-      st.markdown(
-        f'<div class="message-container {role_class}">{msg["text"]}</div>',
-        unsafe_allow_html=True
-    )
-    st.markdown('</div>', unsafe_allow_html=True)
+        with st.chat_message(msg["sender"]):
+            st.write(msg["text"])
 
 
 # -------------------
