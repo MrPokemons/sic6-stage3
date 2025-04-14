@@ -21,6 +21,7 @@ class WouldYouRather(Agentic):
     async def _start(state: SessionState, config: ConfigSchema):
         print("wouldyourather", state, config["configurable"]["thread_id"])
 
+    @classmethod
     def build_workflow(self) -> CompiledStateGraph:
         builder = StateGraph(
             WYRSessionState, input=SessionState, config_schema=ConfigurableSchema
@@ -31,6 +32,7 @@ class WouldYouRather(Agentic):
 
         # Edge
         builder.add_edge(START, "start")
+        builder.add_edge("start", END)
 
         workflow = builder.compile(checkpointer=MemorySaver())
         return workflow

@@ -1,20 +1,22 @@
 import os
+from pydantic import BaseModel, Field
+
 
 PROMPT_DIR = os.path.join(os.path.dirname(__file__), "prompts")
 
-with (
-    open(os.path.join(PROMPT_DIR, "base.md"), "r", encoding="utf8") as fbase,
-    open(os.path.join(PROMPT_DIR, "scope.md"), "r", encoding="utf8") as fscope,
-    open(os.path.join(PROMPT_DIR, "guideline.md"), "r", encoding="utf8") as fguideline,
-    open(
-        os.path.join(PROMPT_DIR, "generate-questions.md"), "r", encoding="utf8"
-    ) as fgenerate_question,
-    open(
-        os.path.join(PROMPT_DIR, "verify-answer.md"), "r", encoding="utf8"
-    ) as fverify_answer,
-):
-    BASE_PROMPT: str = fbase.read()
-    SCOPE_PROMPT: str = fscope.read()
-    GUIDELINE_PROMPT: str = fguideline.read()
-    GENERATE_QUESTION_PROMPT: str = fgenerate_question.read()
-    VERIFY_ANSWER_PROMPT: str = fverify_answer.read()
+
+def load_prompt_md(filename: str) -> str:
+    with open(os.path.join(PROMPT_DIR, filename), "r", encoding="utf8") as f:
+        return f.read()
+
+
+class PromptLoader(BaseModel):
+    # Core Flow
+    baseline: str = Field(default_factory=lambda: load_prompt_md("baseline.md"))
+    welcome_template: str = Field(default_factory=lambda: load_prompt_md("welcome.md"))
+    language_template: str = Field(
+        default_factory=lambda: load_prompt_md("language.md")
+    )
+
+
+prompt_loader = PromptLoader()
