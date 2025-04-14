@@ -18,13 +18,14 @@ from ..schemas.conversation import (
     AnswerWithEvaluation,
     Answer,
 )
-from ..utils.prompt_loader import (
-    BASE_PROMPT,
-    SCOPE_PROMPT,
-    GUIDELINE_PROMPT,
-    GENERATE_QUESTION_PROMPT,
-    VERIFY_ANSWER_PROMPT,
-)
+
+
+BASE_PROMPT = "awefw"
+SCOPE_PROMPT = "afew"
+GUIDELINE_PROMPT = "fwaef"
+GENERATE_QUESTION_PROMPT = "fawefwa"
+VERIFY_ANSWER_PROMPT = "awfwaef"
+
 
 
 class InputState(ConversationSettings):
