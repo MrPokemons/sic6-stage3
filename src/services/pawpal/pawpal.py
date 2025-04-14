@@ -66,6 +66,7 @@ class PawPal(Agentic):
 
         This node won't be included into the graph since its just the redirector.
         """
+        print(f"hi {state.from_node} -> {state.next_node}")
         if state.from_node == "start":
             interrupt(
                 [InterruptSchema(action="speaker", message=state.messages[-1].text())]
@@ -101,7 +102,7 @@ class PawPal(Agentic):
                     content=(
                         "Say something fun and playful, like PawPal is drawing a surprise session from a magical mystery box. "
                         "Build excitement with a little drumroll or silly sound effect, then reveal the session name and jump right in, "
-                        f"which next session name will be '{next_feature}'."
+                        f"which next session name will be '{next_feature.replace('_', ' ').capitalize()}'."
                     )
                     + "\n"
                     + prompt_loader.language_template.format(

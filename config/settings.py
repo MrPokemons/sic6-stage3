@@ -1,6 +1,6 @@
 import os
 from typing import Literal
-from pydantic import BaseModel, Field, AliasChoices
+from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from dotenv import load_dotenv
@@ -17,7 +17,6 @@ class Settings(BaseSettings):
     class _App(BaseModel):
         HOST: str
         PORT: int
-        ENV_NAME: str
         CONTAINER_NAME: str
 
     class _MongoDB(BaseModel):
@@ -25,8 +24,8 @@ class Settings(BaseSettings):
         DB_NAME: str
 
     class _Model(BaseModel):
-        NAME: str = Field(validation_alias=AliasChoices("MODEL", "NAME", "MODEL_NAME"))
-        URL: str = Field(validation_alias=AliasChoices("URL", "BASE_URL"))
+        NAME: str
+        URL: str
 
     ENV_TYPE: Literal["local", "development", "production"]
     APP: _App
