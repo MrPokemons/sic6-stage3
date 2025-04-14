@@ -1,15 +1,11 @@
-from typing import Literal
-from datetime import datetime, timezone
-from pydantic import BaseModel, Field
-
-from langchain_core.messages import SystemMessage, HumanMessage
 from langgraph.types import Command
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.checkpoint.memory import MemorySaver
 
 from ..agentic import Agentic
-from ..schemas import ConfigSchema, ConfigurableSchema, SessionState
+from ..schemas.config import ConfigSchema, ConfigurableSchema
+from ..schemas.state import SessionState
 
 
 class MGSessionState(SessionState):
@@ -17,6 +13,8 @@ class MGSessionState(SessionState):
 
 
 class MathGame(Agentic):
+    COLLECTION_NAME = "math_game-topic"
+
     @staticmethod
     async def _start(state: SessionState, config: ConfigSchema):
         print("mathgame", state, config["configurable"]["thread_id"])

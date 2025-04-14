@@ -74,15 +74,13 @@ model = ChatOllama(
     model=CONFIG.MODEL.NAME,
     base_url=CONFIG.MODEL.URL,
     num_ctx=2048 * 3,
-    keep_alive=False
+    keep_alive=False,
 )
 tts = TextToSpeech()
 
 pawpal = PawPal()
 pawpal.set_agentic_cls(
-    model=model,
-    mongodb_engine=mongodb_engine,
-    collection_name="pawpal"
+    model=model, mongodb_engine=mongodb_engine, COLLECTION_NAME="pawpal"
 )
 
 
