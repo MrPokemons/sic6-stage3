@@ -1,4 +1,4 @@
-from typing import Literal, Annotated, Optional, List, Sequence
+from typing import Literal, Annotated, Optional, List, Sequence, TypeAlias, Union
 from typing_extensions import TypedDict
 from pydantic import BaseModel, PositiveInt
 
@@ -13,7 +13,6 @@ class FeatureParams(TypedDict):
 
     class MathGameParam(TypedDict):
         total_question: int
-        hint: int = 3
 
     class SpellingGameParam(TypedDict):
         total_question: int
@@ -25,6 +24,30 @@ class FeatureParams(TypedDict):
     math_game: MathGameParam
     spelling_game: SpellingGameParam
     would_you_rather: WouldYouRatherParam
+
+
+class FeatureResults(BaseModel):
+    class TalkToMeResult(BaseModel):
+        overview: str
+        emotion: str
+        keypoints: List[str]
+
+    class MathGameResult(BaseModel):
+        ...
+
+    class SpellingGameResult(BaseModel):
+        ...
+
+    class WouldYouRatherResult(BaseModel):
+        ...
+
+
+FeatureResultsType: TypeAlias = Union[
+    FeatureResults.TalkToMeResult,
+    FeatureResults.MathGameResult,
+    FeatureResults.SpellingGameResult,
+    FeatureResults.WouldYouRatherResult,
+]
 
 
 class UserData(TypedDict):

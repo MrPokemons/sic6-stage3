@@ -123,8 +123,9 @@ class PawPal(Agentic):
 
     @staticmethod
     async def _check_and_save_session(state: AgentState, config: ConfigSchema) -> Command[Literal["randomize_features", END]]:  # type: ignore
+        # update sessions
         if len(state.sessions) >= state.total_sessions:
-            # store to mongodb
+            # store whole sessions to mongodb
             return Command(
                 update={"from_node": "check_and_save_session", "next_node": END},
                 goto="talk",
