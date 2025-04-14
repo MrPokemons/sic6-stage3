@@ -15,7 +15,7 @@ from ..nosql import MongoDBEngine
 class Agentic(ABC):
     model: BaseChatModel
     mongodb_engine: MongoDBEngine
-    collection_name: str
+    COLLECTION_NAME: str
 
     @classmethod
     @abstractmethod
@@ -50,13 +50,10 @@ class Agentic(ABC):
         cls.mongodb_engine = mongodb_engine
 
     @classmethod
-    def set_collection_name(cls, collection_name: str):
-        cls.collection_name = collection_name
-
-    @classmethod
     def set_agentic_cls(
-        cls, model: BaseChatModel, mongodb_engine: MongoDBEngine, collection_name: str
+        cls, model: Optional[BaseChatModel], mongodb_engine: Optional[MongoDBEngine]
     ):
-        cls.model = model
-        cls.mongodb_engine = mongodb_engine
-        cls.collection_name = collection_name
+        if model:
+            cls.model = model
+        if mongodb_engine:
+            cls.mongodb_engine = mongodb_engine

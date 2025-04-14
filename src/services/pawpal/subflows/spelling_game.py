@@ -13,6 +13,8 @@ class SGSessionState(SessionState):
 
 
 class SpellingGame(Agentic):
+    COLLECTION_NAME = "spelling_game-topic"
+
     @staticmethod
     async def _start(state: SessionState, config: ConfigSchema):
         print("spellinggame", state, config["configurable"]["thread_id"])

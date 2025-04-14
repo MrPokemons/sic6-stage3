@@ -13,6 +13,8 @@ class WYRSessionState(SessionState):
 
 
 class WouldYouRather(Agentic):
+    COLLECTION_NAME = "would_you_rather-topic"
+
     @staticmethod
     async def _start(state: SessionState, config: ConfigSchema):
         print("wouldyourather", state, config["configurable"]["thread_id"])

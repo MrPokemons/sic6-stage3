@@ -80,7 +80,7 @@ tts = TextToSpeech()
 
 pawpal = PawPal()
 pawpal.set_agentic_cls(
-    model=model, mongodb_engine=mongodb_engine, collection_name="pawpal"
+    model=model, mongodb_engine=mongodb_engine, COLLECTION_NAME="pawpal"
 )
 
 

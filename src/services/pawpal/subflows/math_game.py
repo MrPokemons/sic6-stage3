@@ -13,6 +13,8 @@ class MGSessionState(SessionState):
 
 
 class MathGame(Agentic):
+    COLLECTION_NAME = "math_game-topic"
+
     @staticmethod
     async def _start(state: SessionState, config: ConfigSchema):
         print("mathgame", state, config["configurable"]["thread_id"])

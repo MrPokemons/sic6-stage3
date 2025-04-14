@@ -25,6 +25,8 @@ class AgentState(SessionState):
 
 
 class PawPal(Agentic):
+    COLLECTION_NAME = "pawpal-conversation"
+
     @classmethod
     async def _start(
         cls, state: AgentState, config: ConfigSchema
@@ -68,7 +70,6 @@ class PawPal(Agentic):
 
         This node won't be included into the graph since its just the redirector.
         """
-        print(f"hi {state.from_node} -> {state.next_node}")
         if state.from_node == "start":
             interrupt(
                 [InterruptSchema(action="speaker", message=state.messages[-1].text())]
@@ -101,15 +102,20 @@ class PawPal(Agentic):
             [
                 *state.messages,
                 SystemMessage(
-                    content=(
-                        "Say something fun and playful, like PawPal is drawing a surprise session from a magical mystery box. "
-                        "Build excitement with a little drumroll or silly sound effect, then reveal the session name and jump right in, "
-                        f"which next session name will be '{next_feature.replace('_', ' ').capitalize()}'."
-                    )
-                    + "\n"
-                    + prompt_loader.language_template.format(
-                        user_language=user_data.get("language", "English")
-                    )
+                    content=[
+                        {
+                            "type": "text",
+                            "text": (
+                                "Say something fun and playful, like PawPal is drawing a surprise session from a magical mystery box. "
+                                "Build excitement with a little drumroll or silly sound effect, then reveal the session name and jump right in, "
+                                f"which next session name will be '{next_feature.replace('_', ' ').capitalize()}'."
+                            )
+                            + "\n"
+                            + prompt_loader.language_template.format(
+                                user_language=user_data.get("language", "English")
+                            ),
+                        }
+                    ]
                 ),
             ]
         )
@@ -136,9 +142,29 @@ class PawPal(Agentic):
                 total_sessions=state.total_sessions,
                 sessions=state.sessions,
             )
-            cls.mongodb_engine.insert_doc(cls.collection_name, saved_session)
+            cls.mongodb_engine.insert_doc(cls.COLLECTION_NAME, saved_session)
+            end_conversation_message = await cls.model.ainvoke(
+                [
+                    *state.messages,
+                    SystemMessage(
+                        content=(
+                            ""
+                            + "\n"
+                            + prompt_loader.language_template.format(
+                                user_language=configurable["user"].get(
+                                    "language", "English"
+                                )
+                            )
+                        )
+                    ),
+                ]
+            )
             return Command(
-                update={"from_node": "check_and_save_session", "next_node": END},
+                update={
+                    "messages": end_conversation_message,
+                    "from_node": "check_and_save_session",
+                    "next_node": END,
+                },
                 goto="talk",
             )
         return Command(
@@ -163,7 +189,6 @@ class PawPal(Agentic):
             _agentic_object.set_agentic_cls(
                 model=cls.model,
                 mongodb_engine=cls.mongodb_engine,
-                collection_name=flow_feature_name,
             )
             _agentic_workflow = _agentic_object.build_workflow()
             builder.add_node(TopicFlowNodeMapping[flow_feature_name], _agentic_workflow)

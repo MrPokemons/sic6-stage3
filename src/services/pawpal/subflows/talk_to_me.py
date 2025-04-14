@@ -18,6 +18,8 @@ class TTMSessionState(SessionState):
 
 
 class TalkToMe(Agentic):
+    COLLECTION_NAME = "talk_to_me-topic"
+
     @staticmethod
     async def _start(
         state: TTMSessionState, config: ConfigSchema
@@ -35,16 +37,21 @@ class TalkToMe(Agentic):
 
     @staticmethod
     async def _talk(state: TTMSessionState, config: ConfigSchema):
-        # just central to use interrupt without worrying reprocessing something, so don't need included into the Graph
-        # this interrupt is to send the message from previous node
-        # something like introduce bot himself, then lets randomize features
+        """
+        Every node that requires interruption for sending/receiving message,
+        then it will be directed to this node. Provides the interruption with ease,
+        not needing to worry about the interrupt side-effect or best practice to
+        put it in beginning of the node.
+
+        This node won't be included into the graph since its just the redirector.
+        """
         if state.from_node == "start":
             interrupt(
-                [InterruptSchema(action="speaker", message="send from last AI Message")]
+                [InterruptSchema(action="speaker", message=state.messages[-1].text())]
             )
         elif state.from_node == "responding":
             interrupt(
-                [InterruptSchema(action="speaker", message="Are you ready here we go")]
+                [InterruptSchema(action="speaker", message=state.messages[-1].text())]
             )
         elif state.from_node == "check_session":
             if state.next_node == END:
