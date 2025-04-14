@@ -4,14 +4,16 @@ from logging.config import dictConfig
 
 import uvicorn
 from fastapi import FastAPI
-
 from langchain_ollama import ChatOllama
 
-from src.services.agent import PawPal
+from config.settings import Settings
+
+from src.services.pawpal import PawPal
 from src.services.stt import SpeechToText
 from src.services.tts import TextToSpeech
-from src.controllers.conversation import pawpal_conversation_router
-from config.settings import Settings
+from src.services.nosql import MongoDBEngine
+
+from src.controllers.pawpal import pawpal_router
 
 
 # ENV Configuration
@@ -64,11 +66,12 @@ app_logger = logging.Logger(__name__)
 
 
 # Initialize Services
-pawpal = PawPal()
-pawpal_workflow = pawpal.build_workflow()
-
+mongodb_engine = MongoDBEngine(
+    uri=CONFIG.MONGODB.CONN_URI, db_name=CONFIG.MONGODB.DB_NAME
+)
+pawpal = PawPal(mongodb_engine=mongodb_engine, collection_name="pawpal")
 stt = SpeechToText()
-model = ChatOllama(model="qwen2.5:3b", num_ctx=2048 * 3, keep_alive=False)
+model = ChatOllama(model=CONFIG.MODEL.NAME, num_ctx=2048 * 3, keep_alive=False)
 tts = TextToSpeech()
 
 
@@ -76,8 +79,8 @@ tts = TextToSpeech()
 app = FastAPI()
 
 app.include_router(
-    pawpal_conversation_router(
-        pawpal_workflow=pawpal_workflow,
+    pawpal_router(
+        pawpal=pawpal,
         model=model,
         stt=stt,
         tts=tts,
@@ -87,4 +90,4 @@ app.include_router(
 
 
 if __name__ == "__main__":
-    uvicorn.run(app=app, host=CONFIG.app.host, port=CONFIG.app.port)
+    uvicorn.run(app=app, host=CONFIG.APP.HOST, port=CONFIG.APP.PORT)

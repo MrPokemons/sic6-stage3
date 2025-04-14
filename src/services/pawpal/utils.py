@@ -1,6 +1,6 @@
 import os
 
-PROMPT_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data", "prompt")
+PROMPT_DIR = os.path.join(os.path.dirname(__file__), "prompts")
 
 with (
     open(os.path.join(PROMPT_DIR, "base.md"), "r", encoding="utf8") as fbase,

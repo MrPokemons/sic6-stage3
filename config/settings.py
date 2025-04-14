@@ -1,6 +1,6 @@
 import os
 from typing import Literal
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, AliasChoices
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from dotenv import load_dotenv
@@ -16,8 +16,7 @@ if ENV_FILE is None:
 class Settings(BaseSettings):
     class _App(BaseModel):
         HOST: str
-        INTERNAL_PORT: int
-        EXTERNAL_PORT: int
+        PORT: int
         ENV_NAME: str
         CONTAINER_NAME: str
 
@@ -25,8 +24,12 @@ class Settings(BaseSettings):
         CONN_URI: str
         DB_NAME: str
 
+    class _Model(BaseModel):
+        NAME: str = Field(validation_alias=AliasChoices("MODEL", "NAME", "MODEL_NAME"))
+
     ENV_TYPE: Literal["local", "development", "production"]
     APP: _App
     MONGODB: _MongoDB
+    MODEL: _Model
 
     model_config = SettingsConfigDict(env_file=ENV_FILE, env_nested_delimiter="__")

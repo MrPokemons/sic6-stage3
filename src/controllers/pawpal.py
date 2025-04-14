@@ -8,13 +8,13 @@ from fastapi.websockets import WebSocket
 from fastapi.exceptions import HTTPException
 
 from langchain_core.language_models import BaseChatModel
-from langgraph.graph.state import CompiledStateGraph
 
 from ..utils.typex import ExcludedField
 from ..services.agent import Agent
 from ..schemas.conversation import Conversation, ConversationSettings
 from ..services.stt import SpeechToText
 from ..services.tts import TextToSpeech
+from ..services.pawpal import PawPal
 
 
 class StartConversationInput(ConversationSettings):
@@ -25,14 +25,15 @@ class ConversationOutput(Conversation):
     messages: ExcludedField
 
 
-def pawpal_conversation_router(
-    pawpal_workflow: CompiledStateGraph,
+def pawpal_router(
+    pawpal: PawPal,
     model: BaseChatModel,
     stt: SpeechToText,
     tts: TextToSpeech,
     logger: logging.Logger,
 ):
     router = APIRouter(prefix="/api/v1/pawpal", tags=["pawpal"])
+    pawpal_workflow = pawpal.build_workflow()
 
     @router.get("/conversation/{chat_id}")
     async def get_conversation(chat_id: str) -> ConversationOutput:
