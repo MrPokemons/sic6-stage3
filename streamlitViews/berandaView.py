@@ -16,9 +16,12 @@ mathDictionary = {
 }
 
 dummyMsg = [
-    {"sender": "user", "text": "Hai, kamu lagi apa?"},
-    {"sender": "bot", "text": "Halo! Aku lagi standby nunggu kamu 😄"},
-    {"sender": "user", "text": "Oke siap~"},
+    {"sender": "user", 
+     "text": "Hai, kamu lagi apa?"},
+    {"sender": "bot", 
+     "text": "Halo! Aku lagi standby nunggu kamu 😄"},
+    {"sender": "user", 
+     "text": "Oke siap~"},
 ]
 
 

@@ -2,9 +2,9 @@ import streamlit as st
 import requests
 
 pages = [
-    st.Page("pages/beranda.py", title="🏡 Beranda"),
-    st.Page("pages/data_diri.py", title="🧒 Data Anak"),
-    st.Page("pages/percakapan.py", title="🤖 Mulai Percakapan 🐾"),
+    st.Page("streamlitViews/berandaView.py", title="🏡 Beranda"),
+    st.Page("streamlitViews/dataDiriView.py", title="🧒 Data Anak"),
+    st.Page("streamlitViews/percakapanView.py", title="🤖 Mulai Percakapan 🐾"),
 ]
     
 
