@@ -9,7 +9,8 @@ from langgraph.graph.state import CompiledStateGraph
 from langgraph.checkpoint.memory import MemorySaver
 
 from ..agentic import Agentic
-from ..schemas import ConfigSchema, ConfigurableSchema, SessionState, InterruptSchema
+from ..schemas.config import ConfigSchema, ConfigurableSchema
+from ..schemas.state import SessionState, InterruptSchema
 
 
 class TTMSessionState(SessionState):

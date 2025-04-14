@@ -14,18 +14,19 @@ from langchain_core.language_models import BaseChatModel
 from ..services.stt import SpeechToText
 from ..services.tts import TextToSpeech
 from ..services.pawpal import PawPal
-from ..services.pawpal.schemas import UserData, FeatureParams
-from ..services.pawpal.subflows import FlowFeatureType
-
-from ..schemas.conversation import ConversationDoc
+from ..services.pawpal.schemas.user import UserData
+from ..services.pawpal.schemas.topic import TopicParams
+from ..services.pawpal.schemas.topic_flow import TopicFlowType
+from ..services.pawpal.schemas.document import ConversationDoc
 
 
 class StartConversationInput(BaseModel):
     device_id: Annotated[str, "iot_device_id"]
     user: UserData
-    feature_params: FeatureParams
-    selected_features: List[FlowFeatureType]
+    feature_params: TopicParams
+    selected_features: List[TopicFlowType]
     total_sessions: PositiveInt
+
 
 class ConversationOutput(ConversationDoc): ...
 
@@ -43,6 +44,7 @@ def pawpal_router(
     # TODO:
     @router.get("/conversation/{device_id}")
     async def get_conversation(device_id: str) -> ConversationOutput:
+        pawpal.get_agent_results(device_id=device_id)
         # take docs from "pawpal" collections.
 
         # curr_config = Agent.create_config(chat_id=chat_id)

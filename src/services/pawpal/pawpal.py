@@ -8,18 +8,20 @@ from langgraph.graph.state import CompiledStateGraph
 from langgraph.checkpoint.memory import MemorySaver
 
 from .agentic import Agentic
-from .schemas import ConfigSchema, ConfigurableSchema, SessionState, InterruptSchema
-from .subflows import (
-    FlowFeatureType,
-    FlowFeatureNodeType,
-    FlowFeatureNodeMapping,
-    FlowFeatureClassMapping,
+from .subflows import TopicFlowClassMapping
+from .schemas.config import ConfigSchema, ConfigurableSchema
+from .schemas.state import SessionState, InterruptSchema
+from .schemas.document import ConversationDoc
+from .schemas.topic_flow import (
+    TopicFlowType,
+    TopicFlowNodeType,
+    TopicFlowNodeMapping,
 )
 from .utils import prompt_loader
 
 
 class AgentState(SessionState):
-    selected_features: List[FlowFeatureType]
+    selected_features: List[TopicFlowType]
 
 
 class PawPal(Agentic):
@@ -89,10 +91,10 @@ class PawPal(Agentic):
     @classmethod
     async def _randomize_features(
         cls, state: AgentState, config: ConfigSchema
-    ) -> Command[FlowFeatureNodeType]:
+    ) -> Command[TopicFlowNodeType]:
         #  each subflow will welcome and explain the rule or straight to the stuff
         next_feature: str = secrets.choice(state.selected_features)
-        next_node = FlowFeatureNodeMapping[next_feature]
+        next_node = TopicFlowNodeMapping[next_feature]
 
         user_data = config["configurable"]["user"]
         randomize_message = await cls.model.ainvoke(
@@ -121,11 +123,20 @@ class PawPal(Agentic):
             goto="talk",
         )
 
-    @staticmethod
-    async def _check_and_save_session(state: AgentState, config: ConfigSchema) -> Command[Literal["randomize_features", END]]:  # type: ignore
-        # update sessions
+    @classmethod
+    async def _check_and_save_session(cls, state: AgentState, config: ConfigSchema) -> Command[Literal["randomize_features", END]]:  # type: ignore
         if len(state.sessions) >= state.total_sessions:
-            # store whole sessions to mongodb
+            configurable = config["configurable"]
+            saved_session = ConversationDoc(
+                id=configurable["thread_id"],
+                device_id=configurable["device_id"],
+                user=configurable["user"],
+                feature_params=configurable["feature_params"],
+                selected_features=state.selected_features,
+                total_sessions=state.total_sessions,
+                sessions=state.sessions,
+            )
+            cls.mongodb_engine.insert_doc(cls.collection_name, saved_session)
             return Command(
                 update={"from_node": "check_and_save_session", "next_node": END},
                 goto="talk",
@@ -147,7 +158,7 @@ class PawPal(Agentic):
         builder.add_node("talk", cls._talk)
         builder.add_node("randomize_features", cls._randomize_features)
         builder.add_node("check_and_save_session", cls._check_and_save_session)
-        for flow_feature_name, flow_feature_class in FlowFeatureClassMapping.items():
+        for flow_feature_name, flow_feature_class in TopicFlowClassMapping.items():
             _agentic_object: Agentic = flow_feature_class()
             _agentic_object.set_agentic_cls(
                 model=cls.model,
@@ -155,13 +166,11 @@ class PawPal(Agentic):
                 collection_name=flow_feature_name,
             )
             _agentic_workflow = _agentic_object.build_workflow()
-            builder.add_node(
-                FlowFeatureNodeMapping[flow_feature_name], _agentic_workflow
-            )
+            builder.add_node(TopicFlowNodeMapping[flow_feature_name], _agentic_workflow)
 
         # Edge
         builder.add_edge(START, "start")
-        for flow_feature_node in FlowFeatureNodeType.__args__:
+        for flow_feature_node in TopicFlowNodeType.__args__:
             builder.add_edge(flow_feature_node, "check_and_save_session")
 
         workflow = builder.compile(checkpointer=MemorySaver())

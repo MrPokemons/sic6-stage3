@@ -8,7 +8,7 @@ from langchain_core.language_models import BaseChatModel
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Command
 
-from .schemas import ConfigSchema
+from .schemas.config import ConfigSchema
 from ..nosql import MongoDBEngine
 
 
@@ -54,7 +54,9 @@ class Agentic(ABC):
         cls.collection_name = collection_name
 
     @classmethod
-    def set_agentic_cls(cls, model: BaseChatModel, mongodb_engine: MongoDBEngine, collection_name: str):
+    def set_agentic_cls(
+        cls, model: BaseChatModel, mongodb_engine: MongoDBEngine, collection_name: str
+    ):
         cls.model = model
         cls.mongodb_engine = mongodb_engine
         cls.collection_name = collection_name
