@@ -1,7 +1,10 @@
 from abc import ABC, abstractmethod
 from typing import Any, Optional
+
 from uuid import UUID
 from bson.objectid import ObjectId
+
+from langchain_core.language_models import BaseChatModel
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Command
 
@@ -10,12 +13,13 @@ from ..nosql import MongoDBEngine
 
 
 class Agentic(ABC):
-    def __init__(self, mongodb_engine: MongoDBEngine, collection_name: str):
-        self.mongodb_engine = mongodb_engine
-        self.COLLECTION_NAME = collection_name
+    model: BaseChatModel
+    mongodb_engine: MongoDBEngine
+    collection_name: str
 
+    @classmethod
     @abstractmethod
-    def build_workflow(self) -> CompiledStateGraph: ...
+    def build_workflow(cls) -> CompiledStateGraph: ...
 
     @staticmethod
     async def resume_workflow(
@@ -36,3 +40,21 @@ class Agentic(ABC):
             collection_name=self.COLLECTION_NAME, filter=result_filter
         )
         return results
+
+    @classmethod
+    def set_model(cls, model: BaseChatModel):
+        cls.model = model
+
+    @classmethod
+    def set_mongodb_engine(cls, mongodb_engine: MongoDBEngine):
+        cls.mongodb_engine = mongodb_engine
+
+    @classmethod
+    def set_collection_name(cls, collection_name: str):
+        cls.collection_name = collection_name
+
+    @classmethod
+    def set_agentic_cls(cls, model: BaseChatModel, mongodb_engine: MongoDBEngine, collection_name: str):
+        cls.model = model
+        cls.mongodb_engine = mongodb_engine
+        cls.collection_name = collection_name

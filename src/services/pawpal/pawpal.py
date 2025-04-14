@@ -1,7 +1,7 @@
 import secrets
 from typing import List, Literal
 
-from langchain_core.messages import SystemMessage, HumanMessage
+from langchain_core.messages import SystemMessage
 from langgraph.types import Command, interrupt
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.state import CompiledStateGraph
@@ -15,6 +15,7 @@ from .subflows import (
     FlowFeatureNodeMapping,
     FlowFeatureClassMapping,
 )
+from .utils import prompt_loader
 
 
 class AgentState(SessionState):
@@ -22,12 +23,30 @@ class AgentState(SessionState):
 
 
 class PawPal(Agentic):
-    @staticmethod
+    @classmethod
     async def _start(
-        state: AgentState, config: ConfigSchema
+        cls, state: AgentState, config: ConfigSchema
     ) -> Command[Literal["randomize_features"]]:
-        messages = []  # system msg for guiding through the system
-        # need to welcome the child message
+        user_data = config["configurable"]["user"]
+        messages = [
+            SystemMessage(content=[{"type": "text", "text": prompt_loader.baseline}]),
+            SystemMessage(
+                content=[
+                    {
+                        "type": "text",
+                        "text": prompt_loader.welcome_template.format(
+                            user_name=user_data.get("name", ""),
+                            user_gender=user_data.get("gender", ""),
+                            user_age=user_data.get("age", ""),
+                            user_description=user_data.get("description", ""),
+                            user_language=user_data.get("language", "English"),
+                        ),
+                    }
+                ]
+            ),
+        ]
+        welcome_message = await cls.model.ainvoke(messages)
+        messages.append(welcome_message)
         return Command(
             update={
                 "messages": messages,
@@ -39,32 +58,62 @@ class PawPal(Agentic):
 
     @staticmethod
     async def _talk(state: AgentState, config: ConfigSchema):
-        # just central to use interrupt without worrying reprocessing something, so don't need included into the Graph
-        # this interrupt is to send the message from previous node
-        # something like introduce bot himself, then lets randomize features
+        """
+        Every node that requires interruption for sending/receiving message,
+        then it will be directed to this node. Provides the interruption with ease,
+        not needing to worry about the interrupt side-effect or best practice to
+        put it in beginning of the node.
+
+        This node won't be included into the graph since its just the redirector.
+        """
         if state.from_node == "start":
             interrupt(
-                [InterruptSchema(action="speaker", message="send from last AI Message")]
+                [InterruptSchema(action="speaker", message=state.messages[-1].text())]
             )
         elif state.from_node == "randomize_features":
             interrupt(
-                [InterruptSchema(action="speaker", message="Are you ready here we go")]
+                [InterruptSchema(action="speaker", message=state.messages[-1].text())]
             )
         elif state.from_node == "check_and_save_session":
             if state.next_node == END:
-                # thank you for playing and have a great time
-                ...
+                interrupt(
+                    [
+                        InterruptSchema(
+                            action="speaker", message=state.messages[-1].text()
+                        )
+                    ]
+                )
         return Command(goto=state.next_node)
 
-    @staticmethod
+    @classmethod
     async def _randomize_features(
-        state: AgentState, config: ConfigSchema
+        cls, state: AgentState, config: ConfigSchema
     ) -> Command[FlowFeatureNodeType]:
         #  each subflow will welcome and explain the rule or straight to the stuff
         next_feature: str = secrets.choice(state.selected_features)
         next_node = FlowFeatureNodeMapping[next_feature]
+
+        user_data = config["configurable"]["user"]
+        randomize_message = await cls.model.ainvoke(
+            [
+                *state.messages,
+                SystemMessage(
+                    content=(
+                        "Say something fun and playful, like PawPal is drawing a surprise session from a magical mystery box. "
+                        "Build excitement with a little drumroll or silly sound effect, then reveal the session name and jump right in, "
+                        f"which next session name will be '{next_feature}'."
+                    )
+                    + "\n"
+                    + prompt_loader.language_template.format(
+                        user_language=user_data.get("language", "English")
+                    )
+                ),
+            ]
+        )
+
         return Command(
             update={
+                "messages": randomize_message,
                 "from_node": "randomize_features",
                 "next_node": next_node,
             },
@@ -84,20 +133,23 @@ class PawPal(Agentic):
                 "from_node": "check_and_save_session",
                 "next_node": "randomize_features",
             },
-            goto="talk",
+            goto="randomize_features",
         )
 
-    def build_workflow(self) -> CompiledStateGraph:
+    @classmethod
+    def build_workflow(cls) -> CompiledStateGraph:
         builder = StateGraph(AgentState, config_schema=ConfigurableSchema)
 
         # Node & Subflow
-        builder.add_node("start", self._start)
-        builder.add_node("talk", self._talk)
-        builder.add_node("randomize_features", self._randomize_features)
-        builder.add_node("check_and_save_session", self._check_and_save_session)
+        builder.add_node("start", cls._start)
+        builder.add_node("talk", cls._talk)
+        builder.add_node("randomize_features", cls._randomize_features)
+        builder.add_node("check_and_save_session", cls._check_and_save_session)
         for flow_feature_name, flow_feature_class in FlowFeatureClassMapping.items():
-            _agentic_object: Agentic = flow_feature_class(
-                mongodb_engine=self.mongodb_engine,
+            _agentic_object: Agentic = flow_feature_class()
+            _agentic_object.set_agentic_cls(
+                model=cls.model,
+                mongodb_engine=cls.mongodb_engine,
                 collection_name=flow_feature_name,
             )
             _agentic_workflow = _agentic_object.build_workflow()

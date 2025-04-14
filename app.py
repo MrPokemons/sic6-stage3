@@ -69,10 +69,16 @@ app_logger = logging.Logger(__name__)
 mongodb_engine = MongoDBEngine(
     uri=CONFIG.MONGODB.CONN_URI, db_name=CONFIG.MONGODB.DB_NAME
 )
-pawpal = PawPal(mongodb_engine=mongodb_engine, collection_name="pawpal")
 stt = SpeechToText()
-model = ChatOllama(model=CONFIG.MODEL.NAME, num_ctx=2048 * 3, keep_alive=False)
+model = ChatOllama(
+    model=CONFIG.MODEL.NAME,
+    base_url=CONFIG.MODEL.URL,
+    num_ctx=2048 * 3,
+    keep_alive=False
+)
 tts = TextToSpeech()
+
+pawpal = PawPal(model=model, mongodb_engine=mongodb_engine, collection_name="pawpal")
 
 
 # App Router

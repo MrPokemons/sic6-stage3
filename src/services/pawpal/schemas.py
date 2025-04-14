@@ -2,7 +2,6 @@ from typing import Literal, Annotated, Optional, List, Sequence
 from typing_extensions import TypedDict
 from pydantic import BaseModel, PositiveInt
 
-from langchain_core.language_models import BaseChatModel
 from langchain_core.runnables.config import RunnableConfig
 from langchain_core.messages import BaseMessage
 from langgraph.graph.message import add_messages
@@ -32,13 +31,13 @@ class UserData(TypedDict):
     name: str
     gender: Optional[Literal["male", "female"]]
     age: Optional[int]
-    decsription: str = ""
+    description: str = ""
+    language: str = "Indonesian"
 
 
 class ConfigurableSchema(TypedDict):
     thread_id: Annotated[str, "chat_id"]
     device_id: Annotated[str, "iot_device_id"]
-    model: BaseChatModel
     user: UserData
     feature_params: FeatureParams
 

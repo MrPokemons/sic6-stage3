@@ -26,6 +26,7 @@ class Settings(BaseSettings):
 
     class _Model(BaseModel):
         NAME: str = Field(validation_alias=AliasChoices("MODEL", "NAME", "MODEL_NAME"))
+        URL: str = Field(validation_alias=AliasChoices("URL", "BASE_URL"))
 
     ENV_TYPE: Literal["local", "development", "production"]
     APP: _App

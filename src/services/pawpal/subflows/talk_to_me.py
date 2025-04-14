@@ -95,6 +95,7 @@ class TalkToMe(Agentic):
             goto="responding",
         )
 
+    @classmethod
     def build_workflow(self) -> CompiledStateGraph:
         builder = StateGraph(TTMSessionState, config_schema=ConfigurableSchema)
 
