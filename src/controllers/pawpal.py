@@ -70,7 +70,7 @@ def pawpal_router(
             total_sessions=conversation_input.total_sessions,
         )
         await pawpal.create_agent_conversation(conv_doc=new_conversation_doc)
-        return {"message": "success"}, 201
+        return new_conversation_doc, 201
 
     @router.websocket("/conversation/{device_id}")
     async def conversation(websocket: WebSocket, device_id: str):
