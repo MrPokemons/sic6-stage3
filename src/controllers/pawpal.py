@@ -75,7 +75,7 @@ def pawpal_router(
     async def conversation(websocket: WebSocket, device_id: str):
         await websocket.accept()
         while 1:
-            docs = pawpal.get_agent_results(device_id=device_id)
+            docs = await pawpal.get_agent_results(device_id=device_id)
             convo_docs: List[ConversationDoc] = sorted(
                 [ConversationDoc.model_validate(doc) for doc in docs],
                 key=lambda convo_doc: convo_doc.created_datetime,
@@ -132,14 +132,17 @@ def pawpal_router(
 
     @router.post("/test/audio")
     async def test_post_audio(test_audio_input: TestAudioInput):
-        return {"data": stt.transcribe(test_audio_input.audio_data)}
+        transcribed_text = stt.transcribe(test_audio_input.audio_data)
+        print("Transcribed Text:", transcribed_text)
+        return {"data": transcribed_text}
 
     @router.websocket("/test/audio")
     async def test_ws_audio(websocket: WebSocket):
         await websocket.accept()
         audio_data = await websocket.receive_bytes()
         audio_text = stt.transcribe(audio_data)
-        print(audio_text)
+        print("Transcribed Text:", audio_text)
         await websocket.send(audio_text)
+        await websocket.close()
 
     return router
