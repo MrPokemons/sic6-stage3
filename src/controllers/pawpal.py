@@ -3,6 +3,7 @@ import uuid
 import logging
 import traceback
 from typing import Annotated, List
+from bson.objectid import ObjectId
 
 from fastapi import status
 from fastapi.routing import APIRouter
@@ -59,7 +60,7 @@ def pawpal_router(
     async def start_conversation(
         conversation_input: StartConversationInput,
     ) -> ConversationOutput:
-        new_chat_id = str(uuid.uuid1())
+        new_chat_id = str(ObjectId())
         new_conversation_doc = ConversationDoc(
             id=new_chat_id,
             device_id=conversation_input.device_id,
