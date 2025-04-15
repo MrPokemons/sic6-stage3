@@ -11,7 +11,7 @@ from fastapi.exceptions import HTTPException
 from pydantic import BaseModel, PositiveInt
 
 from langchain_core.language_models import BaseChatModel
-from langgraph.types import Command
+from langgraph.types import Command, Interrupt
 
 from ..services.stt import SpeechToText
 from ..services.tts import TextToSpeech
@@ -105,6 +105,7 @@ def pawpal_router(
                 "total_sessions": curr_convo_doc.total_sessions,
                 "selected_features": curr_convo_doc.selected_features
             }
+            idk_just_run = 0
             while keep_running:
                 async for _subgraph, event in pawpal_workflow.astream(
                     curr_input,
@@ -117,8 +118,9 @@ def pawpal_router(
                             continue
 
                         if node == "__interrupt__":
-                            for i in state:
-                                for interrupt_schema in i.value:
+                            for interrupt_ in state:
+                                interrupt_: Interrupt
+                                for interrupt_schema in interrupt_.value:
                                     interrupt_schema: InterruptSchema
                                     if interrupt_schema["action"] == "speaker":
                                         tts_audio_data = tts.synthesize(interrupt_schema["message"])
@@ -128,7 +130,12 @@ def pawpal_router(
                                         mic_audio_data = await websocket.receive_bytes()
                                         user_answer = stt.transcribe(mic_audio_data)
                                         curr_input = Command(resume=user_answer)
-                                keep_running = i.resumable  # use i.resumable as the breaker for while loop
+                                keep_running = interrupt_.resumable  # use i.resumable as the breaker for while loop
+                            idk_just_run = 0
+
+                idk_just_run += 1
+                if idk_just_run >= 10000:
+                    break
 
     @router.post("/test/audio")
     async def test_post_audio(test_audio_input: TestAudioInput):
