@@ -1,6 +1,6 @@
 from typing import Annotated, List, TypeAlias, Union
 from typing_extensions import TypedDict
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class TopicParams(TypedDict):
@@ -24,9 +24,13 @@ class TopicParams(TypedDict):
 
 class TopicResults(BaseModel):
     class TalkToMeResult(BaseModel):
-        overview: str
-        emotion: str
-        keypoints: List[str]
+        overview: str = Field(description="Summarize the chat history")
+        emotion: str = Field(
+            description="Analyze the emotion based on the behaviour and chatting style, or how he/she feeling from the chat history provided"
+        )
+        keypoints: List[str] = Field(
+            description="List the key points from the chat history, which pointing out the important section or behaviour from the chat history provided"
+        )
 
     class MathGameResult(BaseModel): ...
 

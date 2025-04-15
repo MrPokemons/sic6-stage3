@@ -1,5 +1,7 @@
 import secrets
+import copy
 from typing import List, Literal
+
 
 from langchain_core.messages import SystemMessage
 from langgraph.types import Command, interrupt
@@ -50,10 +52,9 @@ class PawPal(Agentic):
             ),
         ]
         welcome_message = await cls.model.ainvoke(messages)
-        messages.append(welcome_message)
         return Command(
             update={
-                "messages": messages,
+                "messages": [*messages, welcome_message],
                 "from_node": "start",
                 "next_node": "randomize_features",
             },
@@ -98,31 +99,28 @@ class PawPal(Agentic):
         next_node = TopicFlowNodeMapping[next_feature]
 
         user_data = config["configurable"]["user"]
-        randomize_message = await cls.model.ainvoke(
-            [
-                *state.messages,
-                SystemMessage(
-                    content=[
-                        {
-                            "type": "text",
-                            "text": (
-                                "Say something fun and playful, like PawPal is drawing a surprise session from a magical mystery box. "
-                                "Build excitement with a little drumroll or silly sound effect, then reveal the session name and jump right in, "
-                                f"which next session name will be '{next_feature.replace('_', ' ').capitalize()}'."
-                            )
-                            + "\n"
-                            + prompt_loader.language_template.format(
-                                user_language=user_data.get("language", "English")
-                            ),
-                        }
-                    ]
-                ),
-            ]
-        )
-
+        messages = [
+            SystemMessage(
+                content=[
+                    {
+                        "type": "text",
+                        "text": (
+                            "Say something fun and playful, like PawPal is drawing a surprise session from a magical mystery box. "
+                            "Build excitement with a little drumroll or silly sound effect, then reveal the session name and jump right in, "
+                            f"which next session name will be '{next_feature.replace('_', ' ').capitalize()}'."
+                        )
+                        + "\n"
+                        + prompt_loader.language_template.format(
+                            user_language=user_data.get("language", "English")
+                        ),
+                    }
+                ]
+            ),
+        ]
+        randomize_message = await cls.model.ainvoke([*state.messages, *messages])
         return Command(
             update={
-                "messages": randomize_message,
+                "messages": [*messages, randomize_message],
                 "from_node": "randomize_features",
                 "next_node": next_node,
             },
@@ -131,48 +129,46 @@ class PawPal(Agentic):
 
     @classmethod
     async def _check_and_save_session(cls, state: AgentState, config: ConfigSchema) -> Command[Literal["randomize_features", END]]:  # type: ignore
-        if len(state.sessions) >= state.total_sessions:
-            configurable = config["configurable"]
-            saved_session = ConversationDoc(
-                id=configurable["thread_id"],
-                device_id=configurable["device_id"],
-                user=configurable["user"],
-                feature_params=configurable["feature_params"],
-                selected_features=state.selected_features,
-                total_sessions=state.total_sessions,
-                sessions=state.sessions,
-            )
-            cls.mongodb_engine.insert_doc(cls.COLLECTION_NAME, saved_session)
-            end_conversation_message = await cls.model.ainvoke(
-                [
-                    *state.messages,
-                    SystemMessage(
-                        content=(
-                            ""
-                            + "\n"
-                            + prompt_loader.language_template.format(
-                                user_language=configurable["user"].get(
-                                    "language", "English"
-                                )
-                            )
-                        )
-                    ),
-                ]
-            )
+        if len(state.sessions) < state.total_sessions:
             return Command(
                 update={
-                    "messages": end_conversation_message,
                     "from_node": "check_and_save_session",
-                    "next_node": END,
+                    "next_node": "randomize_features",
                 },
-                goto="talk",
+                goto="randomize_features",
             )
+
+        configurable = config["configurable"]
+        saved_session = ConversationDoc(
+            id=configurable["thread_id"],
+            device_id=configurable["device_id"],
+            user=configurable["user"],
+            feature_params=configurable["feature_params"],
+            selected_features=state.selected_features,
+            total_sessions=state.total_sessions,
+            sessions=copy.deepcopy(state.sessions),
+        )
+        cls.mongodb_engine.insert_doc(cls.COLLECTION_NAME, saved_session)
+
+        messages = [
+            SystemMessage(
+                content=(
+                    "End the Conversation, while saying thank you for the participation and encourage to be strong."
+                    + "\n"
+                    + prompt_loader.language_template.format(
+                        user_language=configurable["user"].get("language", "English")
+                    )
+                )
+            ),
+        ]
+        end_conversation_message = await cls.model.ainvoke([*state.messages, *messages])
         return Command(
             update={
+                "messages": [*messages, end_conversation_message],
                 "from_node": "check_and_save_session",
-                "next_node": "randomize_features",
+                "next_node": END,
             },
-            goto="randomize_features",
+            goto="talk",
         )
 
     @classmethod

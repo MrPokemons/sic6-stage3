@@ -1,14 +1,12 @@
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Optional
 
 from uuid import UUID
 from bson.objectid import ObjectId
 
 from langchain_core.language_models import BaseChatModel
 from langgraph.graph.state import CompiledStateGraph
-from langgraph.types import Command
 
-from .schemas.config import ConfigSchema
 from ..nosql import MongoDBEngine
 
 
@@ -20,13 +18,6 @@ class Agentic(ABC):
     @classmethod
     @abstractmethod
     def build_workflow(cls) -> CompiledStateGraph: ...
-
-    @staticmethod
-    async def resume_workflow(
-        workflow: CompiledStateGraph, value: Any, config: ConfigSchema
-    ):
-        resume_command = Command(resume=value)
-        return await workflow.ainvoke(resume_command, config=config)
 
     async def get_agent_results(
         self, chat_id: Optional[ObjectId] = None, device_id: Optional[UUID] = None
