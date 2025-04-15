@@ -34,7 +34,7 @@ class MongoDBEngine:
 
     async def insert_doc(self, collection_name: str, doc: dict):
         collection = self.db[collection_name]
-        id = await collection.insert_one(doc).inserted_id
+        id = (await collection.insert_one(doc)).inserted_id
         return str(id)
 
     async def update_doc(
