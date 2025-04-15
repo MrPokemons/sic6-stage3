@@ -11,12 +11,19 @@ def load_prompt_md(filename: str) -> str:
 
 
 class PromptLoader(BaseModel):
+    class TalkToMe(BaseModel):
+        opening: str = Field(
+            default_factory=lambda: load_prompt_md("talk_to_me/opening.md")
+        )
+
     # Core Flow
     baseline: str = Field(default_factory=lambda: load_prompt_md("baseline.md"))
     welcome_template: str = Field(default_factory=lambda: load_prompt_md("welcome.md"))
     language_template: str = Field(
         default_factory=lambda: load_prompt_md("language.md")
     )
+
+    talk_to_me: TalkToMe = Field(default_factory=TalkToMe)
 
 
 prompt_loader = PromptLoader()
