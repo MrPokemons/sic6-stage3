@@ -79,9 +79,13 @@ model = ChatOllama(
 tts = TextToSpeech()
 
 pawpal = PawPal()
+<<<<<<< HEAD
 pawpal.set_agentic_cls(
     model=model, mongodb_engine=mongodb_engine
 )
+=======
+pawpal.set_agentic_cls(model=model, mongodb_engine=mongodb_engine)
+>>>>>>> pawpal-v2
 
 
 # App Router

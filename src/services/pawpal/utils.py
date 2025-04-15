@@ -1,6 +1,6 @@
 import os
 from pydantic import BaseModel, Field
-
+from langchain.schema import BaseMessage, AIMessage, HumanMessage, SystemMessage
 
 PROMPT_DIR = os.path.join(os.path.dirname(__file__), "prompts")
 
@@ -27,3 +27,20 @@ class PromptLoader(BaseModel):
 
 
 prompt_loader = PromptLoader()
+
+
+def convert_base_to_specific(message: BaseMessage):
+    if message.type == "human":
+        return HumanMessage(
+            content=message.content, additional_kwargs=message.additional_kwargs
+        )
+    elif message.type == "ai":
+        return AIMessage(
+            content=message.content, additional_kwargs=message.additional_kwargs
+        )
+    elif message.type == "system":
+        return SystemMessage(
+            content=message.content, additional_kwargs=message.additional_kwargs
+        )
+    else:
+        raise ValueError(f"Unknown message type: {message.type}")

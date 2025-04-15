@@ -8,6 +8,7 @@ from langchain_core.language_models import BaseChatModel
 from langgraph.graph.state import CompiledStateGraph
 
 from ..nosql import MongoDBEngine
+from .schemas.document import ConversationDoc
 
 
 class Agentic(ABC):
@@ -31,6 +32,13 @@ class Agentic(ABC):
             collection_name=self.COLLECTION_NAME, filter=result_filter
         )
         return results
+
+    async def create_agent_conversation(self, conv_doc: ConversationDoc):
+        conv_doc_dict = conv_doc.model_dump(mode="json")
+        conv_doc_dict["_id"] = ObjectId(conv_doc.id)
+        await self.mongodb_engine.insert_doc(
+            collection_name=self.COLLECTION_NAME, doc=conv_doc_dict
+        )
 
     @classmethod
     def set_model(cls, model: BaseChatModel):

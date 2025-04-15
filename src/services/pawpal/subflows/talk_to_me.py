@@ -15,7 +15,7 @@ from ..schemas.config import ConfigSchema, ConfigurableSchema
 from ..schemas.state import SessionState, InterruptSchema
 from ..schemas.document import SessionResult
 from ..schemas.topic import TopicResults
-from ..utils import prompt_loader
+from ..utils import prompt_loader, convert_base_to_specific
 
 
 class TTMSessionState(SessionState):
@@ -57,6 +57,7 @@ class TalkToMe(Agentic):
         )
         return Command(
             update={
+                "start_datetime": datetime.now(timezone.utc),
                 "messages": [*messages, opening_message],
                 "sessions": copy.deepcopy(state.sessions),
                 "from_node": "start",
@@ -157,22 +158,29 @@ class TalkToMe(Agentic):
 
         messages = [
             SystemMessage(
-                content=(
-                    "End the Session, while saying thank you for participating for the session."
-                    + "\n"
-                    + prompt_loader.language_template.format(
-                        user_language=configurable["user"].get("language", "English")
-                    )
-                )
+                content=[
+                    {
+                        "type": "text",
+                        "text": (
+                            "End the Session, while saying thank you for participating for the session."
+                            + "\n"
+                            + prompt_loader.language_template.format(
+                                user_language=configurable["user"].get(
+                                    "language", "English"
+                                )
+                            )
+                        ),
+                    }
+                ]
             ),
         ]
         end_conversation_message = await cls.model.ainvoke([*state.messages, *messages])
-        curr_session.messages.append([*messages, end_conversation_message])
+        curr_session.messages.extend([*messages, end_conversation_message])
         model_with_session_result = cls.model.with_structured_output(
             TopicResults.TalkToMeResult
         )
         curr_session.result = await model_with_session_result.ainvoke(
-            curr_session.messages
+            [convert_base_to_specific(msg) for msg in curr_session.messages]
         )
         return Command(
             update={
