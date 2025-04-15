@@ -15,7 +15,7 @@ from ..schemas.config import ConfigSchema, ConfigurableSchema
 from ..schemas.state import SessionState, InterruptSchema
 from ..schemas.document import SessionResult
 from ..schemas.topic import TopicResults
-from ..utils import prompt_loader
+from ..utils import prompt_loader, convert_base_to_specific
 
 
 class TTMSessionState(SessionState):
@@ -174,14 +174,13 @@ class TalkToMe(Agentic):
                 ]
             ),
         ]
-        print(curr_session.messages)
         end_conversation_message = await cls.model.ainvoke([*state.messages, *messages])
         curr_session.messages.extend([*messages, end_conversation_message])
         model_with_session_result = cls.model.with_structured_output(
             TopicResults.TalkToMeResult
         )
         curr_session.result = await model_with_session_result.ainvoke(
-            curr_session.messages
+            [convert_base_to_specific(msg) for msg in curr_session.messages]
         )
         return Command(
             update={

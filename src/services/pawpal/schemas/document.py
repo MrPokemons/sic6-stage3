@@ -21,7 +21,12 @@ class ConversationDoc(BaseModel):
     feature_params: TopicParams
     selected_features: List[TopicFlowType]
     total_sessions: PositiveInt
-    sessions: List[SessionResult]
+    just_created: bool = True
+    sessions: List[SessionResult] = []
     created_datetime: str = Field(
         default_factory=lambda: datetime.now(timezone.utc).isoformat()
     )
+
+    @property
+    def ongoing(self):
+        return self.total_sessions > len(self.sessions)
