@@ -59,17 +59,6 @@ def pawpal_router(
     async def start_conversation(
         conversation_input: StartConversationInput,
     ) -> ConversationOutput:
-        """
-        start convo triggered by FE, i need to create global state which filters by device_id
-        which in websocket will constantly waiting for that device_id to appear,
-        meanwhile having the chat status is still ongoing. If multiple just take the first.
-
-        websocket will receive the registration of the device_id from IoT, then
-        will try to check the mongodb collection "pawpal" whether there're active chat status.
-        check every 5-10seconds then convo start,
-        server will start the invocation and iot will wait instructions based on the interruptions
-        from the server.
-        """
         new_chat_id = str(uuid.uuid1())
         new_conversation_doc = ConversationDoc(
             id=new_chat_id,
@@ -140,36 +129,6 @@ def pawpal_router(
                                         user_answer = stt.transcribe(mic_audio_data)
                                         curr_input = Command(resume=user_answer)
                                 keep_running = i.resumable  # use i.resumable as the breaker for while loop
-
-        # while state_snapshot.next:
-        #     try:
-        #         audio_data = await websocket.receive_bytes()
-        #         user_answer = stt.transcribe(audio_data)
-        #         resp_state = await Agent.resume_workflow(
-        #             workflow=pawpal_workflow, value=user_answer, config=curr_config
-        #         )
-        #         convo: Conversation = Conversation.model_validate(resp_state)
-        #         last_question = convo.last_answered_question
-        #         if last_question is None:
-        #             raise HTTPException(
-        #                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        #                 detail="invalid flow logic, please review",
-        #             )
-        #         last_answer = last_question.answers[-1]
-        #         model_response = last_answer.feedback
-        #         logger.info(f"Websocket - Model Response: {model_response}")
-
-        #         tts_audio = tts.synthesize(model_response)
-        #         await websocket.send_bytes(tts_audio)
-
-        #     except Exception as e:
-        #         await websocket.close(code=1011, reason=str(e))
-        #         logger.error(f"Conversation Error\n{traceback.format_exc()}")
-        # else:
-        #     raise HTTPException(
-        #         status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="conversation ended"
-        #     )
-        return
 
     @router.post("/test/audio")
     async def test_post_audio(test_audio_input: TestAudioInput):
