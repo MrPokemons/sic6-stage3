@@ -184,7 +184,7 @@ class TalkToMe(Agentic):
         )
         return Command(
             update={
-                "messages": end_conversation_message,
+                "messages": [*messages, end_conversation_message],
                 "sessions": copy.deepcopy(state.sessions),
                 "from_node": "check_session",
                 "next_node": END,

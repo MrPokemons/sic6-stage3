@@ -1,8 +1,6 @@
 import asyncio
-import uuid
 import logging
-import traceback
-from typing import Annotated, List
+from typing import Annotated, List, Optional, Dict, Union
 from bson.objectid import ObjectId
 
 from fastapi import status
@@ -13,6 +11,7 @@ from pydantic import BaseModel, PositiveInt
 
 from langchain_core.language_models import BaseChatModel
 from langgraph.types import Command, Interrupt
+from langgraph.graph import END
 
 from ..services.stt import SpeechToText
 from ..services.tts import TextToSpeech
@@ -77,19 +76,22 @@ def pawpal_router(
         await websocket.accept()
         while 1:
             docs = await pawpal.get_agent_results(device_id=device_id)
-            convo_docs: List[ConversationDoc] = sorted(
-                [ConversationDoc.model_validate(doc) for doc in docs],
-                key=lambda convo_doc: convo_doc.created_datetime,
-                reverse=True,
-            )
-            curr_convo_doc = None
-            for convo_doc in convo_docs:
+            active_convo_docs: List[ConversationDoc] = [
+                convo_doc
+                for convo_doc in sorted(
+                    [ConversationDoc.model_validate(doc) for doc in docs],
+                    key=lambda convo_doc: convo_doc.created_datetime,
+                )
+                if convo_doc.ongoing
+            ]
+            curr_convo_doc: Optional[ConversationDoc] = None
+            for convo_doc in active_convo_docs:
                 if convo_doc.ongoing:
                     curr_convo_doc = convo_doc.model_copy(deep=True)
                     break
 
             if curr_convo_doc is None:
-                await asyncio.sleep(10)
+                await asyncio.sleep(15)
                 continue
 
             workflow_config = ConfigSchema(
@@ -97,46 +99,52 @@ def pawpal_router(
                     thread_id=curr_convo_doc.id,
                     device_id=curr_convo_doc.device_id,
                     user=curr_convo_doc.user,
-                    feature_params=curr_convo_doc.feature_params
+                    feature_params=curr_convo_doc.feature_params,
                 )
             )
 
-            keep_running = True
-            curr_input = {
+            workflow_input = {
                 "total_sessions": curr_convo_doc.total_sessions,
-                "selected_features": curr_convo_doc.selected_features
+                "selected_features": curr_convo_doc.selected_features,
             }
-            idk_just_run = 0
+
+            keep_running = True
             while keep_running:
                 async for _subgraph, event in pawpal_workflow.astream(
-                    curr_input,
+                    workflow_input,
                     config=workflow_config,
                     stream_mode="updates",
-                    subgraphs=True
+                    subgraphs=True,
                 ):
+                    event: Dict[str, Union[dict, list, tuple]]
                     for node, state in event.items():
                         if node == "talk":
                             continue
 
+                        if (
+                            isinstance(state, dict)
+                            and state.get("next_node") == END
+                            and not _subgraph
+                        ):
+                            keep_running = False
+
                         if node == "__interrupt__":
                             for interrupt_ in state:
                                 interrupt_: Interrupt
-                                for interrupt_schema in interrupt_.value:
-                                    interrupt_schema: InterruptSchema
+                                list_interrupts: List[InterruptSchema] = (
+                                    interrupt_.value
+                                )
+                                for interrupt_schema in list_interrupts:
                                     if interrupt_schema["action"] == "speaker":
-                                        tts_audio_data = tts.synthesize(interrupt_schema["message"])
+                                        tts_audio_data = tts.synthesize(
+                                            interrupt_schema["message"]
+                                        )
                                         await websocket.send_bytes(tts_audio_data)
-                                        curr_input = Command(resume="")
+                                        workflow_input = Command(resume="")
                                     elif interrupt_schema["action"] == "microphone":
                                         mic_audio_data = await websocket.receive_bytes()
                                         user_answer = stt.transcribe(mic_audio_data)
-                                        curr_input = Command(resume=user_answer)
-                                keep_running = interrupt_.resumable  # use i.resumable as the breaker for while loop
-                            idk_just_run = 0
-
-                idk_just_run += 1
-                if idk_just_run >= 10000:
-                    break
+                                        workflow_input = Command(resume=user_answer)
 
     @router.post("/test/audio")
     async def test_post_audio(test_audio_input: TestAudioInput):
