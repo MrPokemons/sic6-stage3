@@ -148,7 +148,7 @@ class PawPal(Agentic):
             total_sessions=state.total_sessions,
             sessions=copy.deepcopy(state.sessions),
         )
-        cls.mongodb_engine.insert_doc(cls.COLLECTION_NAME, saved_session)
+        await cls.mongodb_engine.insert_doc(cls.COLLECTION_NAME, saved_session)
 
         messages = [
             SystemMessage(
