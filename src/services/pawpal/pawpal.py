@@ -1,7 +1,7 @@
 import secrets
 import copy
 from typing import List, Literal
-
+from bson.objectid import ObjectId
 
 from langchain_core.messages import SystemMessage
 from langgraph.types import Command, interrupt
@@ -148,7 +148,9 @@ class PawPal(Agentic):
             total_sessions=state.total_sessions,
             sessions=copy.deepcopy(state.sessions),
         )
-        await cls.mongodb_engine.insert_doc(cls.COLLECTION_NAME, saved_session)
+        saved_session_dict = saved_session.model_dump(mode='json')
+        saved_session_dict["_id"] = ObjectId(saved_session.id)
+        await cls.mongodb_engine.insert_doc(cls.COLLECTION_NAME, saved_session_dict)
 
         messages = [
             SystemMessage(
