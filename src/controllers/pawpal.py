@@ -44,7 +44,6 @@ def pawpal_router(
     # TODO:
     @router.get("/conversation/{device_id}")
     async def get_conversation(device_id: str) -> ConversationOutput:
-        pawpal.get_agent_results(device_id=device_id)
         # take docs from "pawpal" collections.
 
         # curr_config = Agent.create_config(chat_id=chat_id)
@@ -55,6 +54,9 @@ def pawpal_router(
         #     )
         # convo: Conversation = Conversation.model_validate(state_snapshot.values)
         # return convo
+
+        print("hi")
+        
         return
 
     # TODO:
@@ -81,6 +83,7 @@ def pawpal_router(
         # )
         # convo: Conversation = Conversation.model_validate(resp_state)
         # return convo
+        print("endpoint working")
         return
 
     @router.websocket("/conversation/{device_id}")
