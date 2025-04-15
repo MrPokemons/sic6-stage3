@@ -31,6 +31,10 @@ class StartConversationInput(BaseModel):
 class ConversationOutput(ConversationDoc): ...
 
 
+class TestAudioInput(BaseModel):
+    audio_data: bytes
+
+
 def pawpal_router(
     pawpal: PawPal,
     model: BaseChatModel,
@@ -122,5 +126,9 @@ def pawpal_router(
         #         status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="conversation ended"
         #     )
         return
+
+    @router.post("/test/audio")
+    async def test_audio(test_audio_input: TestAudioInput):
+        return {"data": stt.transcribe(test_audio_input.audio_data)}
 
     return router
