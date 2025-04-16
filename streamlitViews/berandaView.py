@@ -1,6 +1,8 @@
 import streamlit as st
 import requests
 import pandas as pd
+from dateutil import parser
+from datetime import datetime
 
 # analytics data declaration here
 
@@ -53,6 +55,7 @@ st.title("PawPal 🐾")
 deviceId = st.text_input("No. ID Perangkat", "")
 if st.button("Cari percakapan terakhir", type="primary"):
     lastConversation = requests.get(f"http://localhost:8899/api/v1/pawpal/conversation/{deviceId}").json()
+    print(lastConversation)
 
     for session in lastConversation['sessions']:
         dummyMsg.clear()
@@ -76,10 +79,24 @@ if st.button("Cari percakapan terakhir", type="primary"):
                 dummyMsg.append({"sender": sender, "text": text})
 
     # -------------------
+    convoStartTime = lastConversation['sessions'][0]['messages'][2]['response_metadata']['created_at']
+    convoStartTime = parser.isoparse(convoStartTime)
+    convoStartTimeDate = convoStartTime.strftime('%d %B %Y')
+    convoStartTimeHour = convoStartTime.strftime('%H:%M')
+
+    convoEndTime = datetime.now()
+    for message in reversed(lastConversation['sessions'][0]['messages']):
+        if 'response_metadata' in message and 'created_at' in message['response_metadata']:
+            convoEndTime = message['response_metadata']['created_at']
+            break
+
+    convoEndTime = parser.isoparse(convoEndTime)
+    convoEndTimeHour = convoEndTime.strftime("%H:%M")
+
     col1, col2 = st.columns(2)
     with col1:
         st.subheader("Percakapan Terakhir")
-        st.markdown("""
+        st.markdown(f"""
         <div style="
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
             font-family: 'Helvetica', sans-serif;
@@ -87,8 +104,8 @@ if st.button("Cari percakapan terakhir", type="primary"):
             padding-bottom: 20px;
         ">        
             <div style="margin-bottom: 6px">
-                <span style="margin-right: 20px;">🗓️ 12 April 2015</span>
-                <span>⏰ 17:10 - 17:15</span>
+                <span style="margin-right: 20px;">🗓️ {convoStartTimeDate}</span>
+                <span>⏰ {convoStartTimeHour} - {convoEndTimeHour}</span>
                 </div>
         </div>
     """, unsafe_allow_html=True)
