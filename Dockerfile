@@ -1,18 +1,14 @@
-# Use a base Python image
-FROM python:3.12-alpine
+FROM python:3.11
 
-# Set the working directory
 WORKDIR /app
 
-# Copy requirements file and install dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the entire application code
 COPY . .
 
-# Expose the correct port (matching app.py)
-EXPOSE 5678
+EXPOSE 80
 
-# Run the application
-CMD ["python", "app.py"]
+# CMD ["python", "app.py"]
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "80"]
+# CMD ["fastapi", "run", "app.py", "--port", "80"]

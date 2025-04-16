@@ -7,7 +7,6 @@ from fastapi.routing import APIRouter
 from fastapi.websockets import WebSocket
 from pydantic import BaseModel, PositiveInt
 
-from langchain_core.language_models import BaseChatModel
 from langgraph.types import Command, Interrupt
 from langgraph.graph import END
 
@@ -33,13 +32,8 @@ class StartConversationInput(BaseModel):
 class ConversationOutput(ConversationDoc): ...
 
 
-class TestAudioInput(BaseModel):
-    audio_data: bytes
-
-
 def pawpal_router(
     pawpal: PawPal,
-    model: BaseChatModel,
     stt: SpeechToText,
     tts: TextToSpeech,
     logger: logging.Logger,
