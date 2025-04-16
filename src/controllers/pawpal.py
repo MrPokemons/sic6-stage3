@@ -144,19 +144,4 @@ def pawpal_router(
                                         user_answer = stt.transcribe(mic_audio_data)
                                         workflow_input = Command(resume=user_answer)
 
-    @router.post("/test/audio")
-    async def test_post_audio(test_audio_input: TestAudioInput):
-        transcribed_text = stt.transcribe(test_audio_input.audio_data)
-        print("Transcribed Text:", transcribed_text)
-        return {"data": transcribed_text}
-
-    @router.websocket("/test/audio")
-    async def test_ws_audio(websocket: WebSocket):
-        await websocket.accept()
-        audio_data = await websocket.receive_bytes()
-        audio_text = stt.transcribe(audio_data)
-        print("Transcribed Text:", audio_text)
-        await websocket.send(audio_text)
-        await websocket.close()
-
     return router
