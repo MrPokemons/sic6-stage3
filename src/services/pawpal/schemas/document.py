@@ -1,4 +1,4 @@
-from typing import Annotated, List, Optional, Union
+from typing import Annotated, List, Optional
 from datetime import datetime, timezone
 from pydantic import BaseModel, Field, PositiveInt
 from langchain_core.messages import BaseMessage

@@ -3,10 +3,8 @@ import logging
 from typing import Annotated, List, Optional, Dict, Union
 from bson.objectid import ObjectId
 
-from fastapi import status
 from fastapi.routing import APIRouter
 from fastapi.websockets import WebSocket
-from fastapi.exceptions import HTTPException
 from pydantic import BaseModel, PositiveInt
 
 from langchain_core.language_models import BaseChatModel
@@ -69,7 +67,7 @@ def pawpal_router(
             total_sessions=conversation_input.total_sessions,
         )
         await pawpal.create_agent_conversation(conv_doc=new_conversation_doc)
-        return new_conversation_doc, 201
+        return new_conversation_doc
 
     @router.websocket("/conversation/{device_id}")
     async def conversation(websocket: WebSocket, device_id: str):
