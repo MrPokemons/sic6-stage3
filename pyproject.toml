@@ -1,0 +1,11 @@
+[tool.pylint."MESSAGES CONTROL"]
+disable = ["W", "C"]
+
+[tool.ruff]
+exclude = ["*.ipynb"]
+lint.ignore = ["E402", "E501"]
+lint.select = ["W", "E", "F"]
+
+[tool.black]
+exclude = "\\.ipynb$"
+target-version = ['py39', 'py310', 'py311']

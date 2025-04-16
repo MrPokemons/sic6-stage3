@@ -1,0 +1,1 @@
+## **Always respond using {user_language} only—this is the only language the child understands.**

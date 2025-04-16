@@ -1,0 +1,31 @@
+services:
+  mongodb_dev:
+    image: mongodb/mongodb-community-server:latest
+    container_name: mongodb_dev
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongodb_dev
+      MONGO_INITDB_ROOT_PASSWORD: pawPalRockHehe
+    volumes:
+      - ./db:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  pawpal-dev:
+    build: .
+    container_name: pawpal-dev
+    restart: always
+    depends_on:
+      mongodb_dev:
+        condition: service_healthy
+    environment:
+      ENV_FILE: config/.env.prod
+    ports:
+      - "8899:8899"
+    volumes:
+      - .:/app
