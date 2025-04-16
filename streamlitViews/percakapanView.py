@@ -29,62 +29,66 @@ with st.form("child_profile_form"):
     startConvo = st.form_submit_button("Mulai")
 
 if startConvo:
-    gender_map = {
-    "Laki-laki": "male",
-    "Perempuan": "female"
-    }
 
-    try:
-        user_data = UserData(
-            name=nameInput,
-            gender=gender_map.get(genderInput),
-            age=ageInput,
-            description=descriptionInput,
-            language="Indonesian"
-        )
+    if not nameInput or ageInput or genderInput or descriptionInput or deviceIdInput or durationInput or sessionsInput:
+        st.error("Semua kolom wajib diisi! Mohon dicek kembali.")
+    else: 
+        gender_map = {
+        "Laki-laki": "male",
+        "Perempuan": "female"
+        }
 
-        topic_param = TopicParams(
-            talk_to_me = TopicParams.TalkToMeParam(duration = durationInput),
-            math_game = TopicParams.MathGameParam(total_question = durationInput),
-            spelling_game = TopicParams.SpellingGameParam(total_question = durationInput),
-            would_you_rather = TopicParams.WouldYouRatherParam(duration = durationInput),
+        try:
+            user_data = UserData(
+                name=nameInput,
+                gender=gender_map.get(genderInput),
+                age=ageInput,
+                description=descriptionInput,
+                language="Indonesian"
+            )
 
-        )
+            topic_param = TopicParams(
+                talk_to_me = TopicParams.TalkToMeParam(duration = durationInput),
+                math_game = TopicParams.MathGameParam(total_question = durationInput),
+                spelling_game = TopicParams.SpellingGameParam(total_question = durationInput),
+                would_you_rather = TopicParams.WouldYouRatherParam(duration = durationInput),
 
-        convo_input = StartConversationInput(
-            device_id=deviceIdInput,
-            user=user_data,
-            feature_params=topic_param,
-            selected_features=["talk_to_me"],
-            total_sessions=sessionsInput
-        )
+            )
 
-        # class TopicParams(TypedDict):
-        # class TalkToMeParam(TypedDict):
-        #     duration: Annotated[int, "in seconds"]
+            convo_input = StartConversationInput(
+                device_id=deviceIdInput,
+                user=user_data,
+                feature_params=topic_param,
+                selected_features=["talk_to_me"],
+                total_sessions=sessionsInput
+            )
 
-        # class MathGameParam(TypedDict):
-        #     total_question: int
+            # class TopicParams(TypedDict):
+            # class TalkToMeParam(TypedDict):
+            #     duration: Annotated[int, "in seconds"]
 
-        # class SpellingGameParam(TypedDict):
-        #     total_question: int
+            # class MathGameParam(TypedDict):
+            #     total_question: int
 
-        # class WouldYouRatherParam(TypedDict):
-        #     duration: Annotated[int, "in seconds"]
+            # class SpellingGameParam(TypedDict):
+            #     total_question: int
 
-        # talk_to_me: TalkToMeParam
-        # math_game: MathGameParam
-        # spelling_game: SpellingGameParam
-        # would_you_rather: WouldYouRatherParam
-        
-        st.json(convo_input.model_dump())  # show for debugging
-        requests.post("http://localhost:8899/api/v1/pawpal/conversation/start", json=convo_input.model_dump())
-        st.success("Berhasil menginput konfigurasi percakapan baru!!")
+            # class WouldYouRatherParam(TypedDict):
+            #     duration: Annotated[int, "in seconds"]
 
-    except Exception as e:
-        st.error(f"Terjadi kesalahan: {e}")
+            # talk_to_me: TalkToMeParam
+            # math_game: MathGameParam
+            # spelling_game: SpellingGameParam
+            # would_you_rather: WouldYouRatherParam
+            
+            st.json(convo_input.model_dump())  # show for debugging
+            requests.post("http://localhost:8899/api/v1/pawpal/conversation/start", json=convo_input.model_dump())
+            st.success("Berhasil menginput konfigurasi percakapan baru!!")
 
-    print("convo started")
+        except Exception as e:
+            st.error(f"Terjadi kesalahan: {e}")
+
+        print("convo started")
 
 # -------------------
 st.subheader("Transkrip")
