@@ -23,6 +23,28 @@ dummyMsg = [
      "text": "Oke siap~"},
 ]
 
+# messages: [
+#         {
+        #   content: "Halo Cindy, selamat datang kembali ke sesi 'Berbicara'. Senyummu menunjukkan bahwa hari ini pasti penuh dengan kesenangan, kan? Bagaimana kabarmu hari ini? Ada yang lucu atau serius yang mau kita bicarakan?",
+        #   additional_kwargs: {},
+        #   type: 'ai',
+        #   name: null,
+        #   id: 'run-e8ddba46-0a2b-4230-af92-d6975601bbb3-0'
+        # },
+        # {
+        #   content: [
+        #     {
+        #       type: 'text',
+        #       text: 'Iya kak, hari ini saya berkunjung ke taman yang penuh dengan bunga dan banyak yang mekar.'
+        #     }
+        #   ],
+        #   additional_kwargs: {},
+        #   response_metadata: {},
+        #   type: 'human',
+        #   name: null,
+        #   id: null
+        # },
+# ]
 
 # view starts here
 st.title("PawPal 🐾")
@@ -30,7 +52,29 @@ st.title("PawPal 🐾")
 # input device ID
 deviceId = st.text_input("No. ID Perangkat", "")
 if st.button("Cari percakapan terakhir", type="primary"):
-    requests.get(f"http://localhost:8899/api/v1/pawpal/conversation/{deviceId}")
+    lastConversation = requests.get(f"http://localhost:8899/api/v1/pawpal/conversation/{deviceId}").json()
+
+    for session in lastConversation['sessions']:
+        dummyMsg.clear()
+        for message in session['messages']:
+            # Check message type and handle accordingly
+            if isinstance(message, dict):
+                if message['type'] == 'ai':
+                    sender = 'bot'
+                    text = message['content']
+                elif message['type'] == 'human':
+                    sender = 'user'
+                    # Assuming content is a list
+                    if isinstance(message['content'], list) and len(message['content']) > 0:
+                        text = message['content'][0]['text']
+                    else:
+                        text = message['content']
+                else:
+                    continue  # Skip other types of messages
+
+                # Append formatted message to the dummyMsg list
+                dummyMsg.append({"sender": sender, "text": text})
+
     # -------------------
     col1, col2 = st.columns(2)
     with col1:
