@@ -84,6 +84,7 @@ pawpal.set_agentic_cls(model=model, mongodb_engine=mongodb_engine)
 # App Router
 app = FastAPI()
 
+
 @app.get("/")
 async def home():
     return {"message": "hello world, this is running"}
