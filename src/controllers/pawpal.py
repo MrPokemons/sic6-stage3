@@ -84,9 +84,11 @@ def pawpal_router(
                     break
 
             if curr_convo_doc is None:
+                print(f"Device '{device_id}' waiting for new chat.")
                 await asyncio.sleep(15)
                 continue
 
+            print(f"Device '{device_id}' starting chat '{curr_convo_doc.id}'.")
             workflow_config = ConfigSchema(
                 configurable=ConfigurableSchema(
                     thread_id=curr_convo_doc.id,
@@ -129,14 +131,14 @@ def pawpal_router(
                                 )
                                 for interrupt_schema in list_interrupts:
                                     if interrupt_schema["action"] == "speaker":
-                                        await websocket.send("speaker")
+                                        await websocket.send_text("speaker")
                                         tts_audio_data = tts.synthesize(
                                             interrupt_schema["message"]
                                         )
                                         await websocket.send_bytes(tts_audio_data)
                                         workflow_input = Command(resume="")
                                     elif interrupt_schema["action"] == "microphone":
-                                        await websocket.send("microphone")
+                                        await websocket.send_text("microphone")
                                         mic_audio_data = await websocket.receive_bytes()
                                         user_answer = stt.transcribe(mic_audio_data)
                                         workflow_input = Command(resume=user_answer)
