@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 from src.services.pawpal.schemas.user import UserData
-from src.controllers.pawpal import StartConversationInput, TopicParams, TopicFlowType
+from src.controllers.pawpal import StartConversationInput, TopicParams
 
 chatConfig = []
 dummyMsg = []
@@ -17,11 +17,13 @@ with st.form("child_profile_form"):
     st.subheader("Biodata Anak")
     nameInput = st.text_input("🧒 Nama")
     ageInput = st.number_input("🎂 Umur", min_value=3, max_value=8, step=1)
-    genderInput = st.selectbox("🚻 Jenis Kelamin", ["Pilih Jenis Kelamin", "Laki-laki", "Perempuan"])
+    genderInput = st.selectbox(
+        "🚻 Jenis Kelamin", ["Pilih Jenis Kelamin", "Laki-laki", "Perempuan"]
+    )
     descriptionInput = st.text_area("🚲 Deskripsi Anak (hobi dan minat, kepribadian)")
 
     st.subheader("Konfigurasi Percakapan")
-    deviceIdInput = st.text_input("⚙️ No. ID Perangkat", "") 
+    deviceIdInput = st.text_input("⚙️ No. ID Perangkat", "")
     durationInput = st.number_input("⏰ Durasi", min_value=3, step=2)
     sessionsInput = st.number_input("🗣️ Jumlah Sesi", min_value=1, step=1)
     # topic = st.text_area("💬 Topik Percakapan (Opsional)")
@@ -30,13 +32,18 @@ with st.form("child_profile_form"):
 
 if startConvo:
 
-    if not nameInput or ageInput or genderInput or descriptionInput or deviceIdInput or durationInput or sessionsInput:
+    if (
+        not nameInput
+        or ageInput
+        or genderInput
+        or descriptionInput
+        or deviceIdInput
+        or durationInput
+        or sessionsInput
+    ):
         st.error("Semua kolom wajib diisi! Mohon dicek kembali.")
-    else: 
-        gender_map = {
-        "Laki-laki": "male",
-        "Perempuan": "female"
-        }
+    else:
+        gender_map = {"Laki-laki": "male", "Perempuan": "female"}
 
         try:
             user_data = UserData(
@@ -44,15 +51,18 @@ if startConvo:
                 gender=gender_map.get(genderInput),
                 age=ageInput,
                 description=descriptionInput,
-                language="Indonesian"
+                language="Indonesian",
             )
 
             topic_param = TopicParams(
-                talk_to_me = TopicParams.TalkToMeParam(duration = durationInput),
-                math_game = TopicParams.MathGameParam(total_question = durationInput),
-                spelling_game = TopicParams.SpellingGameParam(total_question = durationInput),
-                would_you_rather = TopicParams.WouldYouRatherParam(duration = durationInput),
-
+                talk_to_me=TopicParams.TalkToMeParam(duration=durationInput),
+                math_game=TopicParams.MathGameParam(total_question=durationInput),
+                spelling_game=TopicParams.SpellingGameParam(
+                    total_question=durationInput
+                ),
+                would_you_rather=TopicParams.WouldYouRatherParam(
+                    duration=durationInput
+                ),
             )
 
             convo_input = StartConversationInput(
@@ -60,7 +70,7 @@ if startConvo:
                 user=user_data,
                 feature_params=topic_param,
                 selected_features=["talk_to_me"],
-                total_sessions=sessionsInput
+                total_sessions=sessionsInput,
             )
 
             # class TopicParams(TypedDict):
@@ -80,9 +90,12 @@ if startConvo:
             # math_game: MathGameParam
             # spelling_game: SpellingGameParam
             # would_you_rather: WouldYouRatherParam
-            
+
             st.json(convo_input.model_dump())  # show for debugging
-            requests.post("http://localhost:8899/api/v1/pawpal/conversation/start", json=convo_input.model_dump())
+            requests.post(
+                "http://localhost:8899/api/v1/pawpal/conversation/start",
+                json=convo_input.model_dump(),
+            )
             st.success("Berhasil menginput konfigurasi percakapan baru!!")
 
         except Exception as e:
@@ -93,7 +106,7 @@ if startConvo:
 # -------------------
 st.subheader("Transkrip")
 with st.expander("💬 Transkrip Percakapan"):
-    if(dummyMsg):
+    if dummyMsg:
         for msg in dummyMsg:
             with st.chat_message(msg["sender"]):
                 st.write(msg["text"])
