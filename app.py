@@ -2,7 +2,6 @@ import os
 import logging
 from logging.config import dictConfig
 
-import uvicorn
 from fastapi import FastAPI
 from langchain_ollama import ChatOllama
 
@@ -85,16 +84,17 @@ pawpal.set_agentic_cls(model=model, mongodb_engine=mongodb_engine)
 # App Router
 app = FastAPI()
 
+
+@app.get("/")
+async def home():
+    return {"message": "hello world, this is running"}
+
+
 app.include_router(
     pawpal_router(
         pawpal=pawpal,
-        model=model,
         stt=stt,
         tts=tts,
         logger=app_logger,
     )
 )
-
-
-if __name__ == "__main__":
-    uvicorn.run(app=app, host=CONFIG.APP.HOST, port=CONFIG.APP.PORT)

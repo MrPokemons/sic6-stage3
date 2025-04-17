@@ -6,12 +6,16 @@ from langchain_core.messages import BaseMessage
 from .topic import TopicResultsType, TopicParams
 from .topic_flow import TopicFlowType
 from .user import UserData
+from ..utils import convert_base_to_specific
 
 
 class SessionResult(BaseModel):
     type: TopicFlowType
     messages: List[BaseMessage]
     result: Optional[TopicResultsType] = None
+
+    def get_messages(self):
+        return [convert_base_to_specific(msg) for msg in self.messages]
 
 
 class ConversationDoc(BaseModel):
@@ -21,7 +25,6 @@ class ConversationDoc(BaseModel):
     feature_params: TopicParams
     selected_features: List[TopicFlowType]
     total_sessions: PositiveInt
-    just_created: bool = True
     sessions: List[SessionResult] = []
     created_datetime: str = Field(
         default_factory=lambda: datetime.now(timezone.utc).isoformat()

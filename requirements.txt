@@ -1,4 +1,8 @@
 accelerate==1.6.0
+fastapi==0.115.8
+pydantic==2.10.6
+pydantic-settings==2.7.1
+uvicorn==0.34.0
 altair==5.5.0
 annotated-types==0.7.0
 anyio==4.9.0
@@ -111,6 +115,5 @@ uvicorn==0.34.0
 wcwidth==0.2.13
 xxhash==3.5.0
 zstandard==0.23.0
-# ###############
 pymongo==4.11.3
 motor==3.7.0

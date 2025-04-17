@@ -15,8 +15,6 @@ if ENV_FILE is None:
 
 class Settings(BaseSettings):
     class _App(BaseModel):
-        HOST: str
-        PORT: int
         CONTAINER_NAME: str
 
     class _MongoDB(BaseModel):

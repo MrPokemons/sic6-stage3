@@ -32,15 +32,21 @@ prompt_loader = PromptLoader()
 def convert_base_to_specific(message: BaseMessage):
     if message.type == "human":
         return HumanMessage(
-            content=message.content, additional_kwargs=message.additional_kwargs
+            content=message.content,
+            additional_kwargs=message.additional_kwargs,
+            response_metadata=message.response_metadata,
         )
     elif message.type == "ai":
         return AIMessage(
-            content=message.content, additional_kwargs=message.additional_kwargs
+            content=message.content,
+            additional_kwargs=message.additional_kwargs,
+            response_metadata=message.response_metadata,
         )
     elif message.type == "system":
         return SystemMessage(
-            content=message.content, additional_kwargs=message.additional_kwargs
+            content=message.content,
+            additional_kwargs=message.additional_kwargs,
+            response_metadata=message.response_metadata,
         )
     else:
         raise ValueError(f"Unknown message type: {message.type}")
