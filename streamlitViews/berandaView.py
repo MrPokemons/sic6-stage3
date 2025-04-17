@@ -7,13 +7,76 @@ from datetime import datetime
 # analytics data declaration here
 
 wordDictionary = {
-    "Kata Asli": ["Adel", "Data 2", "Data 3"],
-    "Pelafalan Anak": ["Value 1", "Value 2", "Value 3"],
+    "Kata Asli": [
+        "Kucing",
+        "Mobil",
+        "Makan",
+        "Tidur",
+        "Minum",
+        "Sepeda",
+        "Sekolah",
+        "Buku",
+        "Pensil",
+        "Hujan",
+    ],
+    "Pelafalan Anak": [
+        "Cicing",
+        "Obil",
+        "Maka",
+        "Tiduh",
+        "Minuh",
+        "Sepeda",
+        "Sekola",
+        "Buku",
+        "Pensel",
+        "Ujan",
+    ],
+    "Koreksi": ["✅", "✅", "✅", "✅", "❌", "✅", "✅", "✅", "❌", "✅"],
 }
 
 mathDictionary = {
-    "Pertanyaan": ["Data 1", "Data 2", "Data 3"],
-    "Jawaban Anak": ["Value 1", "Value 2", "Value 3"],
+    "Pertanyaan": [
+        "1 + 1?",
+        "2 + 3?",
+        "4 - 2?",
+        "5 x 2?",
+        "10 : 2?",
+        "3 + 5?",
+        "9 - 4?",
+        "6 x 3?",
+        "12 : 4?",
+        "7 + 8?",
+    ],
+    "Jawaban Anak": ["2", "4", "2", "12", "5", "7", "5", "18", "2", "15"],
+    "Koreksi": ["✅", "❌", "✅", "❌", "✅", "❌", "✅", "✅", "❌", "✅"],
+}
+
+reasoningGames = {
+    "Pertanyaan": [
+        "Kamu lebih suka hidup di dunia penuh dinosaurus atau penuh robot?",
+        "Kalau bisa pilih satu hewan jadi hewan peliharaan, kamu pilih apa dan kenapa?",
+        "Lebih enak liburan di pegunungan atau di kota besar? Kenapa?",
+        "Kalau bisa mengulang waktu, kamu mau kembali ke masa kapan?",
+        "Kalau kamu jadi presiden, hal pertama yang ingin kamu ubah apa?",
+        "Kamu lebih suka bisa berbicara semua bahasa di dunia, atau bisa bermain semua alat musik?",
+        "Kalau ada pintu ajaib, kamu mau pergi ke mana?",
+        "Lebih suka punya taman bermain di rumah atau kolam renang pribadi?",
+        "Kalau kamu bisa membuat mainan impianmu, mainan seperti apa yang kamu buat?",
+        "Kamu lebih suka membaca pikiran orang lain, atau bisa melihat masa depan?",
+    ],
+    "Contoh Jawaban Anak": [
+        "Dunia robot, karena keren dan canggih!",
+        "Panda, karena gemesin dan lucu banget!",
+        "",
+        "Waktu ulang tahun aku, karena seru dan dapat kado",
+        "Semua anak sekolah gratis!",
+        "Main semua alat musik, bisa bikin band sendiri!",
+        "",
+        "Taman bermain! Biar bisa main sepuasnya tiap hari!",
+        "",
+        "Melihat masa depan, biar tahu nanti aku jadi apa",
+    ],
+    "Status": ["✅", "✅", "❌", "✅", "✅", "✅", "❌", "✅", "❌", "✅"],
 }
 
 dummyMsg = [
@@ -22,33 +85,9 @@ dummyMsg = [
     {"sender": "user", "text": "Oke siap~"},
 ]
 
-# messages: [
-#         {
-#   content: "Halo Cindy, selamat datang kembali ke sesi 'Berbicara'. Senyummu menunjukkan bahwa hari ini pasti penuh dengan kesenangan, kan? Bagaimana kabarmu hari ini? Ada yang lucu atau serius yang mau kita bicarakan?",
-#   additional_kwargs: {},
-#   type: 'ai',
-#   name: null,
-#   id: 'run-e8ddba46-0a2b-4230-af92-d6975601bbb3-0'
-# },
-# {
-#   content: [
-#     {
-#       type: 'text',
-#       text: 'Iya kak, hari ini saya berkunjung ke taman yang penuh dengan bunga dan banyak yang mekar.'
-#     }
-#   ],
-#   additional_kwargs: {},
-#   response_metadata: {},
-#   type: 'human',
-#   name: null,
-#   id: null
-# },
-# ]
 
-# view starts here
 st.title("PawPal 🐾")
 
-# input device ID
 deviceId = st.text_input("No. ID Perangkat", "")
 if st.button("Cari percakapan terakhir", type="primary"):
     resp = requests.get(f"http://localhost:11080/api/v1/pawpal/conversation/{deviceId}")
@@ -152,19 +191,32 @@ if st.button("Cari percakapan terakhir", type="primary"):
     # -------------------
     # hard coded values
     # karena belum setup backend logic & endpoints for retrieving these kinds of data
-    st.subheader("Analitik")
+    st.subheader("Spelling Games 🔤")
     # dictionary columns
     # declare tables and columns
     wordDictTable = pd.DataFrame(wordDictionary)
     mathDictTable = pd.DataFrame(mathDictionary)
+    reasoningGamesTable = pd.DataFrame(reasoningGames)
 
     wdt = pd.DataFrame(wordDictTable)
     wdt.index += 1
-    mdt = pd.DataFrame(mathDictTable)
+    mdt = pd.DataFrame(mathDictionary)
     mdt.index += 1
+    rgt = pd.DataFrame(reasoningGamesTable)
+    rgt.index += 1
 
-    col1, col2 = st.columns(2)
-    with col1:
-        st.table(wdt)
-    with col2:
-        st.table(mdt)
+    st.table(wdt)
+
+    st.subheader("Math Adventures 🖐️")
+    st.table(mdt)
+
+    st.subheader("Reasoning Games 🧠")
+    st.dataframe(rgt)
+
+    # col1, col2, col3 = st.columns(3)
+    # with col1:
+    #     st.table(wdt)
+    # with col2:
+    #     st.table(mdt)
+    # with col3:
+    #     st.table(rgt)
