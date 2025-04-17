@@ -4,12 +4,12 @@ from src.services.pawpal.schemas.user import UserData
 from src.controllers.pawpal import StartConversationInput, TopicParams
 
 chatConfig = []
-dummyMsg = []
-# dummyMsg = [
-#     {"sender": "user", "text": "Hai, kamu lagi apa?"},
-#     {"sender": "bot", "text": "Halo! Aku lagi standby nunggu kamu 😄"},
-#     {"sender": "user", "text": "Oke siap~"},
-# ]
+# dummyMsg = []
+dummyMsg = [
+    {"sender": "user", "text": "Hai, kamu lagi apa?"},
+    {"sender": "bot", "text": "Halo! Aku lagi standby nunggu kamu 😄"},
+    {"sender": "user", "text": "Oke siap~"},
+]
 
 st.title("Mulai Percakapan 🤖")
 
