@@ -42,6 +42,7 @@ if startConvo:
         and sessionsInput
     ):
         st.error("Semua kolom wajib diisi! Mohon dicek kembali.")
+        st.stop()
 
     gender_map = {"Laki-laki": "male", "Perempuan": "female"}
 
