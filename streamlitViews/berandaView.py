@@ -51,9 +51,13 @@ st.title("PawPal 🐾")
 # input device ID
 deviceId = st.text_input("No. ID Perangkat", "")
 if st.button("Cari percakapan terakhir", type="primary"):
-    lastConversation = requests.get(
-        f"http://localhost:8899/api/v1/pawpal/conversation/{deviceId}"
-    ).json()
+    resp = requests.get(f"http://localhost:11080/api/v1/pawpal/conversation/{deviceId}")
+    list_conversation = resp.json()
+    if not list_conversation:
+        st.error("No conversation ever recorded from the provided device id")
+        st.stop()
+
+    lastConversation = list_conversation[0]
     print(lastConversation)
 
     for session in lastConversation["sessions"]:

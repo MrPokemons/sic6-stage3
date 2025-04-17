@@ -42,11 +42,11 @@ def pawpal_router(
     pawpal_workflow = pawpal.build_workflow()
 
     @router.get("/conversation/{device_id}")
-    async def get_conversation(device_id: str) -> ConversationOutput:
+    async def get_conversations(device_id: str) -> List[ConversationOutput]:
         docs = await pawpal.get_agent_results(device_id=device_id)
         docs = [ConversationDoc.model_validate(doc) for doc in docs]
         docs = sorted(docs, key=lambda x: x.created_datetime, reverse=True)
-        return docs[0]
+        return docs
 
     @router.post("/conversation/start")
     async def start_conversation(
