@@ -8,7 +8,7 @@
 
 ---
 
-# Setting up IoT
+# Setting Up IoT
 Board: ESP32 A1S 
 Speaker terkoneksi ke ESP32 A1S dengan kabel melalui port yang sudah ada di board.
 
@@ -31,3 +31,8 @@ Langkah-langkah setup IoT:
     Diakses melalui ombol atas kanan dengan icon centang
 6. Upload sketch to board & menjalankan sketch 
     Diakses melalui tombol atas kanan dengan icon panah
+
+---
+
+# Setting Up Backend
+
