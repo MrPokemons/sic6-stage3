@@ -129,12 +129,14 @@ def pawpal_router(
                                 )
                                 for interrupt_schema in list_interrupts:
                                     if interrupt_schema["action"] == "speaker":
+                                        await websocket.send("speaker")
                                         tts_audio_data = tts.synthesize(
                                             interrupt_schema["message"]
                                         )
                                         await websocket.send_bytes(tts_audio_data)
                                         workflow_input = Command(resume="")
                                     elif interrupt_schema["action"] == "microphone":
+                                        await websocket.send("microphone")
                                         mic_audio_data = await websocket.receive_bytes()
                                         user_answer = stt.transcribe(mic_audio_data)
                                         workflow_input = Command(resume=user_answer)
