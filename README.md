@@ -23,7 +23,7 @@ Langkah-langkah setup IoT:
         - Arduino_SerialUpdater (https://github.com/arduino-libraries/Arduino_SerialUpdater)
         - ES8388 by thaaraak (https://github.com/thaaraak/es8388)
         - WebSockets 
-    File-file dapat diakses pada IoT/libraries.
+    File-file dapat diakses pada folder: `IoT/libraries.`
     Di copy-paste ke folder: `~/Arduino/libraries`
 3. Di dalam Arduino IDE, import file sketch yang dibutuhkan
 4. Konfigurasi board (pilih ESP32 Dev Module) & port yang tersambung
