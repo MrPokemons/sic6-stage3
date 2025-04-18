@@ -1,7 +1,48 @@
 import streamlit as st
 import requests
-from src.services.pawpal.schemas.user import UserData
-from src.controllers.pawpal import StartConversationInput, TopicParams
+from typing import Optional, Literal, Annotated, List, TypeAlias
+from typing_extensions import TypedDict
+from pydantic import BaseModel, PositiveInt
+
+
+class UserData(TypedDict):
+    name: str
+    gender: Optional[Literal["male", "female"]]
+    age: Optional[int]
+    description: str = ""
+    language: str = "Indonesian"
+
+
+TopicFlowType: TypeAlias = Literal[
+    "talk_to_me", "math_games", "spelling_games", "would_you_rather"
+]
+
+class TopicParams(TypedDict):
+    class TalkToMeParam(TypedDict):
+        duration: Annotated[int, "in seconds"]
+
+    class MathGameParam(TypedDict):
+        total_question: int
+
+    class SpellingGameParam(TypedDict):
+        total_question: int
+
+    class WouldYouRatherParam(TypedDict):
+        duration: Annotated[int, "in seconds"]
+
+    talk_to_me: TalkToMeParam
+    math_game: MathGameParam
+    spelling_game: SpellingGameParam
+    would_you_rather: WouldYouRatherParam
+
+
+class StartConversationInput(BaseModel):
+    device_id: Annotated[str, "iot_device_id"]
+    user: UserData
+    feature_params: TopicParams
+    selected_features: List[TopicFlowType]
+    total_sessions: PositiveInt
+
 
 chatConfig = []
 # dummyMsg = []
