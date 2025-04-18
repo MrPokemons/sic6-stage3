@@ -5,6 +5,9 @@
 #include "es8388.h"
 #include "Wire.h"
 
+// --- Device Metadata ---
+const char* device_id = "2b129436-1a2d-11f0-9045-6ac49b7e4ceb";
+
 // --- WiFi Setup ---
 const char* ssid = "";
 const char* password = "";
