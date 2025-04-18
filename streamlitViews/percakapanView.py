@@ -89,13 +89,15 @@ if startConvo:
         # would_you_rather: WouldYouRatherParam
 
         st.json(convo_input.model_dump())  # show for debugging
-        requests.post(
+        resp = requests.post(
             "http://localhost:11080/api/v1/pawpal/conversation/start",
             json=convo_input.model_dump(),
         )
+        if resp.status_code != 200:
+            resp.raise_for_status()
         st.success("Berhasil menginput konfigurasi percakapan baru!!")
-
     except Exception as e:
+        st.warning("Jika Backend tidak berjalan, fitur ini tidak dapat dipakai.")
         st.error(f"Terjadi kesalahan: {e}")
 
     print("convo started")
