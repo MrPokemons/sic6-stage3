@@ -168,8 +168,6 @@ uvicorn app:app --host 0.0.0.0 --port 11080
 
 - MongoDB should be listening on the default port (`27017`) unless configured otherwise.
 
-Great addition! Here's the updated and polished `README.md` for the **frontend setup**, now including instructions regarding the `device_id` from the IoT device:
-
 ---
 
 # 🖼️ PawPal Frontend
