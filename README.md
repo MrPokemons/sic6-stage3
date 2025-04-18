@@ -12,20 +12,14 @@
 
 Welcome to the **PawPal IoT**! This guide will walk you through everything you need to set up the configuration for running the arduino for intended purposes.
 
----
-
 ## Board: ESP32 A1S  
 The speaker is connected to the ESP32 A1S via the built-in port on the board using cables.
-
----
 
 ## 🔧 IoT Setup Steps
 
 ### 1. Install the Arduino IDE  
 Download and install the Arduino IDE from the official website:  
 👉 [https://www.arduino.cc/en/software](https://www.arduino.cc/en/software)
-
----
 
 ### 2. Add Required Arduino Libraries  
 The following libraries are used in the project:
@@ -44,12 +38,9 @@ Library files can be found in the project directory:
 Copy these folders into your local Arduino libraries directory:  
 📁 `~/Arduino/libraries` (or equivalent on your OS)
 
----
-
 ### 3. Import the Sketch into Arduino IDE  
 Open the required `.ino` sketch file using the Arduino IDE.
 
----
 
 ### 4. Configure the Board and Port  
 In the Arduino IDE, set the board to:  
@@ -57,12 +48,8 @@ In the Arduino IDE, set the board to:
 
 Then select the appropriate port your device is connected to.
 
----
-
 ### 5. Verify the Sketch  
 Click the ✅ **check mark** icon in the top-right corner of the IDE to verify the code.
-
----
 
 ### 6. Upload the Sketch & Run It  
 Click the ➡️ **arrow icon** (next to the check mark) to upload the sketch to your board and run it.
@@ -73,8 +60,6 @@ Click the ➡️ **arrow icon** (next to the check mark) to upload the sketch to
 
 Welcome to the **PawPal Backend**! This guide will walk you through everything you need to set up the development environment, from installing dependencies like Ollama and MongoDB, to running the FastAPI app locally.
 
----
-
 ## 🚀 Prerequisites
 
 Before starting, make sure the following tools are installed on your system:
@@ -84,9 +69,6 @@ Before starting, make sure the following tools are installed on your system:
 - [Python 3.10+](https://www.python.org/downloads/) (Python 3.11 is used in development)
 - [Ollama](https://ollama.com/) — for running local LLMs
 - [MongoDB Community Server](https://www.mongodb.com/try/download/community) — for data persistence
-- [Git](https://git-scm.com/)
-
----
 
 ## 📦 Clone the Repository
 
@@ -94,8 +76,6 @@ Before starting, make sure the following tools are installed on your system:
 git clone https://github.com/MrPokemons/sic6-stage3.git
 cd pawpal-backend
 ```
-
----
 
 ## ⚙️ Environment Setup
 
@@ -145,8 +125,6 @@ $env:ENV_FILE = "config/.env"
 
 > ✅ This step is critical. Your app reads `ENV_FILE` to load the correct configuration.
 
----
-
 ## 🐍 Python Environment Setup
 
 #### Option A: Using `venv` (Recommended)
@@ -163,16 +141,12 @@ conda create -n pawpal python=3.11
 conda activate pawpal
 ```
 
----
-
 ### 3. 📥 Install Dependencies
 
 ```bash
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
-
----
 
 ## ▶️ Running the App
 
@@ -183,8 +157,6 @@ uvicorn app:app --host 0.0.0.0 --port 11080
 ```
 
 > 🌍 Visit the app at: `http://localhost:11080`
-
----
 
 ## 🧠 Notes
 
@@ -204,8 +176,6 @@ Great addition! Here's the updated and polished `README.md` for the **frontend s
 
 This is the **Streamlit-based dashboard** for **PawPal**, providing an intuitive interface to start the session and view the summarize dashboard.
 
----
-
 ## ⚙️ Prerequisites
 
 ### ✅ Backend Must Be Running
@@ -219,13 +189,9 @@ Start the backend with:
 uvicorn app:app --host 0.0.0.0 --port 11080
 ```
 
----
-
 ## 📦 Environment Setup
 
 No need to create a separate environment. The frontend uses the **same Python environment** as the backend.
-
----
 
 ## 🚀 Running the Frontend
 
@@ -237,8 +203,6 @@ streamlit run dashboard.py
 
 > Make sure you run this command **after activating the backend environment**.
 
----
-
 ## 📇 Registering Your Device
 
 To interact with PawPal via the frontend, you'll need your **IoT device's `device_id`**.
@@ -249,8 +213,6 @@ To interact with PawPal via the frontend, you'll need your **IoT device's `devic
 - You can view it from the **device metadata** or by checking the sketch code used for deployment.
 
 This `device_id` is required during the registration or usage process to associate interactions with the correct device in the backend system.
-
----
 
 ## 🧠 Features
 
