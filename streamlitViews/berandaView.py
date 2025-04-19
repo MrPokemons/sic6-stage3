@@ -93,14 +93,20 @@ deviceId = st.text_input("No. ID Perangkat", "")
 if st.button("Cari percakapan terakhir", type="primary"):
     list_conversation = None
     try:
-        resp = requests.get(f"http://localhost:11080/api/v1/pawpal/conversation/{deviceId}")
+        resp = requests.get(
+            f"http://localhost:11080/api/v1/pawpal/conversation/{deviceId}"
+        )
         if resp.status_code == 200:
             list_conversation = resp.json()
     except Exception:
         pass
 
-    if list_conversation is None:  # backend offline, connect to read-only demo purposes mongodb
-        _client = MongoClient("mongodb+srv://pawpal-demo-user:p78Q4EsqPfLmnvtb@sic-cluster.hcqho.mongodb.net/?retryWrites=true&w=majority&appName=SIC-Cluster")
+    if (
+        list_conversation is None
+    ):  # backend offline, connect to read-only demo purposes mongodb
+        _client = MongoClient(
+            "mongodb+srv://pawpal-demo-user:p78Q4EsqPfLmnvtb@sic-cluster.hcqho.mongodb.net/?retryWrites=true&w=majority&appName=SIC-Cluster"
+        )
         _db = _client["pawpal_v2"]
         _collection = _db["pawpal-conversation"]
         list_conversation: list = _collection.find({"device_id": deviceId}).to_list()
@@ -108,10 +114,14 @@ if st.button("Cari percakapan terakhir", type="primary"):
 
     if not list_conversation:
         st.error("No conversation ever recorded from the provided device id")
-        st.info("Jika anda ingin melihat demo tampilan dan backend harus tidak berjalan, dapat menggunakan device_id `2b129436-1a2d-11f0-9045-6ac49b7e4ceb`")
+        st.info(
+            "Jika anda ingin melihat demo tampilan dan backend harus tidak berjalan, dapat menggunakan device_id `2b129436-1a2d-11f0-9045-6ac49b7e4ceb`"
+        )
         st.stop()
 
-    list_conversation = sorted(list_conversation, key=lambda x: x["created_datetime"], reverse=True)
+    list_conversation = sorted(
+        list_conversation, key=lambda x: x["created_datetime"], reverse=True
+    )
     lastConversation = list_conversation[0]
     print(lastConversation)
 
