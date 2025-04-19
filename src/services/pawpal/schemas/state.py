@@ -1,4 +1,4 @@
-from typing import Literal, Annotated, Optional, List, Sequence
+from typing import Literal, Annotated, Optional, List, Sequence, TypeAlias
 from typing_extensions import TypedDict
 from pydantic import BaseModel, PositiveInt
 
@@ -16,6 +16,9 @@ class SessionState(BaseModel):
     messages: Annotated[Sequence[BaseMessage], add_messages] = []
 
 
+InterruptAction: TypeAlias = Literal["speaker", "microphone"]
+
+
 class InterruptSchema(TypedDict):
-    action: Literal["speaker", "microphone"]
+    action: InterruptAction
     message: Optional[str]
