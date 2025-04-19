@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+.ignore/
+.ruff_cache/
+
+# python env lib
+.venv
+venv
+
+# redundant volume
+db/
+logs/
+
+# unused lib
+IoT/
