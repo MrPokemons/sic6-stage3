@@ -149,8 +149,12 @@ class PawPal(Agentic):
             sessions=copy.deepcopy(state.sessions),
         )
         saved_session_dict = saved_session.model_dump(mode="json")
-        saved_session_dict["_id"] = ObjectId(saved_session.id)
-        await cls.mongodb_engine.insert_doc(cls.COLLECTION_NAME, saved_session_dict)
+        await cls.mongodb_engine.update_doc(
+            cls.COLLECTION_NAME,
+            doc_id=saved_session.id,
+            new_doc=saved_session_dict,
+            upsert=True,
+        )
 
         messages = [
             SystemMessage(
