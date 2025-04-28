@@ -6,9 +6,10 @@ from transformers import WhisperProcessor, WhisperForConditionalGeneration
 
 class SpeechToText:
     def __init__(self):
-        self.processor = WhisperProcessor.from_pretrained("cahya/whisper-medium-id")
+        self.processor = WhisperProcessor.from_pretrained("cahya/whisper-medium-id", local_files_only=True)
         self.model = WhisperForConditionalGeneration.from_pretrained(
-            "cahya/whisper-medium-id"
+            "cahya/whisper-medium-id",
+            local_files_only=True,
         )
         self.model.eval()
 

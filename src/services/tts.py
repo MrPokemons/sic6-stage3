@@ -6,8 +6,8 @@ from transformers import AutoTokenizer, VitsModel
 
 class TextToSpeech:
     def __init__(self):
-        self.tokenizer = AutoTokenizer.from_pretrained("facebook/mms-tts-ind")
-        self.model = VitsModel.from_pretrained("facebook/mms-tts-ind")
+        self.tokenizer = AutoTokenizer.from_pretrained("facebook/mms-tts-ind", local_files_only=True,)
+        self.model = VitsModel.from_pretrained("facebook/mms-tts-ind", local_files_only=True,)
         self.model.eval()
 
     def synthesize(self, text: str) -> bytes:
