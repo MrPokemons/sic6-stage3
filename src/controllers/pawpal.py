@@ -231,6 +231,7 @@ def pawpal_router(
                                         continue
 
                                     await ws_manager.send_text(websocket=websocket, message=_action)
+                                    logger.info(f"Agentic sent Action: {_action}")
                                     if _action == "speaker":
                                         tts_audio_data = tts.synthesize(
                                             interrupt_schema["message"]
@@ -247,17 +248,18 @@ def pawpal_router(
                                             "Request audio recorded from microphone"
                                         )
                                         audio_array, sample_rate = await ws_manager.recv_audio(websocket=websocket)
+                                        logger.info("Audio has been received, parsing to STT model")
                                         user_answer = stt.transcribe(audio_array, sample_rate=sample_rate)
                                         logger.info(
-                                            f'Received, continue chat with new user answer "{user_answer}".'
+                                            f'Done parsing, continue chat with new user answer "{user_answer}".'
                                         )
                                         workflow_input = Command(resume=user_answer)
                 logger.info(
                     f"Device '{device_id}': Chat '{curr_convo_doc.id}' has ended"
                 )
         except WebSocketDisconnect as e:
-            ws_manager.disconnect(websocket=websocket)
             logger.info(f"Device '{device_id}' has disconnected, due to {e}")
+            ws_manager.disconnect(websocket=websocket)
 
     @router.websocket("/conversation-test")
     async def conversation_test(websocket: WebSocket):
