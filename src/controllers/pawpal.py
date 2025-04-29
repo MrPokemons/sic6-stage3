@@ -3,7 +3,6 @@ import asyncio
 import logging
 import numpy as np
 import soundfile as sf
-import sounddevice as sd
 from typing import Annotated, List, Optional, Dict, Union, Tuple
 from io import BytesIO
 from bson.objectid import ObjectId
@@ -273,8 +272,15 @@ def pawpal_router(
 
         logger.info("Received the audio successfully, trying to play")
         audio_array, sample_rate = sf.read(BytesIO(audio_bytes), dtype="int16")
-        sd.play(data=audio_array, samplerate=sample_rate)
-        sd.wait()
+
+        try:
+            import sounddevice as sd
+            sd.play(data=audio_array, samplerate=sample_rate)
+            sd.wait()
+        except OSError:
+            _fp = "tests/conversation-test-result.wav"
+            logger.info(f"failed to play due to unsupported OS, will just write to '{_fp}'")
+            sf.write(_fp, data=audio_array, samplerate=sample_rate)
 
         logger.info("Testing successfully been executed")
 
@@ -295,8 +301,14 @@ def pawpal_router(
         audio_array, sample_rate = await ws_manager.recv_audio(websocket=websocket)
 
         logger.info("Received the audio successfully, trying to play")
-        sd.play(data=audio_array, samplerate=sample_rate)
-        sd.wait()
+        try:
+            import sounddevice as sd
+            sd.play(data=audio_array, samplerate=sample_rate)
+            sd.wait()
+        except OSError:
+            _fp = "tests/conversation-chunking-test-result.wav"
+            logger.info(f"failed to play due to unsupported OS, will just write to '{_fp}'")
+            sf.write(_fp, data=audio_array, samplerate=sample_rate)
 
         logger.info("Testing successfully been executed")
 
