@@ -3,6 +3,13 @@ import requests
 import pandas as pd
 from dateutil import parser
 from datetime import datetime
+from pymongo import MongoClient
+
+if 'deviceId' not in st.session_state:
+    st.session_state.deviceId = False
+
+if 'deviceId' not in st.session_state:
+    st.session_state.deviceId = False
 
 # analytics data declaration here
 
@@ -107,41 +114,67 @@ dummyMsg = [
 # view starts here
 st.title("PawPal 🐾")
 
-# input device ID
-deviceId = st.text_input("No. ID Perangkat", "")
-if st.button("Cari percakapan terakhir", type="primary"):
-    resp = requests.get(f"http://localhost:11080/api/v1/pawpal/conversation/{deviceId}")
-    list_conversation = resp.json()
+if not st.session_state.deviceId:
+    with st.form("device_id_form"):
+        deviceIdInput = st.text_input("No. ID Perangkat", "")
+        st.session_state.deviceId = deviceIdInput
+        saveDeviceId = st.form_submit_button("Cari percakapan terakhir")
+
+if st.session_state.deviceId:
+    deviceId = st.session_state.deviceId
+    print("\ndevice id ", deviceId)
+    list_conversation = None
+    try:
+        resp = requests.get(
+            f"http://localhost:11080/api/v1/pawpal/conversation/{deviceId}"
+        )
+        if resp.status_code == 200:
+            list_conversation = resp.json()
+    except Exception:
+        pass
+
+    if (
+        list_conversation is None
+    ):  # backend offline, connect to read-only demo purposes mongodb
+        _client = MongoClient(
+            "mongodb+srv://pawpal-demo-user:p78Q4EsqPfLmnvtb@sic-cluster.hcqho.mongodb.net/?retryWrites=true&w=majority&appName=SIC-Cluster"
+        )
+        _db = _client["pawpal_v2"]
+        _collection = _db["pawpal-conversation"]
+        list_conversation: list = _collection.find({"device_id": deviceId}).to_list()
+        st.warning("Backend tidak aktif, maka menggunakan alternatif database.")
+
     if not list_conversation:
         st.error("No conversation ever recorded from the provided device id")
         st.stop()
 
     lastConversation = list_conversation[0]
     print(lastConversation)
-
+    
+    messageResult = []
     for session in lastConversation["sessions"]:
-        dummyMsg.clear()
+        # dummyMsg.clear()
         for message in session["messages"]:
             # Check message type and handle accordingly
             if isinstance(message, dict):
                 if message["type"] == "ai":
-                    sender = "bot"
+                    sender = "ai"
                     text = message["content"]
                 elif message["type"] == "human":
                     sender = "user"
                     # Assuming content is a list
-                    if (
-                        isinstance(message["content"], list)
-                        and len(message["content"]) > 0
-                    ):
-                        text = message["content"][0]["text"]
-                    else:
-                        text = message["content"]
+                    # if (
+                    #     isinstance(message["content"], list)
+                    #     and len(message["content"]) > 0
+                    # ):
+                    text = message["content"][0]["text"]
+                    # else:
+                    #     text = message["content"]
                 else:
                     continue  # Skip other types of messages
 
                 # Append formatted message to the dummyMsg list
-                dummyMsg.append({"sender": sender, "text": text})
+                messageResult.append({"sender": sender, "text": text})
 
     # -------------------
     convoStartTime = lastConversation["sessions"][0]["messages"][2][
@@ -204,7 +237,7 @@ if st.button("Cari percakapan terakhir", type="primary"):
     # -------------------
     st.subheader("Transkrip")
     with st.expander("💬 Transkrip Percakapan Terakhir"):
-        for msg in dummyMsg:
+        for msg in messageResult:
             with st.chat_message(msg["sender"]):
                 st.write(msg["text"])
 

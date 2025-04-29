@@ -1,7 +1,12 @@
 import streamlit as st
 import requests
-from src.services.pawpal.schemas.user import UserData
-from src.controllers.pawpal import StartConversationInput, TopicParams
+import pandas as pd
+from dateutil import parser
+from datetime import datetime
+from pymongo import MongoClient
+
+if 'deviceId' not in st.session_state:
+    st.session_state.deviceId = False
 
 chatConfig = []
 # dummyMsg = []
@@ -11,101 +16,143 @@ dummyMsg = [
     {"sender": "user", "text": "Oke siap~"},
 ]
 
-st.title("Mulai Percakapan 🤖")
+st.title("🤖 Percakapan Saat Ini 🧒")
 
-with st.form("child_profile_form"):
-    st.subheader("Biodata Anak")
-    nameInput = st.text_input("🧒 Nama")
-    ageInput = st.number_input("🎂 Umur", min_value=3, max_value=8, step=1)
-    genderInput = st.selectbox(
-        "🚻 Jenis Kelamin", ["Pilih Jenis Kelamin", "Laki-laki", "Perempuan"]
-    )
-    descriptionInput = st.text_area("🚲 Deskripsi Anak (hobi dan minat, kepribadian)")
+if not st.session_state.deviceId:
+    with st.form("device_id_form"):
+        deviceIdInput = st.text_input("No. ID Perangkat", "")
+        st.session_state.deviceId = deviceIdInput
+        saveDeviceId = st.form_submit_button("Cari percakapan terakhir")
 
-    st.subheader("Konfigurasi Percakapan")
-    deviceIdInput = st.text_input("⚙️ No. ID Perangkat", "")
-    durationInput = st.number_input("⏰ Durasi", min_value=3, step=2)
-    sessionsInput = st.number_input("🗣️ Jumlah Sesi", min_value=1, step=1)
-    # topic = st.text_area("💬 Topik Percakapan (Opsional)")
+if st.session_state.deviceId:
+    deviceId = st.session_state.deviceId
 
-    startConvo = st.form_submit_button("Mulai")
+    st.subheader("Transkrip")
+    with st.container(border=True):
+        st.chat_message("user").write("test")
+        st.chat_message("ai").write("test")
 
-if startConvo:
+        list_conversation = None
+        try:
+            resp = requests.get(
+                f"http://localhost:11080/api/v1/pawpal/conversation/{deviceId}"
+            )
+            if resp.status_code == 200:
+                list_conversation = resp.json()
+        except Exception:
+            pass
 
-    if not (
-        nameInput
-        and ageInput
-        and genderInput
-        and descriptionInput
-        and deviceIdInput
-        and durationInput
-        and sessionsInput
-    ):
-        st.error("Semua kolom wajib diisi! Mohon dicek kembali.")
-        st.stop()
+        if (
+            list_conversation is None
+        ):  # backend offline, connect to read-only demo purposes mongodb
+            _client = MongoClient(
+                "mongodb+srv://pawpal-demo-user:p78Q4EsqPfLmnvtb@sic-cluster.hcqho.mongodb.net/?retryWrites=true&w=majority&appName=SIC-Cluster"
+            )
+            _db = _client["pawpal_v2"]
+            _collection = _db["pawpal-conversation"]
+            list_conversation: list = _collection.find({"device_id": deviceId}).to_list()
+            st.warning("Backend tidak aktif, maka menggunakan alternatif database.")
 
-    gender_map = {"Laki-laki": "male", "Perempuan": "female"}
+        if not list_conversation:
+            st.error("No conversation ever recorded from the provided device id")
+            st.info(
+                "Jika anda ingin melihat demo tampilan dan backend harus tidak berjalan, dapat menggunakan device_id `2b129436-1a2d-11f0-9045-6ac49b7e4ceb`"
+            )
+            st.stop()
 
-    try:
-        user_data = UserData(
-            name=nameInput,
-            gender=gender_map.get(genderInput),
-            age=ageInput,
-            description=descriptionInput,
-            language="Indonesian",
+        list_conversation = sorted(
+            list_conversation, key=lambda x: x["created_datetime"], reverse=True
         )
+        lastConversation = list_conversation[0]
+        # print(lastConversation)
+        # print("SESSIONNN ?? ", lastConversation["sessions"])
 
-        topic_param = TopicParams(
-            talk_to_me=TopicParams.TalkToMeParam(duration=durationInput),
-            math_game=TopicParams.MathGameParam(total_question=durationInput),
-            spelling_game=TopicParams.SpellingGameParam(total_question=durationInput),
-            would_you_rather=TopicParams.WouldYouRatherParam(duration=durationInput),
-        )
+        for session in lastConversation["sessions"]:
+            dummyMsg.clear()
+            for message in session["messages"]:
+                # Check message type and handle accordingly
+                if isinstance(message, dict):
+                    if message["type"] == "ai":
+                        sender = "bot"
+                        text = message["content"]
+                    elif message["type"] == "human":
+                        sender = "user"
+                        # Assuming content is a list
+                        if (
+                            isinstance(message["content"], list)
+                            and len(message["content"]) > 0
+                        ):
+                            text = message["content"][0]["text"]
+                        else:
+                            text = message["content"]
+                    else:
+                        continue  # Skip other types of messages
 
-        convo_input = StartConversationInput(
-            device_id=deviceIdInput,
-            user=user_data,
-            feature_params=topic_param,
-            selected_features=["talk_to_me"],
-            total_sessions=sessionsInput,
-        )
+                    # Append formatted message to the dummyMsg list
+                    dummyMsg.append({"sender": sender, "text": text})
 
-        # class TopicParams(TypedDict):
-        # class TalkToMeParam(TypedDict):
-        #     duration: Annotated[int, "in seconds"]
+        # -------------------
+        convoStartTime = lastConversation["sessions"][0]["messages"][2][
+            "response_metadata"
+        ]["created_at"]
+        convoStartTime = parser.isoparse(convoStartTime)
+        convoStartTimeDate = convoStartTime.strftime("%d %B %Y")
+        convoStartTimeHour = convoStartTime.strftime("%H:%M")
 
-        # class MathGameParam(TypedDict):
-        #     total_question: int
+        convoEndTime = datetime.now()
+        for message in reversed(lastConversation["sessions"][0]["messages"]):
+            if (
+                "response_metadata" in message
+                and "created_at" in message["response_metadata"]
+            ):
+                convoEndTime = message["response_metadata"]["created_at"]
+                break
 
-        # class SpellingGameParam(TypedDict):
-        #     total_question: int
+        convoEndTime = parser.isoparse(convoEndTime)
+        convoEndTimeHour = convoEndTime.strftime("%H:%M")
 
-        # class WouldYouRatherParam(TypedDict):
-        #     duration: Annotated[int, "in seconds"]
+        col1, col2 = st.columns(2)
+        with col1:
+            st.subheader("Percakapan Terakhir")
+            st.markdown(
+                f"""
+            <div style="
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+                font-family: 'Helvetica', sans-serif;
+                line-height: 1.6;
+                padding-bottom: 20px;
+            ">
+                <div style="margin-bottom: 6px">
+                    <span style="margin-right: 20px;">🗓️ {convoStartTimeDate}</span>
+                    <span>⏰ {convoStartTimeHour} - {convoEndTimeHour}</span>
+                    </div>
+            </div>
+        """,
+                unsafe_allow_html=True,
+            )
+        with col2:
+            st.subheader("Perasaan")
+            st.markdown(
+                """
+            <div style="
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+                font-family: 'Helvetica', sans-serif;
+                line-height: 1.6;
+                padding-bottom: 20px;
+            ">
+                <div style="margin-bottom: 6px">
+                    <span style="margin-right: 20px;">
+                        🤩 Senang
+                    </span>
+            </div>
+            """,
+                unsafe_allow_html=True,
+            )
 
-        # talk_to_me: TalkToMeParam
-        # math_game: MathGameParam
-        # spelling_game: SpellingGameParam
-        # would_you_rather: WouldYouRatherParam
-
-        st.json(convo_input.model_dump())  # show for debugging
-        requests.post(
-            "http://localhost:11080/api/v1/pawpal/conversation/start",
-            json=convo_input.model_dump(),
-        )
-        st.success("Berhasil menginput konfigurasi percakapan baru!!")
-
-    except Exception as e:
-        st.error(f"Terjadi kesalahan: {e}")
-
-    print("convo started")
-
-# -------------------
-st.subheader("Transkrip")
-with st.expander("💬 Transkrip Percakapan"):
-    if dummyMsg:
-        for msg in dummyMsg:
-            with st.chat_message(msg["sender"]):
-                st.write(msg["text"])
-    else:
-        st.write("Belum ada percakapan yang dimulai!")
+# with st.expander("💬 Transkrip Percakapan"):
+    # if dummyMsg:
+    #     for msg in dummyMsg:
+    #         with st.chat_message(msg["sender"]):
+    #             st.write(msg["text"])
+    # else:
+    #     st.write("Belum ada percakapan yang dimulai!")
