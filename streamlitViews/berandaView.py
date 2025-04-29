@@ -88,30 +88,7 @@ dummyMsg = [
     {"sender": "user", "text": "Oke siap~"},
 ]
 
-# messages: [
-#         {
-#   content: "Halo Cindy, selamat datang kembali ke sesi 'Berbicara'. Senyummu menunjukkan bahwa hari ini pasti penuh dengan kesenangan, kan? Bagaimana kabarmu hari ini? Ada yang lucu atau serius yang mau kita bicarakan?",
-#   additional_kwargs: {},
-#   type: 'ai',
-#   name: null,
-#   id: 'run-e8ddba46-0a2b-4230-af92-d6975601bbb3-0'
-# },
-# {
-#   content: [
-#     {
-#       type: 'text',
-#       text: 'Iya kak, hari ini saya berkunjung ke taman yang penuh dengan bunga dan banyak yang mekar.'
-#     }
-#   ],
-#   additional_kwargs: {},
-#   response_metadata: {},
-#   type: 'human',
-#   name: null,
-#   id: null
-# },
-# ]
 
-# view starts here
 st.title("PawPal 🐾")
 
 if not st.session_state.deviceId:
@@ -253,7 +230,7 @@ if st.session_state.deviceId:
 
     wdt = pd.DataFrame(wordDictTable)
     wdt.index += 1
-    mdt = pd.DataFrame(mathDictTable)
+    mdt = pd.DataFrame(mathDictionary)
     mdt.index += 1
     rgt = pd.DataFrame(reasoningGamesTable)
     rgt.index += 1
