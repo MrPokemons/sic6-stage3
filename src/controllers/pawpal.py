@@ -102,7 +102,7 @@ class ConnectionManager:
         self.logger.warning(
             f"Missing chunk in index: {missing_chunk_index_str}"
         )
-        audio_array = np.concatenate([_c for _c in list_chunk if _c])
+        audio_array = np.concatenate([_c for _c in list_chunk if isinstance(_c, np.ndarray)])
         return audio_array, sample_rate
 
     def get_samples_per_chunk(self, sample_rate: int):
