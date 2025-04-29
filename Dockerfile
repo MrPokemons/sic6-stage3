@@ -31,6 +31,6 @@ RUN python -c "from huggingface_hub import snapshot_download; snapshot_download(
 
 COPY . .
 
-EXPOSE 80
+EXPOSE 11080
 
 CMD ["python", "app.py"]
