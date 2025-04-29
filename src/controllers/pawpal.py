@@ -98,9 +98,10 @@ class ConnectionManager:
                 break
 
         missing_chunk_index_str = ', '.join([str(i) for i in range(len(list_chunk)) if list_chunk[i] is None])
-        self.logger.warning(
-            f"Missing chunk in index: {missing_chunk_index_str}"
-        )
+        if missing_chunk_index_str:
+            self.logger.warning(
+                f"Missing chunk in index: {missing_chunk_index_str}"
+            )
         audio_array = np.concatenate([_c for _c in list_chunk if isinstance(_c, np.ndarray)])
         return audio_array, sample_rate
 
