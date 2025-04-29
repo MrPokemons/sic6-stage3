@@ -3,6 +3,8 @@ services:
     image: mongodb/mongodb-community-server:latest
     container_name: pawpal_mongodb_dev
     restart: always
+    ports:
+      - "27017:27017"
     environment:
       MONGODB_INITDB_ROOT_USERNAME: pawpal_mongodb_dev
       MONGODB_INITDB_ROOT_PASSWORD: pawPalRockHehe
