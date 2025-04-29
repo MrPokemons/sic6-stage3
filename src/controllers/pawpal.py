@@ -1,6 +1,11 @@
+import math
 import asyncio
 import logging
-from typing import Annotated, List, Optional, Dict, Union
+import numpy as np
+import soundfile as sf
+import sounddevice as sd
+from typing import Annotated, List, Optional, Dict, Union, Tuple
+from io import BytesIO
 from bson.objectid import ObjectId
 
 from fastapi.routing import APIRouter
@@ -20,6 +25,8 @@ from ..services.pawpal.schemas.topic_flow import TopicFlowType
 from ..services.pawpal.schemas.state import InterruptSchema, InterruptAction
 from ..services.pawpal.schemas.document import ConversationDoc
 
+from ..utils.message_packer import MessagePacker, MessageMetadata
+
 
 class StartConversationInput(BaseModel):
     device_id: Annotated[str, "iot_device_id"]
@@ -31,6 +38,76 @@ class StartConversationInput(BaseModel):
 
 class ConversationOutput(ConversationDoc): ...
 
+# need to debug the send and recv chunking audio.
+class ConnectionManager:
+    def __init__(self, logger: logging.Logger, chunk_duration_ms: int = 20, message_packer: Optional[MessagePacker] = None):
+        if message_packer is None:
+            message_packer = MessagePacker(separator=b"---ENDJSON---")
+
+        self.logger = logger
+        self.chunk_duration_ms = chunk_duration_ms
+        self.message_packer = message_packer
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+
+    def disconnect(self, websocket: WebSocket): ...
+
+    async def send_text(
+        self,
+        websocket: WebSocket,
+        message: str,
+    ):
+        await websocket.send_text(message)
+
+    async def send_audio(self, websocket: WebSocket, audio_data: bytes):
+        audio_array, sample_rate = sf.read(BytesIO(audio_data), dtype="int16")
+        num_channels = 1 if len(audio_array.shape) == 1 else audio_array.shape[1]
+        samples_per_chunk = self.get_samples_per_chunk(sample_rate=sample_rate)
+        total_seq = math.ceil(audio_array.shape[0] / samples_per_chunk)
+        for seq in range(total_seq):
+            chunk = audio_array[samples_per_chunk*seq:samples_per_chunk*(seq+1)]
+            chunk_metadata = MessageMetadata(
+                seq=seq+1,
+                total_seq=total_seq,
+                sample_rate=sample_rate,
+                channels=num_channels,
+                dtype=str(audio_array.dtype)
+            )
+            packet = self.message_packer.pack(
+                metadata=chunk_metadata,
+                data=chunk
+            )
+            await websocket.send_bytes(packet)
+
+    async def recv_audio(self, websocket: WebSocket) -> Tuple[np.ndarray, int]:
+        list_chunk: List[Optional[np.ndarray]] = None
+        sample_rate = None
+        while 1:
+            packet = await websocket.receive_bytes()
+            metadata, chunk = self.message_packer.unpack(packet=packet)
+            if list_chunk is None:
+                list_chunk = [None] * metadata["total_seq"]
+
+            sample_rate = metadata["sample_rate"]
+            if metadata["channels"] > 1:
+                chunk = chunk.reshape(-1, metadata["channels"])
+                chunk = chunk.mean(axis=1)  # convert into mono
+
+            list_chunk[metadata["seq"] - 1] = chunk
+            if metadata["seq"] == metadata["total_seq"]:
+                break
+
+        missing_chunk_index_str = ', '.join([str(i) for i in range(len(list_chunk)) if list_chunk[i] is None])
+        self.logger.warning(
+            f"Missing chunk in index: {missing_chunk_index_str}"
+        )
+        audio_array = np.concatenate([_c for _c in list_chunk if _c])
+        return audio_array, sample_rate
+
+    def get_samples_per_chunk(self, sample_rate: int):
+        return sample_rate * self.chunk_duration_ms // 1000
+
 
 def pawpal_router(
     pawpal: PawPal,
@@ -40,6 +117,7 @@ def pawpal_router(
 ):
     router = APIRouter(prefix="/api/v1/pawpal", tags=["pawpal"])
     pawpal_workflow = pawpal.build_workflow()
+    ws_manager = ConnectionManager(logger=logger)
 
     @router.get("/conversation/{device_id}")
     async def get_conversations(device_id: str) -> List[ConversationOutput]:
@@ -69,7 +147,7 @@ def pawpal_router(
 
     @router.websocket("/conversation/{device_id}")
     async def conversation(websocket: WebSocket, device_id: str):
-        await websocket.accept()
+        await ws_manager.connect(websocket=websocket)
         logger.info(f"Device '{device_id}' has connected to server")
         try:
             while 1:
@@ -136,45 +214,90 @@ def pawpal_router(
                             ):
                                 keep_running = False
 
-                            if node == "__interrupt__":
-                                for interrupt_ in state:
-                                    interrupt_: Interrupt
-                                    list_interrupts: List[InterruptSchema] = (
-                                        interrupt_.value
-                                    )
-                                    for interrupt_schema in list_interrupts:
-                                        _action = interrupt_schema["action"]
-                                        if _action not in InterruptAction.__args__:
-                                            logger.warning(
-                                                "Unknown interrupt action '{_action}'"
-                                            )
-                                            continue
+                            if node != "__interrupt__":
+                                continue
 
-                                        await websocket.send_text(_action)
-                                        if _action == "speaker":
-                                            tts_audio_data = tts.synthesize(
-                                                interrupt_schema["message"]
-                                            )
-                                            logger.info("Sending audio to device")
-                                            await websocket.send_bytes(tts_audio_data)
-                                            logger.info("Sent, continue chat.")
-                                            workflow_input = Command(resume="")
-                                        elif _action == "microphone":
-                                            logger.info(
-                                                "Request audio recorded from microphone"
-                                            )
-                                            mic_audio_data = (
-                                                await websocket.receive_bytes()
-                                            )
-                                            user_answer = stt.transcribe(mic_audio_data)
-                                            logger.info(
-                                                f'Received, continue chat with new user answer "{user_answer}".'
-                                            )
-                                            workflow_input = Command(resume=user_answer)
+                            for interrupt_ in state:
+                                interrupt_: Interrupt
+                                list_interrupts: List[InterruptSchema] = (
+                                    interrupt_.value
+                                )
+                                for interrupt_schema in list_interrupts:
+                                    _action = interrupt_schema["action"]
+                                    if _action not in InterruptAction.__args__:
+                                        logger.warning(
+                                            "Unknown interrupt action '{_action}'"
+                                        )
+                                        continue
+
+                                    await ws_manager.send_text(websocket=websocket, message=_action)
+                                    if _action == "speaker":
+                                        tts_audio_data = tts.synthesize(
+                                            interrupt_schema["message"]
+                                        )
+                                        logger.info("Sending audio to device")
+                                        await ws_manager.send_audio(
+                                            websocket=websocket,
+                                            audio_data=tts_audio_data
+                                        )
+                                        logger.info("Sent, continue chat.")
+                                        workflow_input = Command(resume="")
+                                    elif _action == "microphone":
+                                        logger.info(
+                                            "Request audio recorded from microphone"
+                                        )
+                                        audio_array, sample_rate = await ws_manager.recv_audio(websocket=websocket)
+                                        user_answer = stt.transcribe(audio_array, sample_rate=sample_rate)
+                                        logger.info(
+                                            f'Received, continue chat with new user answer "{user_answer}".'
+                                        )
+                                        workflow_input = Command(resume=user_answer)
                 logger.info(
                     f"Device '{device_id}': Chat '{curr_convo_doc.id}' has ended"
                 )
         except WebSocketDisconnect as e:
+            ws_manager.disconnect(websocket=websocket)
             logger.info(f"Device '{device_id}' has disconnected, due to {e}")
+
+    @router.websocket("/conversation-test")
+    async def conversation_test(websocket: WebSocket):
+        await websocket.accept()
+        logger.info("Someone has connected to conversation test websocket")
+
+        logger.info("Sending Audio to client using chunking")
+        with open("tests/test.wav", "rb") as f:
+            await websocket.send_bytes(f.read())
+
+        logger.info("Trying to receive chunked audio from client")
+        audio_bytes = await websocket.receive_bytes()
+
+        logger.info("Received the audio successfully, trying to play")
+        audio_array, sample_rate = sf.read(BytesIO(audio_bytes), dtype="int16")
+        sd.play(data=audio_array, samplerate=sample_rate)
+        sd.wait()
+
+        logger.info("Testing successfully been executed")
+
+
+    @router.websocket("/conversation-chunking-test")
+    async def conversation_chunking_test(websocket: WebSocket):
+        await ws_manager.connect(websocket=websocket)
+        logger.info("Someone has connected to conversation chunking test websocket")
+
+        logger.info("Sending Audio to client using chunking")
+        with open("tests/test.wav", "rb") as f:
+            await ws_manager.send_audio(
+                websocket=websocket,
+                audio_data=f.read()
+            )
+
+        logger.info("Trying to receive chunked audio from client")
+        audio_array, sample_rate = await ws_manager.recv_audio(websocket=websocket)
+
+        logger.info("Received the audio successfully, trying to play")
+        sd.play(data=audio_array, samplerate=sample_rate)
+        sd.wait()
+
+        logger.info("Testing successfully been executed")
 
     return router
