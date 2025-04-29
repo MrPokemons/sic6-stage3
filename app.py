@@ -58,4 +58,4 @@ app.include_router(
 
 
 if __name__ == "__main__":
-    uvicorn.run("app:app", host="0.0.0.0", port=11080, log_config=None)
+    uvicorn.run("app:app", host="0.0.0.0", port=11080, log_config=None, ws_ping_interval=60, ws_ping_timeout=900)
