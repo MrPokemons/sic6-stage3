@@ -6,5 +6,5 @@ class UserData(TypedDict):
     name: str
     gender: Optional[Literal["male", "female"]]
     age: Optional[int]
-    description: str = ""
-    language: str = "Indonesian"
+    description: Optional[str]
+    language: Literal["indonesian", "english"]
