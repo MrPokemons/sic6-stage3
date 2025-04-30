@@ -59,7 +59,7 @@ class ConnectionManager:
     ):
         await websocket.send_text(message)
 
-    async def send_audio(self, websocket: WebSocket, audio_data: bytes):
+    async def send_audio(self, websocket: WebSocket, audio_data: bytes) -> None:
         audio_array, sample_rate = sf.read(BytesIO(audio_data), dtype="int16")
         num_channels = 1 if len(audio_array.shape) == 1 else audio_array.shape[1]
         samples_per_chunk = self.get_samples_per_chunk(sample_rate=sample_rate)
@@ -105,7 +105,7 @@ class ConnectionManager:
         audio_array = np.concatenate([_c for _c in list_chunk if isinstance(_c, np.ndarray)])
         return audio_array, sample_rate
 
-    def get_samples_per_chunk(self, sample_rate: int):
+    def get_samples_per_chunk(self, sample_rate: int) -> int:
         return sample_rate * self.chunk_duration_ms // 1000
 
 
@@ -239,7 +239,7 @@ def pawpal_router(
                                         logger.info("Sending audio to device")
                                         await ws_manager.send_audio(
                                             websocket=websocket,
-                                            audio_data=tts_audio_data
+                                            audio_data=tts_audio_data,
                                         )
                                         logger.info("Sent, continue chat.")
                                         workflow_input = Command(resume="")
