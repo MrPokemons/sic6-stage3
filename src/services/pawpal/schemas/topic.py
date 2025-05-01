@@ -1,4 +1,4 @@
-from typing import Annotated, List, TypeAlias, Union
+from typing import Annotated, List, TypeAlias, Union, TYPE_CHECKING
 from typing_extensions import TypedDict
 from pydantic import BaseModel, Field
 
@@ -6,6 +6,9 @@ from datetime import datetime
 
 from ....utils.typex import EmotionType
 
+
+if TYPE_CHECKING:
+    from ..subflows.math_game import MathQnA
 
 class TopicParams(TypedDict):
     class TalkToMeParam(TypedDict):
@@ -46,8 +49,9 @@ class TopicResults(BaseModel):
         modified_datetime: datetime
 
     class MathGameResult(BaseModel):
-        class _Extract(BaseExtractionTopic): ...
-        extraction: _Extract
+        class _Extraction(BaseExtractionTopic): ...
+        extraction: _Extraction
+        list_qna: List[MathQnA]
         start_datetime: datetime
         modified_datetime: datetime
 
