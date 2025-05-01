@@ -72,19 +72,28 @@ class TalkToMe(Agentic):
         This node won't be included into the graph since its just the redirector.
         """
         if state.from_node == "start":
+            last_ai_msg = state.last_ai_message()
+            if last_ai_msg is None:
+                raise Exception(f"How no last ai message? {state.model_dump(mode='json')}")
             interrupt(
-                [InterruptSchema(action="speaker", message=state.messages[-1].text())]
+                [InterruptSchema(action="speaker", message=last_ai_msg.text())]
             )
         elif state.from_node == "responding":
+            last_ai_msg = state.last_ai_message()
+            if last_ai_msg is None:
+                raise Exception(f"How no last ai message? {state.model_dump(mode='json')}")
             interrupt(
-                [InterruptSchema(action="speaker", message=state.messages[-1].text())]
+                [InterruptSchema(action="speaker", message=last_ai_msg.text())]
             )
         elif state.from_node == "check_session":
+            last_ai_msg = state.last_ai_message()
+            if last_ai_msg is None:
+                raise Exception(f"How no last ai message? {state.model_dump(mode='json')}")
             if state.next_node == END:
                 interrupt(
                     [
                         InterruptSchema(
-                            action="speaker", message=state.messages[-1].text()
+                            action="speaker", message=last_ai_msg.text()
                         )
                     ]
                 )
