@@ -17,6 +17,7 @@ from ..utils import prompt_loader
 
 class TTMSessionState(SessionState):
     start_datetime: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    modified_datetime: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class TalkToMe(Agentic):
@@ -53,6 +54,7 @@ class TalkToMe(Agentic):
         return Command(
             update={
                 "start_datetime": datetime.now(timezone.utc),
+                "modified_datetime": datetime.now(timezone.utc),
                 "messages": [*messages, opening_message],
                 "sessions": state.get_sessions(deep=True),
                 "from_node": "start",
@@ -112,6 +114,7 @@ class TalkToMe(Agentic):
         )
         return Command(
             update={
+                "modified_datetime": datetime.now(timezone.utc),
                 "messages": messages,
                 "sessions": state.get_sessions(deep=True),
                 "from_node": "listening",
@@ -132,6 +135,7 @@ class TalkToMe(Agentic):
         )
         return Command(
             update={
+                "modified_datetime": datetime.now(timezone.utc),
                 "messages": response_message,
                 "sessions": state.get_sessions(deep=True),
                 "from_node": "responding",
@@ -184,6 +188,7 @@ class TalkToMe(Agentic):
         )
         return Command(
             update={
+                "modified_datetime": datetime.now(timezone.utc),
                 "messages": [*messages, end_conversation_message],
                 "sessions": state.get_sessions(deep=True),
                 "from_node": "check_session",
