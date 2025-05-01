@@ -21,19 +21,22 @@ st.title("⚙️ Pengaturan Percakapan")
 with st.form("child_profile_form"):
     st.subheader("Biodata Anak")
     nameInput = st.text_input("🧒 Nama")
-    ageInput = st.number_input("🎂 Umur", min_value=3, max_value=8, step=1)
+    ageInput = st.number_input("🎂 Umur", min_value=4, max_value=8, step=1)
     genderInput = st.selectbox(
         "🚻 Jenis Kelamin", ["Pilih Jenis Kelamin", "Laki-laki", "Perempuan"]
     )
     descriptionInput = st.text_area("🚲 Deskripsi Anak (hobi dan minat, kepribadian)")
 
     st.subheader("Konfigurasi Percakapan")
-    deviceIdInput = st.text_input("⚙️ No. ID Perangkat", "")
+    if not st.session_state.deviceId:
+        deviceIdInput = st.text_input("⚙️ No. ID Perangkat", "")
+    else:
+        deviceIdInput = st.text_input("⚙️ No. ID Perangkat", st.session_state.deviceId)
     st.session_state.deviceId = deviceIdInput
     # durationInput = st.number_input("⏰ Durasi", min_value=3, step=2)
     sessionsInput = st.number_input("🗣️ Jumlah Sesi", min_value=1, step=1)
     
-    featureOptions = ["👄 Talk To Me", "🖐️ Math Adventure", "🔤 Spelling Game", "❓ Would You Rather"]
+    featureOptions = ["👄 Talk To Me", "🖐️ Math Adventures", "🔤 Spelling Games", "❓ Would You Rather"]
     selectedFeatures = st.pills("💬 Jenis Interaksi", featureOptions, selection_mode="multi")
 
     # untuk styling nya nanti lagi
@@ -52,7 +55,7 @@ with st.form("child_profile_form"):
 # print("testtt => ", st.session_state.durationQuestion)
 
 if st.session_state.configuration:
-
+# if saveConfiguration:
     if not (
         nameInput
         and ageInput
@@ -75,7 +78,7 @@ if st.session_state.configuration:
         st.error("Pilih setidaknya salah satu interaksi")
         st.stop()
 
-    topic_map = {"👄 Talk To Me": "talk_to_me", "🖐️ Math Adventure": "math_games", "🔤 Spelling Game": "spelling_games", "❓ Would You Rather": "would_you_rather"}
+    topic_map = {"👄 Talk To Me": "talk_to_me", "🖐️ Math Adventures": "math_games", "🔤 Spelling Games": "spelling_games", "❓ Would You Rather": "would_you_rather"}
     selectedFeatures = [topic_map.get(feature) for feature in selectedFeatures]
 
     durationInput = 0
@@ -90,7 +93,7 @@ if st.session_state.configuration:
         if "math_games" in selectedFeatures or "spelling_games" in selectedFeatures:
             # range = range(1, 31)
             questionInput = st.select_slider(
-                "🙋‍♂️ Jumlah Pertanyaan (Math Game, Spelling Game)",
+                "🙋‍♂️ Jumlah Pertanyaan (Math Adventure, Spelling Game)",
                 options=range(1, 31), value=1)
         startConvo = st.form_submit_button("Mulai Percakapan")
     
@@ -112,10 +115,10 @@ if st.session_state.configuration:
             )
 
             topic_param = TopicParams(
-                talk_to_me=TopicParams.TalkToMeParam(duration=durationInput),
+                talk_to_me=TopicParams.TalkToMeParam(duration=durationInput*60),
                 math_game=TopicParams.MathGameParam(total_question=questionInput),
                 spelling_game=TopicParams.SpellingGameParam(total_question=questionInput),
-                would_you_rather=TopicParams.WouldYouRatherParam(duration=durationInput),
+                would_you_rather=TopicParams.WouldYouRatherParam(duration=durationInput*60  ),
             )
 
             convo_input = StartConversationInput(
@@ -165,3 +168,22 @@ if st.session_state.configuration:
 # options = ["North", "East", "South", "West"]
 # selection = st.pills("Directions", options, selection_mode="multi")
 # st.markdown(f"Your selected options: {selection}.")
+st.markdown("""
+    <style>
+        button:hover{
+            border-color: #1e5677 !important;
+            color: #1e5677 !important;
+        }
+
+        button:active{
+            background-color: #1e5677 !important;
+            color: white !important;
+        }
+                
+        button:focus:not(:active) {
+            border-color: #1e5677 !important;
+            color: #1e5677 !important;
+        }  
+    
+    </style>
+""", unsafe_allow_html=True)

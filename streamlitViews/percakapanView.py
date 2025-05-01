@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 import pandas as pd
+from bson.json_util import dumps
 from dateutil import parser
 from datetime import datetime
 from pymongo import MongoClient
@@ -19,140 +20,161 @@ dummyMsg = [
 st.title("🤖 Percakapan Saat Ini 🧒")
 
 if not st.session_state.deviceId:
-    with st.form("device_id_form"):
+    placeholder = st.empty()
+    with placeholder.form("device_id_form"):
         deviceIdInput = st.text_input("No. ID Perangkat", "")
-        st.session_state.deviceId = deviceIdInput
         saveDeviceId = st.form_submit_button("Cari percakapan terakhir")
+        if saveDeviceId:
+            st.session_state.deviceId = deviceIdInput
+            placeholder.empty()
 
 if st.session_state.deviceId:
     deviceId = st.session_state.deviceId
-
-    st.subheader("Transkrip")
-    with st.container(border=True):
-        st.chat_message("user").write("test")
-        st.chat_message("ai").write("test")
-
-        list_conversation = None
-        try:
-            resp = requests.get(
-                f"http://localhost:11080/api/v1/pawpal/conversation/{deviceId}"
-            )
-            if resp.status_code == 200:
-                list_conversation = resp.json()
-        except Exception:
-            pass
-
-        if (
-            list_conversation is None
-        ):  # backend offline, connect to read-only demo purposes mongodb
-            _client = MongoClient(
-                "mongodb+srv://pawpal-demo-user:p78Q4EsqPfLmnvtb@sic-cluster.hcqho.mongodb.net/?retryWrites=true&w=majority&appName=SIC-Cluster"
-            )
-            _db = _client["pawpal_v2"]
-            _collection = _db["pawpal-conversation"]
-            list_conversation: list = _collection.find({"device_id": deviceId}).to_list()
-            st.warning("Backend tidak aktif, maka menggunakan alternatif database.")
-
-        if not list_conversation:
-            st.error("No conversation ever recorded from the provided device id")
-            st.info(
-                "Jika anda ingin melihat demo tampilan dan backend harus tidak berjalan, dapat menggunakan device_id `2b129436-1a2d-11f0-9045-6ac49b7e4ceb`"
-            )
-            st.stop()
-
-        list_conversation = sorted(
-            list_conversation, key=lambda x: x["created_datetime"], reverse=True
+    print("\ndevice id ", deviceId)
+    list_conversation = None
+    try:
+        resp = requests.get(
+            f"http://localhost:11080/api/v1/pawpal/conversation/{deviceId}"
         )
-        lastConversation = list_conversation[0]
-        # print(lastConversation)
-        # print("SESSIONNN ?? ", lastConversation["sessions"])
+        if resp.status_code == 200:
+            list_conversation = resp.json()
+            
+    except Exception:
+        pass
 
-        for session in lastConversation["sessions"]:
-            dummyMsg.clear()
-            for message in session["messages"]:
-                # Check message type and handle accordingly
-                if isinstance(message, dict):
-                    if message["type"] == "ai":
-                        sender = "bot"
-                        text = message["content"]
-                    elif message["type"] == "human":
-                        sender = "user"
-                        # Assuming content is a list
-                        if (
-                            isinstance(message["content"], list)
-                            and len(message["content"]) > 0
-                        ):
-                            text = message["content"][0]["text"]
-                        else:
-                            text = message["content"]
-                    else:
-                        continue  # Skip other types of messages
+    if (
+        list_conversation is None
+    ):  # backend offline, connect to read-only demo purposes mongodb
+        _client = MongoClient(
+            "mongodb+srv://pawpal-demo-user:p78Q4EsqPfLmnvtb@sic-cluster.hcqho.mongodb.net/?retryWrites=true&w=majority&appName=SIC-Cluster"
+        )
+        _db = _client["pawpal_v2"]
+        _collection = _db["pawpal-conversation"]
+        list_conversation: list = _collection.find({"device_id": deviceId}).to_list()
+        st.warning("Backend tidak aktif, maka menggunakan alternatif database.")
 
-                    # Append formatted message to the dummyMsg list
-                    dummyMsg.append({"sender": sender, "text": text})
+    if not list_conversation:
+        st.error("Tidak ada percakapan yang terekam dari nomor ID perangkat yang dimasukkan, cek kembali pada pengaturan")
+        st.stop()
 
-        # -------------------
-        convoStartTime = lastConversation["sessions"][0]["messages"][2][
-            "response_metadata"
-        ]["created_at"]
-        convoStartTime = parser.isoparse(convoStartTime)
-        convoStartTimeDate = convoStartTime.strftime("%d %B %Y")
-        convoStartTimeHour = convoStartTime.strftime("%H:%M")
+    # st.json(dumps(list_conversation))  
+    lastConversation = list_conversation[-1]
+    # lastSession = lastConversation["sessions"]
+    # print(lastConversation)
+    
+    messageResult = []
+    # for session in lastConversation["sessions"]:
+    #     # dummyMsg.clear()
+    lastSession = lastConversation["sessions"][-1]
+    for message in lastSession["messages"]:
+        # Check message type and handle accordingly
+        if isinstance(message, dict):
+            if message["type"] == "ai":
+                sender = "ai"
+                text = message["content"]
+            elif message["type"] == "human":
+                sender = "user"
+                # Assuming content is a list
+                # if (
+                #     isinstance(message["content"], list)
+                #     and len(message["content"]) > 0
+                # ):
+                text = message["content"][0]["text"]
+                # else:
+                #     text = message["content"]
+            else:
+                continue  # Skip other types of messages
 
-        convoEndTime = datetime.now()
-        for message in reversed(lastConversation["sessions"][0]["messages"]):
-            if (
-                "response_metadata" in message
-                and "created_at" in message["response_metadata"]
-            ):
-                convoEndTime = message["response_metadata"]["created_at"]
-                break
+            # Append formatted message to the dummyMsg list
+            messageResult.append({"sender": sender, "text": text})
 
-        convoEndTime = parser.isoparse(convoEndTime)
-        convoEndTimeHour = convoEndTime.strftime("%H:%M")
+    # -------------------
+    # st.subheader("Transkrip")
+    with st.container(border=True):
+        for msg in messageResult:
+            with st.chat_message(msg["sender"]):
+                st.write(msg["text"])
 
-        col1, col2 = st.columns(2)
-        with col1:
-            st.subheader("Percakapan Terakhir")
-            st.markdown(
-                f"""
-            <div style="
-                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-                font-family: 'Helvetica', sans-serif;
-                line-height: 1.6;
-                padding-bottom: 20px;
-            ">
-                <div style="margin-bottom: 6px">
-                    <span style="margin-right: 20px;">🗓️ {convoStartTimeDate}</span>
-                    <span>⏰ {convoStartTimeHour} - {convoEndTimeHour}</span>
-                    </div>
-            </div>
-        """,
-                unsafe_allow_html=True,
-            )
-        with col2:
-            st.subheader("Perasaan")
-            st.markdown(
-                """
-            <div style="
-                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-                font-family: 'Helvetica', sans-serif;
-                line-height: 1.6;
-                padding-bottom: 20px;
-            ">
-                <div style="margin-bottom: 6px">
-                    <span style="margin-right: 20px;">
-                        🤩 Senang
-                    </span>
-            </div>
-            """,
-                unsafe_allow_html=True,
-            )
+st.markdown("""
+    <style>
+    
+    button:hover{
+        border-color: #1e5677 !important;
+        color: #1e5677 !important;
+    }
 
-# with st.expander("💬 Transkrip Percakapan"):
-    # if dummyMsg:
-    #     for msg in dummyMsg:
-    #         with st.chat_message(msg["sender"]):
-    #             st.write(msg["text"])
-    # else:
-    #     st.write("Belum ada percakapan yang dimulai!")
+    button:active{
+        background-color: #1e5677 !important;
+        color: white !important;
+    }
+            
+    button:focus:not(:active) {
+        border-color: #1e5677 !important;
+        color: #1e5677 !important;
+    }
+            
+    /* Geser avatar user ke kanan */
+    div[data-testid="stChatMessage"] div[data-testid="stChatMessageAvatarUser"] {
+        order: 2; /* Biar muncul setelah pesan */
+        margin-left: auto;
+        margin-right: 0;
+        background-color: #fcc06b;
+    }
+            
+    div[data-testid="stChatMessage"] div[data-testid="stChatMessageAvatarAssistant"] {
+        padding: 1rem;
+        background-color: #1e5677;
+    }
+
+    /* Geser konten pesan ke kiri */
+    div[data-testid="stChatMessage"] div[data-testid="stChatMessageContent"] {
+        order: 1;
+    }
+
+    /* Buat layout flex horizontal (jika belum) */
+    div[data-testid="stChatMessage"] {
+        gap: 1rem;
+    }
+    
+    div[data-testid="stChatMessage"] div[data-testid="stChatMessageAvatarUser"] svg {
+        color: #976216;
+    }
+
+            
+    div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatarUser"]) p {
+        text-align: right;
+            color: white;
+    }
+            
+    div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatarUser"]) {
+        margin-left: 6rem;
+        background-color: #1e5677;
+    }
+            
+    div[data-testid="stChatMessage"] div[data-testid="stChatMessageAvatarAssistant"] svg {
+        color: white;
+    }
+            
+    div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatarAssistant"]) {
+        margin-right: 6rem;
+        background-color: #ededed;
+        padding: 1rem;
+    }
+            
+    @media (prefers-color-scheme: dark) {
+        div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatarAssistant"]) p {
+        
+            color: white;
+        }
+    }
+            
+            
+            
+    div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatarAssistant"]) p {
+            
+        
+    }
+            
+    
+    </style>
+""", unsafe_allow_html=True)
