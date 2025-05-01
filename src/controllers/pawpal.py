@@ -243,6 +243,10 @@ def pawpal_router(
                                         )
                                         logger.info("Sending audio to device")
                                         if stream_audio == "http":
+                                            """
+                                            we send_text "speaker;filename", then we save the audio into static folder.
+                                            then client will need to access the static folder with the provided filename
+                                            """
                                             logger.info(f"Saving audio to '{STATIC_AUDIO_PATH}' as file")
                                             audio_array, sample_rate = sf.read(BytesIO(tts_audio_data), dtype="int16")
                                             audio_filename = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S%f.wav")
@@ -251,6 +255,10 @@ def pawpal_router(
                                             await ws_manager.send_text(websocket=websocket, message=f"{_action};{audio_filename}")
                                             logger.info("Sent the audio filename to client.")
                                         elif stream_audio == "device":
+                                            """
+                                            we don't need to send any text to client, since this will play to server device
+                                            or save as filename
+                                            """
                                             logger.info("Playing audio through device")
                                             audio_array, sample_rate = sf.read(BytesIO(tts_audio_data), dtype="int16")
                                             try:
@@ -262,6 +270,9 @@ def pawpal_router(
                                                 logger.info(f"failed to play due to unsupported OS, will into file '{audio_filename}' in {STATIC_AUDIO_PATH}")
                                                 sf.write(STATIC_AUDIO_PATH / audio_filename, audio_array, samplerate=sample_rate)
                                         else:
+                                            """
+                                            default websocket send_text for telling it will be speaker, then stream with chunks
+                                            """
                                             await ws_manager.send_text(websocket=websocket, message=_action)
                                             logger.info("Streaming audio through websocket to client.")
                                             await ws_manager.send_audio(
@@ -272,6 +283,9 @@ def pawpal_router(
 
                                         workflow_input = Command(resume="")
                                     elif _action == "microphone":
+                                        """
+                                        server will confirm to client we will need microphone, then client will stream us with chunking
+                                        """
                                         await ws_manager.send_text(websocket=websocket, message=_action)
                                         logger.info(
                                             "Request audio recorded from microphone"
@@ -325,7 +339,7 @@ def pawpal_router(
         with open("tests/test.wav", "rb") as f:
             await ws_manager.send_audio(
                 websocket=websocket,
-                audio_data=f.read()
+                audio_data=f.read(),
             )
 
         logger.info("Trying to receive chunked audio from client")
