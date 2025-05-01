@@ -152,7 +152,7 @@ def pawpal_router(
         return new_conversation_doc
 
     @router.websocket("/conversation/{device_id}")
-    async def conversation(websocket: WebSocket, device_id: str, stream_audio: Literal["websocket", "http"] = "websocket"):
+    async def conversation(websocket: WebSocket, device_id: str, stream_audio: Literal["websocket", "http", "device"] = "websocket"):
         await ws_manager.connect(websocket=websocket)
         logger.info(f"Device '{device_id}' has connected to server")
         try:
@@ -250,6 +250,17 @@ def pawpal_router(
                                             logger.info(f"Saved the audio file '{audio_filename}' into '{STATIC_AUDIO_PATH}'")
                                             await ws_manager.send_text(websocket=websocket, message=f"{_action};{audio_filename}")
                                             logger.info("Sent the audio filename to client.")
+                                        elif stream_audio == "device":
+                                            logger.info("Playing audio through device")
+                                            audio_array, sample_rate = sf.read(BytesIO(tts_audio_data), dtype="int16")
+                                            try:
+                                                import sounddevice as sd
+                                                sd.play(data=audio_array, samplerate=sample_rate)
+                                                sd.wait()
+                                            except OSError:
+                                                audio_filename = datetime.now(timezone.utc).strftime("conversation-%Y%m%d_%H%M%S%f.wav")
+                                                logger.info(f"failed to play due to unsupported OS, will into file '{audio_filename}' in {STATIC_AUDIO_PATH}")
+                                                sf.write(STATIC_AUDIO_PATH / audio_filename, audio_array, samplerate=sample_rate)
                                         else:
                                             await ws_manager.send_text(websocket=websocket, message=_action)
                                             logger.info("Streaming audio through websocket to client.")
