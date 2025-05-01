@@ -2,6 +2,8 @@ from typing import Annotated, List, TypeAlias, Union
 from typing_extensions import TypedDict
 from pydantic import BaseModel, Field
 
+from datetime import datetime
+
 from ....utils.typex import EmotionType
 
 
@@ -40,10 +42,14 @@ class TopicResults(BaseModel):
     class TalkToMeResult(BaseModel):
         class _Extraction(BaseExtractionTopic): ...
         extraction: _Extraction
+        start_datetime: datetime
+        modified_datetime: datetime
 
     class MathGameResult(BaseModel):
         class _Extract(BaseExtractionTopic): ...
         extraction: _Extract
+        start_datetime: datetime
+        modified_datetime: datetime
 
     class SpellingGameResult(BaseModel): ...
 

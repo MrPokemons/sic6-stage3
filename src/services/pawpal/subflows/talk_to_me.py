@@ -182,15 +182,19 @@ class TalkToMe(Agentic):
         _extracted_result: TopicResults.TalkToMeResult._Extraction = await model_with_session_result.ainvoke(
             last_session.get_messages()
         )
+
+        modified_datetime = datetime.now(timezone.utc)
         state.add_result_to_last_session(
             session_type="talk_to_me",
             result=TopicResults.TalkToMeResult(
-                extraction=_extracted_result
+                extraction=_extracted_result,
+                start_datetime=state.start_datetime,
+                modified_datetime=modified_datetime,
             )
         )
         return Command(
             update={
-                "modified_datetime": datetime.now(timezone.utc),
+                "modified_datetime": modified_datetime,
                 "messages": [*messages, end_conversation_message],
                 "sessions": state.get_sessions(deep=True),
                 "from_node": "check_session",
