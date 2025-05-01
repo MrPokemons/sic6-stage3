@@ -236,23 +236,13 @@ def pawpal_router(
                                         )
                                         continue
 
-                                    if stream_audio == "websocket":  # if http will send inside the speaker instead
-                                        await ws_manager.send_text(websocket=websocket, message=_action)
-
                                     logger.info(f"Agentic sent Action: {_action}")
                                     if _action == "speaker":
                                         tts_audio_data = tts.synthesize(
                                             interrupt_schema["message"]
                                         )
                                         logger.info("Sending audio to device")
-                                        if stream_audio == "websocket":
-                                            logger.info("Streaming audio through websocket to client.")
-                                            await ws_manager.send_audio(
-                                                websocket=websocket,
-                                                audio_data=tts_audio_data,
-                                            )
-                                            logger.info("Audio has been sent to client, server proceed to continue agentic chat")
-                                        else:
+                                        if stream_audio == "http":
                                             logger.info(f"Saving audio to '{STATIC_AUDIO_PATH}' as file")
                                             audio_array, sample_rate = sf.read(BytesIO(tts_audio_data), dtype="int16")
                                             audio_filename = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S%f.wav")
@@ -260,9 +250,18 @@ def pawpal_router(
                                             logger.info(f"Saved the audio file '{audio_filename}' into '{STATIC_AUDIO_PATH}'")
                                             await ws_manager.send_text(websocket=websocket, message=f"{_action};{audio_filename}")
                                             logger.info("Sent the audio filename to client.")
+                                        else:
+                                            await ws_manager.send_text(websocket=websocket, message=_action)
+                                            logger.info("Streaming audio through websocket to client.")
+                                            await ws_manager.send_audio(
+                                                websocket=websocket,
+                                                audio_data=tts_audio_data,
+                                            )
+                                            logger.info("Audio has been sent to client, server proceed to continue agentic chat")
 
                                         workflow_input = Command(resume="")
                                     elif _action == "microphone":
+                                        await ws_manager.send_text(websocket=websocket, message=_action)
                                         logger.info(
                                             "Request audio recorded from microphone"
                                         )
