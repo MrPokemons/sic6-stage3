@@ -352,7 +352,7 @@ def pawpal_router(
         logger.info("Sent the audio filename to client.")
 
         # Microphone
-        await ws_manager.send_text(websocket=websocket, message=f"microphone;{audio_filename}")
+        await ws_manager.send_text(websocket=websocket, message="microphone;")
         logger.info("Trying to receive chunked audio from client")
         audio_array, sample_rate = await ws_manager.recv_audio(websocket=websocket)
 
