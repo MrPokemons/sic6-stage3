@@ -94,15 +94,13 @@ class TalkToMe(Agentic):
     async def _listening(
         state: TTMSessionState, config: ConfigSchema
     ) -> Command[Literal["responding"]]:
-        curr_session = state.sessions[-1]
-        if curr_session.type != "talk_to_me":
-            raise Exception(
-                f"Not the appropriate type {curr_session.model_dump(mode='json')}"
-            )
-
+        _ = state.verify_last_session(session_type="talk_to_me")
         user_response: str = interrupt([InterruptSchema(action="microphone")])
         messages = [HumanMessage(content=[{"type": "text", "text": user_response}])]
-        curr_session.messages.extend(messages)
+        state.add_message_to_last_session(
+            session_type="talk_to_me",
+            messages=messages,
+        )
         return Command(
             update={
                 "messages": messages,
@@ -117,14 +115,12 @@ class TalkToMe(Agentic):
     async def _responding(
         cls, state: TTMSessionState, config: ConfigSchema
     ) -> Command[Literal["check_session"]]:
-        curr_session = state.sessions[-1]
-        if curr_session.type != "talk_to_me":
-            raise Exception(
-                f"Not the appropriate type {curr_session.model_dump(mode='json')}"
-            )
-
+        _ = state.verify_last_session(session_type="talk_to_me")
         response_message = await cls.model.ainvoke(state.messages)
-        curr_session.messages.append(response_message)
+        state.add_message_to_last_session(
+            session_type="talk_to_me",
+            messages=response_message
+        )
         return Command(
             update={
                 "messages": response_message,
@@ -137,11 +133,7 @@ class TalkToMe(Agentic):
 
     @classmethod
     async def _check_session(cls, state: TTMSessionState, config: ConfigSchema) -> Command[Literal["listening", END]]:  # type: ignore
-        curr_session = state.sessions[-1]
-        if curr_session.type != "talk_to_me":
-            raise Exception(
-                f"Not the appropriate type {curr_session.model_dump(mode='json')}"
-            )
+        last_session = state.verify_last_session(session_type="talk_to_me")
 
         configurable = config["configurable"]
         ongoing_duration = (datetime.now(timezone.utc) - state.start_datetime).seconds
@@ -170,12 +162,16 @@ class TalkToMe(Agentic):
             ),
         ]
         end_conversation_message = await cls.model.ainvoke([*state.messages, *messages])
-        curr_session.messages.extend([*messages, end_conversation_message])
+        state.add_message_to_last_session([*messages, end_conversation_message])
         model_with_session_result = cls.model.with_structured_output(
             TopicResults.TalkToMeResult
         )
-        curr_session.result = await model_with_session_result.ainvoke(
-            curr_session.get_messages()
+        session_result = await model_with_session_result.ainvoke(
+            last_session.get_messages()
+        )
+        state.add_result_to_last_session(
+            session_type="talk_to_me",
+            result=session_result
         )
         return Command(
             update={
