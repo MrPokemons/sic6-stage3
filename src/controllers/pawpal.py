@@ -3,12 +3,13 @@ import asyncio
 import logging
 import numpy as np
 import soundfile as sf
-from typing import Annotated, List, Optional, Dict, Union, Tuple
+from typing import Annotated, List, Optional, Dict, Union, Tuple, Literal
 from io import BytesIO
 from bson.objectid import ObjectId
 
 from fastapi.routing import APIRouter
 from fastapi.websockets import WebSocket, WebSocketDisconnect
+from fastapi.responses import Response, FileResponse
 from pydantic import BaseModel, PositiveInt
 
 from langgraph.types import Command, Interrupt
@@ -146,7 +147,7 @@ def pawpal_router(
         return new_conversation_doc
 
     @router.websocket("/conversation/{device_id}")
-    async def conversation(websocket: WebSocket, device_id: str):
+    async def conversation(websocket: WebSocket, device_id: str, stream_audio: Literal["websocket", "http"] = "websocket"):
         await ws_manager.connect(websocket=websocket)
         logger.info(f"Device '{device_id}' has connected to server")
         try:
@@ -230,18 +231,24 @@ def pawpal_router(
                                         )
                                         continue
 
-                                    await ws_manager.send_text(websocket=websocket, message=_action)
+                                    if stream_audio == "websocket":  # if http will send inside the speaker instead
+                                        await ws_manager.send_text(websocket=websocket, message=_action)
+
                                     logger.info(f"Agentic sent Action: {_action}")
                                     if _action == "speaker":
                                         tts_audio_data = tts.synthesize(
                                             interrupt_schema["message"]
                                         )
                                         logger.info("Sending audio to device")
-                                        await ws_manager.send_audio(
-                                            websocket=websocket,
-                                            audio_data=tts_audio_data,
-                                        )
-                                        logger.info("Sent, continue chat.")
+                                        if stream_audio == "websocket":
+                                            logger.info("Streaming audio through websocket to client.")
+                                            await ws_manager.send_audio(
+                                                websocket=websocket,
+                                                audio_data=tts_audio_data,
+                                            )
+                                        else:
+                                            ...
+                                        logger.info("Audio has been sent to client, server proceed to continue agentic chat")
                                         workflow_input = Command(resume="")
                                     elif _action == "microphone":
                                         logger.info(
@@ -287,7 +294,6 @@ def pawpal_router(
 
         logger.info("Testing successfully been executed")
 
-
     @router.websocket("/conversation-chunking-test")
     async def conversation_chunking_test(websocket: WebSocket):
         await ws_manager.connect(websocket=websocket)
@@ -314,5 +320,15 @@ def pawpal_router(
             sf.write(_fp, data=audio_array, samplerate=sample_rate)
 
         logger.info("Testing successfully been executed")
+
+    @router.get("/http-wav-response-test")
+    async def get_http_wav_response_test():
+        with open("tests/test1.wav", "rb") as f:
+            wav_bytes = f.read()
+            return Response(content=wav_bytes, media_type="audio/wav")
+
+    @router.get("/http-wav-file-test")
+    async def get_http_wav_file_test():
+        return FileResponse("tests/test1.wav", media_type="audio/wav", filename="example.wav")
 
     return router
