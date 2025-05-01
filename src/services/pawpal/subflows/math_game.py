@@ -1,6 +1,5 @@
-import copy
 import secrets
-from typing import List, Optional, Literal, Annotated, Self
+from typing import List, Optional, Literal, Annotated
 from datetime import datetime, timezone
 from pydantic import BaseModel, Field
 
@@ -204,11 +203,10 @@ class MathGame(Agentic):
 
     @classmethod
     async def _ask_question(cls, state: MGSessionState, config: ConfigSchema) -> Command[Literal["listening", END]]: # type: ignore
-        
         ...
 
     @classmethod
-    async def _listening(cls, state: MGSessionState, config: ConfigSchema) -> Command[Literal["eval"]]:
+    async def _listening(cls, state: MGSessionState, config: ConfigSchema) -> Command[Literal["evaluate"]]:
         ...
 
     @classmethod
