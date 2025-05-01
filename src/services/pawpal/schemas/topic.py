@@ -2,6 +2,8 @@ from typing import Annotated, List, TypeAlias, Union
 from typing_extensions import TypedDict
 from pydantic import BaseModel, Field
 
+from ....utils.typex import EmotionType
+
 
 class TopicParams(TypedDict):
     class TalkToMeParam(TypedDict):
@@ -22,17 +24,26 @@ class TopicParams(TypedDict):
     would_you_rather: WouldYouRatherParam
 
 
+class BaseExtractionTopic(BaseModel):
+    overview: str = Field(
+        description="Summarize the chat history, oriented to user's progress and achievement"
+    )
+    emotion: EmotionType = Field(
+        description=f"Based on the user's response behaviour, analyze the user's overall emotion based on the provided list of emotions: {', '.join(EmotionType.__args__)}"
+    )
+    keypoints: List[str] = Field(
+        description="List major event or behaviour for overall of the conversation, it can be achievement from the user or something that user need to know about themselve throughout the conversation"
+    )
+
+
 class TopicResults(BaseModel):
     class TalkToMeResult(BaseModel):
-        overview: str = Field(description="Summarize the chat history")
-        emotion: str = Field(
-            description="Analyze the emotion based on the behaviour and chatting style, or how he/she feeling from the chat history provided"
-        )
-        keypoints: List[str] = Field(
-            description="List the key points from the chat history, which pointing out the important section or behaviour from the chat history provided"
-        )
+        class _Extraction(BaseExtractionTopic): ...
+        extraction: _Extraction
 
-    class MathGameResult(BaseModel): ...
+    class MathGameResult(BaseModel):
+        class _Extract(BaseExtractionTopic): ...
+        extraction: _Extract
 
     class SpellingGameResult(BaseModel): ...
 

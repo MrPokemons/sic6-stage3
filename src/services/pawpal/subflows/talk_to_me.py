@@ -177,14 +177,16 @@ class TalkToMe(Agentic):
         end_conversation_message = await cls.model.ainvoke([*state.messages, *messages])
         state.add_message_to_last_session([*messages, end_conversation_message])
         model_with_session_result = cls.model.with_structured_output(
-            TopicResults.TalkToMeResult
+            TopicResults.TalkToMeResult._Extraction
         )
-        session_result = await model_with_session_result.ainvoke(
+        _extracted_result: TopicResults.TalkToMeResult._Extraction = await model_with_session_result.ainvoke(
             last_session.get_messages()
         )
         state.add_result_to_last_session(
             session_type="talk_to_me",
-            result=session_result
+            result=TopicResults.TalkToMeResult(
+                extraction=_extracted_result
+            )
         )
         return Command(
             update={
