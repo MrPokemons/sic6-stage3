@@ -7,10 +7,6 @@ from logging.config import dictConfig
 from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from dotenv import load_dotenv
-
-load_dotenv()
-
 
 ENV_FILE = os.getenv("ENV_FILE")
 if ENV_FILE is None:
@@ -29,12 +25,25 @@ class Settings(BaseSettings):
         NAME: str
         URL: str
 
+    class _DeepGram(BaseModel):
+        API_KEYS: str
+
+    class _ElevenLabs(BaseModel):
+        API_KEYS: str
+
     ENV_TYPE: Literal["local", "development", "production"]
     APP: _App
     MONGODB: _MongoDB
     MODEL: _Model
+    DEEPGRAM: _DeepGram
+    ELEVENLABS: _ElevenLabs
 
-    model_config = SettingsConfigDict(env_file=ENV_FILE, env_nested_delimiter="__")
+    model_config = SettingsConfigDict(
+        env_file=ENV_FILE,
+        env_file_encoding="utf-8",
+        env_nested_delimiter="__",
+        extra="ignore",
+    )
 
     def configure_logging(self):
         os.makedirs("logs", exist_ok=True)
