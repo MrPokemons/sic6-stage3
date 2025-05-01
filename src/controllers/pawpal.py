@@ -17,8 +17,8 @@ from pydantic import BaseModel, PositiveInt
 from langgraph.types import Command, Interrupt
 from langgraph.graph import END
 
-from ..services.stt import SpeechToText
-from ..services.tts import TextToSpeech
+from ..services.stt import SpeechToTextCollection
+from ..services.tts import TextToSpeechCollection
 from ..services.pawpal import PawPal
 from ..services.pawpal.schemas.config import ConfigSchema, ConfigurableSchema
 from ..services.pawpal.schemas.user import UserData
@@ -119,8 +119,8 @@ class ConnectionManager:
 
 def pawpal_router(
     pawpal: PawPal,
-    stt: SpeechToText,
-    tts: TextToSpeech,
+    stt_coll: SpeechToTextCollection,
+    tts_coll: TextToSpeechCollection,
     logger: logging.Logger,
 ):
     router = APIRouter(prefix="/api/v1/pawpal", tags=["pawpal"])
@@ -240,8 +240,8 @@ def pawpal_router(
 
                                     logger.info(f"Agentic sent Action: {_action}")
                                     if _action == "speaker":
-                                        tts_audio_data = tts.synthesize(
-                                            interrupt_schema["message"]
+                                        tts_audio_data = await tts_coll.synthesize_async(
+                                            interrupt_schema["message"],
                                         )
                                         logger.info("Sending audio to device")
                                         if stream_audio == "http":
@@ -293,8 +293,10 @@ def pawpal_router(
                                             "Request audio recorded from microphone"
                                         )
                                         audio_array, sample_rate = await ws_manager.recv_audio(websocket=websocket)
+                                        buffer = BytesIO()  # convert into bytes for processing to stt_coll
+                                        sf.write(buffer, audio_array, sample_rate, format='WAV')
                                         logger.info("Audio has been received, parsing to STT model")
-                                        user_answer = stt.transcribe(audio_array, sample_rate=sample_rate)
+                                        user_answer = await stt_coll.transcribe_raw_async(buffer.getvalue())
                                         logger.info(
                                             f'Done parsing, continue chat with new user answer "{user_answer}".'
                                         )
