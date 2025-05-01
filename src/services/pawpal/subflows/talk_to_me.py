@@ -86,10 +86,10 @@ class TalkToMe(Agentic):
                 [InterruptSchema(action="speaker", message=last_ai_msg.text())]
             )
         elif state.from_node == "check_session":
-            last_ai_msg = state.last_ai_message()
-            if last_ai_msg is None:
-                raise Exception(f"How no last ai message? {state.model_dump(mode='json')}")
             if state.next_node == END:
+                last_ai_msg = state.last_ai_message()
+                if last_ai_msg is None:
+                    raise Exception(f"How no last ai message? {state.model_dump(mode='json')}")
                 interrupt(
                     [
                         InterruptSchema(
