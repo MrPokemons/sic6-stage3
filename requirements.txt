@@ -13,7 +13,9 @@ certifi==2025.1.31
 cffi==1.17.1
 charset-normalizer==3.4.1
 click==8.1.8
+deepgram-sdk==3.11.0
 dnspython==2.7.0
+elevenlabs==1.57.0
 fastapi==0.115.8
 filelock==3.18.0
 frozenlist==1.5.0
