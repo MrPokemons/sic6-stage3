@@ -4,6 +4,7 @@ os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "1"
 import logging
 import uvicorn
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from langchain_ollama import ChatOllama
@@ -46,6 +47,8 @@ pawpal.set_agentic_cls(model=model, mongodb_engine=mongodb_engine)
 # App Router
 app = FastAPI()
 app.add_middleware(BaseHTTPMiddleware, dispatch=log_middleware)
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 app.include_router(
     pawpal_router(
