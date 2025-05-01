@@ -1,5 +1,3 @@
-import copy
-
 from typing import Literal
 from datetime import datetime, timezone
 from pydantic import Field
@@ -13,7 +11,6 @@ from langgraph.checkpoint.memory import MemorySaver
 from ..agentic import Agentic
 from ..schemas.config import ConfigSchema, ConfigurableSchema
 from ..schemas.state import SessionState, InterruptSchema
-from ..schemas.document import SessionResult
 from ..schemas.topic import TopicResults
 from ..utils import prompt_loader
 
