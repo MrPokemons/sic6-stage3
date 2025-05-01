@@ -49,17 +49,15 @@ class TalkToMe(Agentic):
             ),
         ]
         opening_message = await cls.model.ainvoke([*state.messages, *messages])
-        state.sessions.append(
-            SessionResult(
-                type="talk_to_me",
-                messages=[*messages, opening_message],
-            )
+        state.add_session(
+            session_type="talk_to_me",
+            messages=[*messages, opening_message]
         )
         return Command(
             update={
                 "start_datetime": datetime.now(timezone.utc),
                 "messages": [*messages, opening_message],
-                "sessions": copy.deepcopy(state.sessions),
+                "sessions": state.get_sessions(deep=True),
                 "from_node": "start",
                 "next_node": "listening",
             },
@@ -111,7 +109,7 @@ class TalkToMe(Agentic):
         return Command(
             update={
                 "messages": messages,
-                "sessions": copy.deepcopy(state.sessions),
+                "sessions": state.get_sessions(deep=True),
                 "from_node": "listening",
                 "next_node": "responding",
             },
@@ -133,7 +131,7 @@ class TalkToMe(Agentic):
         return Command(
             update={
                 "messages": response_message,
-                "sessions": copy.deepcopy(state.sessions),
+                "sessions": state.get_sessions(deep=True),
                 "from_node": "responding",
                 "next_node": "check_session",
             },
@@ -185,7 +183,7 @@ class TalkToMe(Agentic):
         return Command(
             update={
                 "messages": [*messages, end_conversation_message],
-                "sessions": copy.deepcopy(state.sessions),
+                "sessions": state.get_sessions(deep=True),
                 "from_node": "check_session",
                 "next_node": END,
             },
