@@ -89,8 +89,10 @@ class ConnectionManager:
         list_chunk: List[Optional[np.ndarray]] = None
         sample_rate = None
         while 1:
-            packet = await websocket.receive_bytes()
+            packet = await asyncio.wait_for(websocket.receive_bytes(), timeout=15)
+            self.logger.info(f"\n\nReceived packet")
             metadata, chunk = self.message_packer.unpack(packet=packet)
+            self.logger.info(f"Client's Metadata: {metadata}\n\n")
             if list_chunk is None:
                 list_chunk = [None] * metadata["total_seq"]
 
@@ -103,10 +105,10 @@ class ConnectionManager:
             if metadata["seq"] == metadata["total_seq"]:
                 break
 
-        missing_chunk_index_str = ', '.join([str(i) for i in range(len(list_chunk)) if list_chunk[i] is None])
-        if missing_chunk_index_str:
+        total_missing_chunks = len([1 for i in range(len(list_chunk)) if list_chunk[i] is None])
+        if total_missing_chunks:
             self.logger.warning(
-                f"Missing chunk in index: {missing_chunk_index_str}"
+                f"Total missing chunk: {total_missing_chunks}"
             )
         audio_array = np.concatenate([_c for _c in list_chunk if isinstance(_c, np.ndarray)])
         return audio_array, sample_rate
