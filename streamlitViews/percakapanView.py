@@ -69,6 +69,8 @@ if st.session_state.deviceId:
     for message in lastSession["messages"]:
         # Check message type and handle accordingly
         if isinstance(message, dict):
+            # if message["content"] == "":
+            #     continue
             if message["type"] == "ai":
                 sender = "ai"
                 text = message["content"]
@@ -80,6 +82,8 @@ if st.session_state.deviceId:
                 #     and len(message["content"]) > 0
                 # ):
                 text = message["content"][0]["text"]
+                if not text:  # This covers both None and empty string
+                    continue
                 # else:
                 #     text = message["content"]
             else:
@@ -90,7 +94,7 @@ if st.session_state.deviceId:
 
     # -------------------
     # st.subheader("Transkrip")
-    with st.container(border=True):
+    with st.container(border=True, height=500):
         for msg in messageResult:
             with st.chat_message(msg["sender"]):
                 st.write(msg["text"])

@@ -195,6 +195,8 @@ if st.session_state.deviceId:
                     #     and len(message["content"]) > 0
                     # ):
                     text = message["content"][0]["text"]
+                    if not text:
+                        continue
                     # else:
                     #     text = message["content"]
                 else:
@@ -292,8 +294,8 @@ if st.session_state.deviceId:
             st.subheader("Transkrip Percakapan")
             with st.container(height=500):
                 for msg in session.message:
-                    if not msg["text"].strip():
-                        continue
+                    # if not msg["text"].strip():
+                    #     continue
                     with st.chat_message(msg["sender"]):
                         st.write(msg["text"])
             
