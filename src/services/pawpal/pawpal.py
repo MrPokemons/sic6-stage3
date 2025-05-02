@@ -104,7 +104,7 @@ class PawPal(Agentic):
                     {
                         "type": "text",
                         "text": (
-                            f"Say something fun and playful, like PawPal is drawing a surprise session from a magical mystery box. Build excitement by adding a sense of suspense, then, in just 1-2 sentences, reveal the name of the next session, which will be '{next_feature.replace('_', ' ').capitalize()}'. Make sure the tone is engaging and friendly, keeping it short, exciting, and direct. The message should be quick and impactful to keep the child interested, so don’t exceed 2 sentences!"
+                            f"Say something fun and playful, like PawPal is drawing a surprise session from a magical mystery box. Build excitement by adding a sense of suspense, then, in just 1-2 sentences, reveal the name of the next session, which will be '{next_feature.replace('_', ' ').capitalize()}'. Make sure the tone is engaging and friendly, keeping it short, exciting, and direct. The message should be quick and impactful to keep the child interested, so don't exceed 2 sentences!"
                         )
                         + "\n"
                         + prompt_loader.language_template.format(
