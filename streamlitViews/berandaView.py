@@ -21,32 +21,47 @@ if 'page' not in st.session_state:
 
 wordDictionary = {
     "Kata Asli": [
-        "Kucing", "Mobil", "Makan", "Tidur", "Minum",
-        "Sepeda", "Sekolah", "Buku", "Pensil", "Hujan"
+        "Kucing",
+        "Mobil",
+        "Makan",
+        "Tidur",
+        "Minum",
+        "Sepeda",
+        "Sekolah",
+        "Buku",
+        "Pensil",
+        "Hujan",
     ],
     "Pelafalan Anak": [
-        "Cicing", "Obil", "Maka", "Tiduh", "Minuh",   
-        "Sepeda", "Sekola", "Buku", "Pensel", "Ujan"  
+        "Cicing",
+        "Obil",
+        "Maka",
+        "Tiduh",
+        "Minuh",
+        "Sepeda",
+        "Sekola",
+        "Buku",
+        "Pensel",
+        "Ujan",
     ],
-    "Koreksi": [
-        "✅", "✅", "✅", "✅", "❌",
-        "✅", "✅", "✅", "❌", "✅"
-    ]
+    "Koreksi": ["✅", "✅", "✅", "✅", "❌", "✅", "✅", "✅", "❌", "✅"],
 }
 
 mathDictionary = {
     "Pertanyaan": [
-        "1 + 1?", "2 + 3?", "4 - 2?", "5 x 2?", "10 : 2?",
-        "3 + 5?", "9 - 4?", "6 x 3?", "12 : 4?", "7 + 8?"
+        "1 + 1?",
+        "2 + 3?",
+        "4 - 2?",
+        "5 x 2?",
+        "10 : 2?",
+        "3 + 5?",
+        "9 - 4?",
+        "6 x 3?",
+        "12 : 4?",
+        "7 + 8?",
     ],
-    "Jawaban Anak": [
-        "2", "4", "2", "12", "5",     
-        "7", "5", "18", "2", "15"     
-    ],
-    "Koreksi": [
-        "✅", "❌", "✅", "❌", "✅",
-        "❌", "✅", "✅", "❌", "✅"
-    ]
+    "Jawaban Anak": ["2", "4", "2", "12", "5", "7", "5", "18", "2", "15"],
+    "Koreksi": ["✅", "❌", "✅", "❌", "✅", "❌", "✅", "✅", "❌", "✅"],
 }
 
 reasoningGames = {
@@ -60,32 +75,21 @@ reasoningGames = {
         "Kalau ada pintu ajaib, kamu mau pergi ke mana?",
         "Lebih suka punya taman bermain di rumah atau kolam renang pribadi?",
         "Kalau kamu bisa membuat mainan impianmu, mainan seperti apa yang kamu buat?",
-        "Kamu lebih suka membaca pikiran orang lain, atau bisa melihat masa depan?"
+        "Kamu lebih suka membaca pikiran orang lain, atau bisa melihat masa depan?",
     ],
     "Contoh Jawaban Anak": [
-        "Dunia robot, karena keren dan canggih!",  
-        "Panda, karena gemesin dan lucu banget!",  
-        "",  
-        "Waktu ulang tahun aku, karena seru dan dapat kado",  
-        "Semua anak sekolah gratis!",  
-        "Main semua alat musik, bisa bikin band sendiri!",  
-        "",  
-        "Taman bermain! Biar bisa main sepuasnya tiap hari!",  
-        "",  
-        "Melihat masa depan, biar tahu nanti aku jadi apa"  
+        "Dunia robot, karena keren dan canggih!",
+        "Panda, karena gemesin dan lucu banget!",
+        "",
+        "Waktu ulang tahun aku, karena seru dan dapat kado",
+        "Semua anak sekolah gratis!",
+        "Main semua alat musik, bisa bikin band sendiri!",
+        "",
+        "Taman bermain! Biar bisa main sepuasnya tiap hari!",
+        "",
+        "Melihat masa depan, biar tahu nanti aku jadi apa",
     ],
-    "Status": [
-        "✅",  
-        "✅", 
-        "❌",  
-        "✅",  
-        "✅",  
-        "✅",  
-        "❌",  
-        "✅",  
-        "❌",  
-        "✅"   
-    ]
+    "Status": ["✅", "✅", "❌", "✅", "✅", "✅", "❌", "✅", "❌", "✅"],
 }
 
 dummyMsg = [
@@ -133,6 +137,9 @@ if st.session_state.deviceId:
 
     if not list_conversation:
         st.error("No conversation ever recorded from the provided device id")
+        st.info(
+            "Jika anda ingin melihat demo tampilan dan backend harus tidak berjalan, dapat menggunakan device_id `2b129436-1a2d-11f0-9045-6ac49b7e4ceb`"
+        )
         st.stop()
 
     

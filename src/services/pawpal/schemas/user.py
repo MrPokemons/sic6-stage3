@@ -4,7 +4,7 @@ from typing_extensions import TypedDict
 
 class UserData(TypedDict):
     name: str
-    gender: Optional[Literal["male", "female"]]
+    gender: Optional[Literal["female", "male", "Female", "Male"]]
     age: Optional[int]
-    description: str = ""
-    language: str = "Indonesian"
+    description: Optional[str]
+    language: Literal["indonesian", "english", "Indonesian", "English"]

@@ -1,5 +1,3 @@
-import copy
-
 from typing import Literal
 from datetime import datetime, timezone
 from pydantic import Field
@@ -13,13 +11,13 @@ from langgraph.checkpoint.memory import MemorySaver
 from ..agentic import Agentic
 from ..schemas.config import ConfigSchema, ConfigurableSchema
 from ..schemas.state import SessionState, InterruptSchema
-from ..schemas.document import SessionResult
 from ..schemas.topic import TopicResults
 from ..utils import prompt_loader
 
 
 class TTMSessionState(SessionState):
     start_datetime: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    modified_datetime: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class TalkToMe(Agentic):
@@ -49,17 +47,16 @@ class TalkToMe(Agentic):
             ),
         ]
         opening_message = await cls.model.ainvoke([*state.messages, *messages])
-        state.sessions.append(
-            SessionResult(
-                type="talk_to_me",
-                messages=[*messages, opening_message],
-            )
+        state.add_session(
+            session_type="talk_to_me",
+            messages=[*messages, opening_message]
         )
         return Command(
             update={
                 "start_datetime": datetime.now(timezone.utc),
+                "modified_datetime": datetime.now(timezone.utc),
                 "messages": [*messages, opening_message],
-                "sessions": copy.deepcopy(state.sessions),
+                "sessions": state.get_sessions(deep=True),
                 "from_node": "start",
                 "next_node": "listening",
             },
@@ -77,19 +74,28 @@ class TalkToMe(Agentic):
         This node won't be included into the graph since its just the redirector.
         """
         if state.from_node == "start":
+            last_ai_msg = state.last_ai_message()
+            if last_ai_msg is None:
+                raise Exception(f"How no last ai message? {state.model_dump(mode='json')}")
             interrupt(
-                [InterruptSchema(action="speaker", message=state.messages[-1].text())]
+                [InterruptSchema(action="speaker", message=last_ai_msg.text())]
             )
         elif state.from_node == "responding":
+            last_ai_msg = state.last_ai_message()
+            if last_ai_msg is None:
+                raise Exception(f"How no last ai message? {state.model_dump(mode='json')}")
             interrupt(
-                [InterruptSchema(action="speaker", message=state.messages[-1].text())]
+                [InterruptSchema(action="speaker", message=last_ai_msg.text())]
             )
         elif state.from_node == "check_session":
             if state.next_node == END:
+                last_ai_msg = state.last_ai_message()
+                if last_ai_msg is None:
+                    raise Exception(f"How no last ai message? {state.model_dump(mode='json')}")
                 interrupt(
                     [
                         InterruptSchema(
-                            action="speaker", message=state.messages[-1].text()
+                            action="speaker", message=last_ai_msg.text()
                         )
                     ]
                 )
@@ -99,19 +105,18 @@ class TalkToMe(Agentic):
     async def _listening(
         state: TTMSessionState, config: ConfigSchema
     ) -> Command[Literal["responding"]]:
-        curr_session = state.sessions[-1]
-        if curr_session.type != "talk_to_me":
-            raise Exception(
-                f"Not the appropriate type {curr_session.model_dump(mode='json')}"
-            )
-
+        _ = state.verify_last_session(session_type="talk_to_me")
         user_response: str = interrupt([InterruptSchema(action="microphone")])
         messages = [HumanMessage(content=[{"type": "text", "text": user_response}])]
-        curr_session.messages.extend(messages)
+        state.add_message_to_last_session(
+            session_type="talk_to_me",
+            messages=messages,
+        )
         return Command(
             update={
+                "modified_datetime": datetime.now(timezone.utc),
                 "messages": messages,
-                "sessions": copy.deepcopy(state.sessions),
+                "sessions": state.get_sessions(deep=True),
                 "from_node": "listening",
                 "next_node": "responding",
             },
@@ -122,18 +127,17 @@ class TalkToMe(Agentic):
     async def _responding(
         cls, state: TTMSessionState, config: ConfigSchema
     ) -> Command[Literal["check_session"]]:
-        curr_session = state.sessions[-1]
-        if curr_session.type != "talk_to_me":
-            raise Exception(
-                f"Not the appropriate type {curr_session.model_dump(mode='json')}"
-            )
-
+        _ = state.verify_last_session(session_type="talk_to_me")
         response_message = await cls.model.ainvoke(state.messages)
-        curr_session.messages.append(response_message)
+        state.add_message_to_last_session(
+            session_type="talk_to_me",
+            messages=response_message
+        )
         return Command(
             update={
+                "modified_datetime": datetime.now(timezone.utc),
                 "messages": response_message,
-                "sessions": copy.deepcopy(state.sessions),
+                "sessions": state.get_sessions(deep=True),
                 "from_node": "responding",
                 "next_node": "check_session",
             },
@@ -142,11 +146,7 @@ class TalkToMe(Agentic):
 
     @classmethod
     async def _check_session(cls, state: TTMSessionState, config: ConfigSchema) -> Command[Literal["listening", END]]:  # type: ignore
-        curr_session = state.sessions[-1]
-        if curr_session.type != "talk_to_me":
-            raise Exception(
-                f"Not the appropriate type {curr_session.model_dump(mode='json')}"
-            )
+        last_session = state.verify_last_session(session_type="talk_to_me")
 
         configurable = config["configurable"]
         ongoing_duration = (datetime.now(timezone.utc) - state.start_datetime).seconds
@@ -175,17 +175,31 @@ class TalkToMe(Agentic):
             ),
         ]
         end_conversation_message = await cls.model.ainvoke([*state.messages, *messages])
-        curr_session.messages.extend([*messages, end_conversation_message])
-        model_with_session_result = cls.model.with_structured_output(
-            TopicResults.TalkToMeResult
+        state.add_message_to_last_session(
+            session_type="talk_to_me",
+            messages=[*messages, end_conversation_message],
         )
-        curr_session.result = await model_with_session_result.ainvoke(
-            curr_session.get_messages()
+        model_with_session_result = cls.model.with_structured_output(
+            TopicResults.TalkToMeResult._Extraction
+        )
+        _extracted_result: TopicResults.TalkToMeResult._Extraction = await model_with_session_result.ainvoke(
+            last_session.get_messages()
+        )
+
+        modified_datetime = datetime.now(timezone.utc)
+        state.add_result_to_last_session(
+            session_type="talk_to_me",
+            result=TopicResults.TalkToMeResult(
+                extraction=_extracted_result,
+                start_datetime=state.start_datetime,
+                modified_datetime=modified_datetime,
+            )
         )
         return Command(
             update={
+                "modified_datetime": modified_datetime,
                 "messages": [*messages, end_conversation_message],
-                "sessions": copy.deepcopy(state.sessions),
+                "sessions": state.get_sessions(deep=True),
                 "from_node": "check_session",
                 "next_node": END,
             },

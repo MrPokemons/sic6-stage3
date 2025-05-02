@@ -3,9 +3,11 @@ services:
     image: mongodb/mongodb-community-server:latest
     container_name: pawpal_mongodb_dev
     restart: always
+    ports:
+      - "27017:27017"
     environment:
-      MONGODB_INITDB_ROOT_USERNAME_FILE: pawpal_mongodb_dev
-      MONGODB_INITDB_ROOT_PASSWORD_FILE: pawPalRockHehe
+      MONGODB_INITDB_ROOT_USERNAME: pawpal_mongodb_dev
+      MONGODB_INITDB_ROOT_PASSWORD: pawPalRockHehe
     volumes:
       - ./db:/data/db
     healthcheck:
@@ -24,6 +26,6 @@ services:
     environment:
       ENV_FILE: config/.env.prod
     ports:
-      - "11080:80"
+      - "11080:11080"
     volumes:
       - .:/app
