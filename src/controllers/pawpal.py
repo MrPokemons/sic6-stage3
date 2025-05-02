@@ -130,8 +130,18 @@ def pawpal_router(
     @router.get("/conversation/{device_id}")
     async def get_conversations(device_id: str) -> List[ConversationOutput]:
         docs = await pawpal.get_agent_results(device_id=device_id)
-        docs = [ConversationDoc.model_validate(doc) for doc in docs]
+        docs = [ConversationDoc.model_validate(_doc) for _doc in docs]
         docs = sorted(docs, key=lambda x: x.created_datetime, reverse=True)
+        return docs
+
+    @router.get("/conversation/{device_id}/live")
+    async def get_live_conversations(device_id: str) -> List[ConversationOutput]:
+        docs = await pawpal.get_agent_results(device_id=device_id)
+        docs = [ConversationDoc.model_validate(_doc) for _doc in docs]
+        docs = sorted(
+            [_doc for _doc in docs if _doc.ongoing],
+            key=lambda x: x.created_datetime
+        )
         return docs
 
     @router.post("/conversation/start")
@@ -166,13 +176,12 @@ def pawpal_router(
                         [ConversationDoc.model_validate(doc) for doc in docs],
                         key=lambda convo_doc: convo_doc.created_datetime,
                     )
-                    if convo_doc.ongoing
+                    if convo_doc.ongoing  # filter the only ongoing
                 ]
                 curr_convo_doc: Optional[ConversationDoc] = None
-                for convo_doc in active_convo_docs:
-                    if convo_doc.ongoing:
-                        curr_convo_doc = convo_doc.model_copy(deep=True)
-                        break
+                for convo_doc in active_convo_docs:  # always take the first created
+                    curr_convo_doc = convo_doc.model_copy(deep=True)
+                    break
 
                 if curr_convo_doc is None:
                     logger.info(f"Device '{device_id}' is waiting for new chat")
