@@ -49,7 +49,7 @@ if st.session_state.deviceId:
             "mongodb+srv://pawpal-demo-user:p78Q4EsqPfLmnvtb@sic-cluster.hcqho.mongodb.net/?retryWrites=true&w=majority&appName=SIC-Cluster"
         )
         _db = _client["pawpal_v2"]
-        _collection = _db["pawpal-conversation"]
+        _collection = _db["pawpal-conversation-2"]
         list_conversation: list = _collection.find({"device_id": deviceId}).to_list()
         st.warning("Backend tidak aktif, maka menggunakan alternatif database.")
 
