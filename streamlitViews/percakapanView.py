@@ -59,7 +59,7 @@ if st.session_state.deviceId:
         )
         st.stop()
 
-    st.json(dumps(list_conversation))
+    # st.json(dumps(list_conversation))
     lastConversation = list_conversation[-1]
     # lastSession = lastConversation["sessions"]
     # print(lastConversation)
