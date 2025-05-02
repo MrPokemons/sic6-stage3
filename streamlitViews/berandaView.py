@@ -137,7 +137,7 @@ if st.session_state.deviceId:
     if not list_conversation:
         st.error("No conversation ever recorded from the provided device id")
         st.info(
-            "Jika anda ingin melihat demo tampilan dan backend harus tidak berjalan, dapat menggunakan device_id `2b129436-1a2d-11f0-9045-6ac49b7e4ceb`"
+            "Jika anda ingin melihat demo tampilan dan backend harus tidak berjalan, dapat menggunakan device_id `cincayla`"
         )
         st.stop()
 
