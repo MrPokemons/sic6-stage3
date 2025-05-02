@@ -43,21 +43,32 @@ class FacebookMMSTextToSpeech(TextToSpeech):
 class ElevenlabsTextToSpeech(TextToSpeech):
     def __init__(self, api_keys: str):
         api_keys: List[str] = api_keys.split(";")
-        self.clients = []
+        self.clients: List[AsyncElevenLabs] = []
         for _api_key in api_keys:
             self.clients.append(AsyncElevenLabs(api_key=_api_key))
         self.voice_id = "RWiGLY9uXI70QL540WNd"
         self.voice_settings = VoiceSettings(
             speed=0.95, stability=0.7, similarity_boost=0.75
         )
+        self.model_id = "eleven_flash_v2_5"
 
-    def get_client(self) -> AsyncElevenLabs:
-        return secrets.choice(self.clients)
+    async def get_client(self) -> AsyncElevenLabs:
+        eligible_clients: List[AsyncElevenLabs] = []
+        for _client in self.clients:
+            _subs_info = await _client.user.get_subscription()
+            if _subs_info.character_count <= 9500:
+                eligible_clients.append(_client)
+        if not eligible_clients:
+            raise Exception("TTS: No more eligible clients from ElevenLabs")
+        return secrets.choice(eligible_clients)
 
     async def synthesize_async(self, text: str) -> bytes:
-        client = self.get_client()
+        client = await self.get_client()
         audio_generator = client.text_to_speech.convert(
-            voice_id=self.voice_id, text=text, voice_settings=self.voice_settings
+            voice_id=self.voice_id,
+            text=text,
+            voice_settings=self.voice_settings,
+            model_id=self.model_id,
         )
         chunks = []
         async for chunk in audio_generator:
