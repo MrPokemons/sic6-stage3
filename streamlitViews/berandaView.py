@@ -293,6 +293,8 @@ if st.session_state.deviceId:
             with st.container(height=500):
                 
                 for msg in session.message: 
+                    if not msg["text"].strip():
+                        continue
                     with st.chat_message(msg["sender"]):
                         st.write(msg["text"])
             
