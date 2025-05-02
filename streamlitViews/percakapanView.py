@@ -57,11 +57,11 @@ if st.session_state.deviceId:
         st.error("Tidak ada percakapan yang terekam dari nomor ID perangkat yang dimasukkan, cek kembali pada pengaturan")
         st.stop()
 
-    # st.json(dumps(list_conversation))  
+    # st.json(dumps(list_conversation))
     lastConversation = list_conversation[-1]
     # lastSession = lastConversation["sessions"]
     # print(lastConversation)
-    
+
     messageResult = []
     # for session in lastConversation["sessions"]:
     #     # dummyMsg.clear()
