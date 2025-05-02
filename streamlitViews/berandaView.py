@@ -12,9 +12,9 @@ from streamlitViews.utils.session import Session
 ROOT_PATH = Path(__file__).parents[1]
 
 
-if 'deviceId' not in st.session_state:
+if "deviceId" not in st.session_state:
     st.session_state.deviceId = False
-if 'page' not in st.session_state:
+if "page" not in st.session_state:
     st.session_state.page = 0
 
 # analytics data declaration here
@@ -141,11 +141,10 @@ if st.session_state.deviceId:
         )
         st.stop()
 
-    
-    # st.json(dumps(list_conversation))  
-    current_conversastion = list_conversation[-page-1]
+    # st.json(dumps(list_conversation))
+    current_conversastion = list_conversation[-page - 1]
     # print(current_conversastion)
-    
+
     # sessionTitle = []
     # messageResult = []
     # session = Session()
@@ -209,18 +208,21 @@ if st.session_state.deviceId:
         emotion = result["extraction"]["emotion"]
         keypoints = result["extraction"]["keypoints"]
 
-        
-
-        newSession = Session(title, convoStartTimeDate, convoStartTimeHour, convoEndTimeHour, messageResult, overview, emotion, keypoints)
+        newSession = Session(
+            title,
+            convoStartTimeDate,
+            convoStartTimeHour,
+            convoEndTimeHour,
+            messageResult,
+            overview,
+            emotion,
+            keypoints,
+        )
         listSession.append(newSession)
 
     print(listSession)
 
-    
     # -------------------
-    
-
-
 
     with st.container():
         pageCol1, pageCol2, pageCol3 = st.columns([1, 14, 1])
@@ -231,9 +233,11 @@ if st.session_state.deviceId:
 
         with pageCol2:
             st.subheader("Riwayat Percakapan")
-                
+
         with pageCol3:
-            if st.button("→", disabled=st.session_state.page >= len(list_conversation)-1):
+            if st.button(
+                "→", disabled=st.session_state.page >= len(list_conversation) - 1
+            ):
                 st.session_state.page += 1
                 st.rerun()
 
@@ -244,33 +248,42 @@ if st.session_state.deviceId:
     #         with st.chat_message(msg["sender"]):
     #             st.write(msg["text"])
 
-    
-
     startDate = listSession[0].date
     endDate = listSession[-1].date
     startTime = listSession[0].startTime
     endTime = listSession[-1].endTime
 
     if startDate == endDate:
-        st.markdown(f"""
+        st.markdown(
+            f"""
         <h3 style="text-align: center; padding-top: 0; padding-bottom: 0.2rem; font-weight:650;">
             🗓️ {startDate}
         </h3>
         <h5 style="text-align: center; padding: 0.5rem 0px 1.2rem; font-size: 1.1rem; ">
             ⏰ {startTime} - {endTime} WIB
         </h5>
-        """, unsafe_allow_html=True)
+        """,
+            unsafe_allow_html=True,
+        )
     else:
-        st.markdown(f"""
+        st.markdown(
+            f"""
         <h5 style="text-align: center; padding: 0.5rem 0px 1.2rem; ">
             {startDate} {startTime} - {endDate} {endTime}
         </h5>
-        """, unsafe_allow_html=True)
+        """,
+            unsafe_allow_html=True,
+        )
 
     for n, session in enumerate(listSession):
-        title_map =  { "talk_to_me" : ("👄", "Talk To Me"), "math_games" : ("🖐️", "Math Adventure"), "spelling_games" : ("🔤", "Spelling Game"),  "would_you_rather" : ("❓", "Would You Rather")}
+        title_map = {
+            "talk_to_me": ("👄", "Talk To Me"),
+            "math_games": ("🖐️", "Math Adventure"),
+            "spelling_games": ("🔤", "Spelling Game"),
+            "would_you_rather": ("❓", "Would You Rather"),
+        }
         _icon, _title = title_map.get(session.title)
-        title_modified = "Sesi " + str((n+1)) + " - " + _title
+        title_modified = "Sesi " + str((n + 1)) + " - " + _title
 
         with st.expander(title_modified, icon=_icon):
             col1, col2 = st.columns(2)
@@ -278,7 +291,9 @@ if st.session_state.deviceId:
             with col1:
                 st.subheader("Tanggal dan Waktu")
                 with st.container(border=True):
-                    st.write(f"🗓️ {session.date}  ⏰ {session.startTime} - {session.endTime} WIB")
+                    st.write(
+                        f"🗓️ {session.date}  ⏰ {session.startTime} - {session.endTime} WIB"
+                    )
                     # st.write(f"⏰ {convoStartTimeHour} - {convoEndTimeHour} WIB")
                     # col3, col4 = st.columns(2)
                     # with col3:
@@ -287,7 +302,27 @@ if st.session_state.deviceId:
                     #     st.write(f"⏰ {convoStartTimeHour} - {convoEndTimeHour} WIB")
             with col2:
                 st.subheader("Perasaan")
-                emotion_map = {"Happy": "😄 Bahagia", "Sad": "😢 Sedih", "Angry": "😠 Marah", "Afraid": "😨 Takut", "Embarrassed": "", "Loving": "😍 Sayang", "Confused": "😕 Bingung", "Frustrated": "😣 Frustrasi", "Confident": "😎 Percaya Diri", "Proud": "😇 Bangga", "Jealous": "😤 Cemburu", "Relieved": "😌 Lega", "Tired": "😫 Lelah", "Excited": "🤗 Semangat", "Nervous": "😬 Gugup", "Disappointed": "🥺 Kecewa", "Amazed": "🤩 Kagum", "Bored": "😐 Bosan", "Doubtful": "🫤 Ragu"}
+                emotion_map = {
+                    "Happy": "😄 Bahagia",
+                    "Sad": "😢 Sedih",
+                    "Angry": "😠 Marah",
+                    "Afraid": "😨 Takut",
+                    "Embarrassed": "",
+                    "Loving": "😍 Sayang",
+                    "Confused": "😕 Bingung",
+                    "Frustrated": "😣 Frustrasi",
+                    "Confident": "😎 Percaya Diri",
+                    "Proud": "😇 Bangga",
+                    "Jealous": "😤 Cemburu",
+                    "Relieved": "😌 Lega",
+                    "Tired": "😫 Lelah",
+                    "Excited": "🤗 Semangat",
+                    "Nervous": "😬 Gugup",
+                    "Disappointed": "🥺 Kecewa",
+                    "Amazed": "🤩 Kagum",
+                    "Bored": "😐 Bosan",
+                    "Doubtful": "🫤 Ragu",
+                }
                 with st.container(border=True):
                     st.write(emotion_map.get(session.emotion.title()))
 
@@ -298,7 +333,7 @@ if st.session_state.deviceId:
                     #     continue
                     with st.chat_message(msg["sender"]):
                         st.write(msg["text"])
-            
+
             st.subheader("Ringkasan")
             st.write(session.overview)
 
@@ -309,7 +344,8 @@ if st.session_state.deviceId:
 
     # --------------------
     # custom styling
-st.markdown("""
+st.markdown(
+    """
 <style>
     h3#riwayat-percakapan{
         text-align: center;  
@@ -410,36 +446,38 @@ st.markdown("""
             
 
 </style>
-""", unsafe_allow_html=True)
-    # -------------------
-    # hard coded values
-    # karena belum setup backend logic & endpoints for retrieving these kinds of data
-    # st.subheader("Spelling Games 🔤")
-    # # dictionary columns
-    # # declare tables and columns
-    # wordDictTable = pd.DataFrame(wordDictionary)
-    # mathDictTable = pd.DataFrame(mathDictionary)
-    # reasoningGamesTable = pd.DataFrame(reasoningGames)
+""",
+    unsafe_allow_html=True,
+)
+# -------------------
+# hard coded values
+# karena belum setup backend logic & endpoints for retrieving these kinds of data
+# st.subheader("Spelling Games 🔤")
+# # dictionary columns
+# # declare tables and columns
+# wordDictTable = pd.DataFrame(wordDictionary)
+# mathDictTable = pd.DataFrame(mathDictionary)
+# reasoningGamesTable = pd.DataFrame(reasoningGames)
 
-    # wdt = pd.DataFrame(wordDictTable)
-    # wdt.index += 1
-    # mdt = pd.DataFrame(mathDictionary)
-    # mdt.index += 1
-    # rgt = pd.DataFrame(reasoningGamesTable)
-    # rgt.index += 1
+# wdt = pd.DataFrame(wordDictTable)
+# wdt.index += 1
+# mdt = pd.DataFrame(mathDictionary)
+# mdt.index += 1
+# rgt = pd.DataFrame(reasoningGamesTable)
+# rgt.index += 1
 
-    # st.table(wdt)
+# st.table(wdt)
 
-    # st.subheader("Math Adventures 🖐️")
-    # st.table(mdt)
+# st.subheader("Math Adventures 🖐️")
+# st.table(mdt)
 
-    # st.subheader("Reasoning Games 🧠")
-    # st.dataframe(rgt)
+# st.subheader("Reasoning Games 🧠")
+# st.dataframe(rgt)
 
-    # col1, col2, col3 = st.columns(3)
-    # with col1:
-    #     st.table(wdt)
-    # with col2:
-    #     st.table(mdt)
-    # with col3:
-    #     st.table(rgt)
+# col1, col2, col3 = st.columns(3)
+# with col1:
+#     st.table(wdt)
+# with col2:
+#     st.table(mdt)
+# with col3:
+#     st.table(rgt)

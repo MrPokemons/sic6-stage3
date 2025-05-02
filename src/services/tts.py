@@ -17,7 +17,6 @@ class TextToSpeech(ABC):
         raise NotImplementedError("synthesize_async() not implemented.")
 
 
-
 class FacebookMMSTextToSpeech(TextToSpeech):
     def __init__(self):
         self.tokenizer = AutoTokenizer.from_pretrained(
@@ -43,15 +42,13 @@ class FacebookMMSTextToSpeech(TextToSpeech):
 
 class ElevenlabsTextToSpeech(TextToSpeech):
     def __init__(self, api_keys: str):
-        api_keys: List[str] = api_keys.split(';')
+        api_keys: List[str] = api_keys.split(";")
         self.clients = []
         for _api_key in api_keys:
             self.clients.append(AsyncElevenLabs(api_key=_api_key))
         self.voice_id = "RWiGLY9uXI70QL540WNd"
         self.voice_settings = VoiceSettings(
-            speed=.95,
-            stability=.7,
-            similarity_boost=.75
+            speed=0.95, stability=0.7, similarity_boost=0.75
         )
 
     def get_client(self) -> AsyncElevenLabs:
@@ -60,18 +57,22 @@ class ElevenlabsTextToSpeech(TextToSpeech):
     async def synthesize_async(self, text: str) -> bytes:
         client = self.get_client()
         audio_generator = client.text_to_speech.convert(
-            voice_id=self.voice_id,
-            text=text,
-            voice_settings=self.voice_settings
+            voice_id=self.voice_id, text=text, voice_settings=self.voice_settings
         )
         chunks = []
         async for chunk in audio_generator:
             chunks.append(chunk)
-        return b''.join(chunks)
+        return b"".join(chunks)
 
 
 class TextToSpeechCollection:
-    def __init__(self, facebook_mms: FacebookMMSTextToSpeech, elevenlabs: Optional[ElevenlabsTextToSpeech] = None, *, logger: Logger):
+    def __init__(
+        self,
+        facebook_mms: FacebookMMSTextToSpeech,
+        elevenlabs: Optional[ElevenlabsTextToSpeech] = None,
+        *,
+        logger: Logger,
+    ):
         self.facebook_mms = facebook_mms
         self.elevenlabs = elevenlabs
         self.logger = logger

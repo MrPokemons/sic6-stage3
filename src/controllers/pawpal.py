@@ -43,9 +43,15 @@ class StartConversationInput(BaseModel):
 
 class ConversationOutput(ConversationDoc): ...
 
+
 # need to debug the send and recv chunking audio.
 class ConnectionManager:
-    def __init__(self, logger: logging.Logger, chunk_duration_ms: int = 20, message_packer: Optional[MessagePacker] = None):
+    def __init__(
+        self,
+        logger: logging.Logger,
+        chunk_duration_ms: int = 20,
+        message_packer: Optional[MessagePacker] = None,
+    ):
         if message_packer is None:
             message_packer = MessagePacker(separator=b"---ENDJSON---")
 
@@ -71,18 +77,15 @@ class ConnectionManager:
         samples_per_chunk = self.get_samples_per_chunk(sample_rate=sample_rate)
         total_seq = math.ceil(audio_array.shape[0] / samples_per_chunk)
         for seq in range(total_seq):
-            chunk = audio_array[samples_per_chunk*seq:samples_per_chunk*(seq+1)]
+            chunk = audio_array[samples_per_chunk * seq : samples_per_chunk * (seq + 1)]
             chunk_metadata = MessageMetadata(
-                seq=seq+1,
+                seq=seq + 1,
                 total_seq=total_seq,
                 sample_rate=sample_rate,
                 channels=num_channels,
-                dtype=str(audio_array.dtype)
+                dtype=str(audio_array.dtype),
             )
-            packet = self.message_packer.pack(
-                metadata=chunk_metadata,
-                data=chunk
-            )
+            packet = self.message_packer.pack(metadata=chunk_metadata, data=chunk)
             await websocket.send_bytes(packet)
 
     async def recv_audio(self, websocket: WebSocket) -> Tuple[np.ndarray, int]:
@@ -105,12 +108,14 @@ class ConnectionManager:
             if metadata["seq"] == metadata["total_seq"]:
                 break
 
-        total_missing_chunks = len([1 for i in range(len(list_chunk)) if list_chunk[i] is None])
+        total_missing_chunks = len(
+            [1 for i in range(len(list_chunk)) if list_chunk[i] is None]
+        )
         if total_missing_chunks:
-            self.logger.warning(
-                f"Total missing chunk: {total_missing_chunks}"
-            )
-        audio_array = np.concatenate([_c for _c in list_chunk if isinstance(_c, np.ndarray)])
+            self.logger.warning(f"Total missing chunk: {total_missing_chunks}")
+        audio_array = np.concatenate(
+            [_c for _c in list_chunk if isinstance(_c, np.ndarray)]
+        )
         return audio_array, sample_rate
 
     def get_samples_per_chunk(self, sample_rate: int) -> int:
@@ -139,8 +144,7 @@ def pawpal_router(
         docs = await pawpal.get_agent_results(device_id=device_id)
         docs = [ConversationDoc.model_validate(_doc) for _doc in docs]
         docs = sorted(
-            [_doc for _doc in docs if _doc.ongoing],
-            key=lambda x: x.created_datetime
+            [_doc for _doc in docs if _doc.ongoing], key=lambda x: x.created_datetime
         )
         return docs
 
@@ -164,7 +168,11 @@ def pawpal_router(
         return new_conversation_doc
 
     @router.websocket("/conversation/{device_id}")
-    async def conversation(websocket: WebSocket, device_id: str, stream_audio: Literal["websocket", "http", "device"] = "websocket"):
+    async def conversation(
+        websocket: WebSocket,
+        device_id: str,
+        stream_audio: Literal["websocket", "http", "device"] = "websocket",
+    ):
         await ws_manager.connect(websocket=websocket)
         logger.info(f"Device '{device_id}' has connected to server")
         try:
@@ -249,8 +257,10 @@ def pawpal_router(
 
                                     logger.info(f"Agentic sent Action: {_action}")
                                     if _action == "speaker":
-                                        tts_audio_data = await tts_coll.synthesize_async(
-                                            interrupt_schema["message"],
+                                        tts_audio_data = (
+                                            await tts_coll.synthesize_async(
+                                                interrupt_schema["message"],
+                                            )
                                         )
                                         logger.info("Sending audio to device")
                                         if stream_audio == "http":
@@ -258,54 +268,112 @@ def pawpal_router(
                                             we send_text "speaker;filename", then we save the audio into static folder.
                                             then client will need to access the static folder with the provided filename
                                             """
-                                            logger.info(f"Saving audio to '{STATIC_AUDIO_PATH}' as file")
-                                            audio_array, sample_rate = sf.read(BytesIO(tts_audio_data), dtype="int16")
-                                            audio_filename = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S%f.wav")
-                                            sf.write(STATIC_AUDIO_PATH / audio_filename, audio_array, samplerate=sample_rate)
-                                            logger.info(f"Saved the audio file '{audio_filename}' into '{STATIC_AUDIO_PATH}'")
-                                            await ws_manager.send_text(websocket=websocket, message=f"{_action};{audio_filename}")
-                                            logger.info("Sent the audio filename to client.")
+                                            logger.info(
+                                                f"Saving audio to '{STATIC_AUDIO_PATH}' as file"
+                                            )
+                                            audio_array, sample_rate = sf.read(
+                                                BytesIO(tts_audio_data), dtype="int16"
+                                            )
+                                            audio_filename = datetime.now(
+                                                timezone.utc
+                                            ).strftime("%Y%m%d_%H%M%S%f.wav")
+                                            sf.write(
+                                                STATIC_AUDIO_PATH / audio_filename,
+                                                audio_array,
+                                                samplerate=sample_rate,
+                                            )
+                                            logger.info(
+                                                f"Saved the audio file '{audio_filename}' into '{STATIC_AUDIO_PATH}'"
+                                            )
+                                            await ws_manager.send_text(
+                                                websocket=websocket,
+                                                message=f"{_action};{audio_filename}",
+                                            )
+                                            logger.info(
+                                                "Sent the audio filename to client."
+                                            )
                                         elif stream_audio == "device":
                                             """
                                             we don't need to send any text to client, since this will play to server device
                                             or save as filename
                                             """
                                             logger.info("Playing audio through device")
-                                            audio_array, sample_rate = sf.read(BytesIO(tts_audio_data), dtype="int16")
+                                            audio_array, sample_rate = sf.read(
+                                                BytesIO(tts_audio_data), dtype="int16"
+                                            )
                                             try:
                                                 import sounddevice as sd
-                                                sd.play(data=audio_array, samplerate=sample_rate)
+
+                                                sd.play(
+                                                    data=audio_array,
+                                                    samplerate=sample_rate,
+                                                )
                                                 sd.wait()
                                             except OSError:
-                                                audio_filename = datetime.now(timezone.utc).strftime("conversation-%Y%m%d_%H%M%S%f.wav")
-                                                logger.info(f"failed to play due to unsupported OS, will into file '{audio_filename}' in {STATIC_AUDIO_PATH}")
-                                                sf.write(STATIC_AUDIO_PATH / audio_filename, audio_array, samplerate=sample_rate)
+                                                audio_filename = datetime.now(
+                                                    timezone.utc
+                                                ).strftime(
+                                                    "conversation-%Y%m%d_%H%M%S%f.wav"
+                                                )
+                                                logger.info(
+                                                    f"failed to play due to unsupported OS, will into file '{audio_filename}' in {STATIC_AUDIO_PATH}"
+                                                )
+                                                sf.write(
+                                                    STATIC_AUDIO_PATH / audio_filename,
+                                                    audio_array,
+                                                    samplerate=sample_rate,
+                                                )
                                         else:
                                             """
                                             default websocket send_text for telling it will be speaker, then stream with chunks
                                             """
-                                            await ws_manager.send_text(websocket=websocket, message=_action)
-                                            logger.info("Streaming audio through websocket to client.")
+                                            await ws_manager.send_text(
+                                                websocket=websocket, message=_action
+                                            )
+                                            logger.info(
+                                                "Streaming audio through websocket to client."
+                                            )
                                             await ws_manager.send_audio(
                                                 websocket=websocket,
                                                 audio_data=tts_audio_data,
                                             )
-                                            logger.info("Audio has been sent to client, server proceed to continue agentic chat")
+                                            logger.info(
+                                                "Audio has been sent to client, server proceed to continue agentic chat"
+                                            )
 
                                         workflow_input = Command(resume="")
                                     elif _action == "microphone":
                                         """
                                         server will confirm to client we will need microphone, then client will stream us with chunking
                                         """
-                                        await ws_manager.send_text(websocket=websocket, message=_action)
+                                        await ws_manager.send_text(
+                                            websocket=websocket, message=_action
+                                        )
                                         logger.info(
                                             "Request audio recorded from microphone"
                                         )
-                                        audio_array, sample_rate = await ws_manager.recv_audio(websocket=websocket)
-                                        buffer = BytesIO()  # convert into bytes for processing to stt_coll
-                                        sf.write(buffer, audio_array, sample_rate, format='WAV')
-                                        logger.info("Audio has been received, parsing to STT model")
-                                        user_answer = await stt_coll.transcribe_raw_async(buffer.getvalue())
+                                        audio_array, sample_rate = (
+                                            await ws_manager.recv_audio(
+                                                websocket=websocket
+                                            )
+                                        )
+                                        buffer = (
+                                            BytesIO()
+                                        )  # convert into bytes for processing to stt_coll
+                                        sf.write(
+                                            buffer,
+                                            audio_array,
+                                            sample_rate,
+                                            format="WAV",
+                                        )
+                                        logger.info(
+                                            "Audio has been received, parsing to STT model"
+                                        )
+                                        user_answer = (
+                                            await stt_coll.transcribe_raw_async(
+                                                buffer.getvalue()
+                                            )
+                                        )
                                         logger.info(
                                             f'Done parsing, continue chat with new user answer "{user_answer}".'
                                         )
@@ -334,11 +402,14 @@ def pawpal_router(
 
         try:
             import sounddevice as sd
+
             sd.play(data=audio_array, samplerate=sample_rate)
             sd.wait()
         except OSError:
             _fp = "tests/conversation-test-result.wav"
-            logger.info(f"failed to play due to unsupported OS, will just write to '{_fp}'")
+            logger.info(
+                f"failed to play due to unsupported OS, will just write to '{_fp}'"
+            )
             sf.write(_fp, data=audio_array, samplerate=sample_rate)
 
         logger.info("Testing successfully been executed")
@@ -361,11 +432,14 @@ def pawpal_router(
         logger.info("Received the audio successfully, trying to play")
         try:
             import sounddevice as sd
+
             sd.play(data=audio_array, samplerate=sample_rate)
             sd.wait()
         except OSError:
             _fp = "tests/conversation-chunking-test-result.wav"
-            logger.info(f"failed to play due to unsupported OS, will just write to '{_fp}'")
+            logger.info(
+                f"failed to play due to unsupported OS, will just write to '{_fp}'"
+            )
             sf.write(_fp, data=audio_array, samplerate=sample_rate)
 
         logger.info("Testing successfully been executed")
@@ -373,19 +447,29 @@ def pawpal_router(
     @router.websocket("/conversation-chunking-http-test")
     async def conversation_chunking_http_test(websocket: WebSocket):
         await ws_manager.connect(websocket=websocket)
-        logger.info("Someone has connected to conversation chunking http test websocket")
+        logger.info(
+            "Someone has connected to conversation chunking http test websocket"
+        )
 
         # speaker
-        logger.info("Sending Audio to client text for accessing the audio static through http")
+        logger.info(
+            "Sending Audio to client text for accessing the audio static through http"
+        )
         with open("tests/test.wav", "rb") as f:
             test_audio_data = f.read()
 
         logger.info(f"Saving audio to '{STATIC_AUDIO_PATH}' as file")
         audio_array, sample_rate = sf.read(BytesIO(test_audio_data), dtype="int16")
         audio_filename = datetime.now(timezone.utc).strftime("test-%Y%m%d_%H%M%S%f.wav")
-        sf.write(STATIC_AUDIO_PATH / audio_filename, audio_array, samplerate=sample_rate)
-        logger.info(f"Saved the audio file '{audio_filename}' into '{STATIC_AUDIO_PATH}'")
-        await ws_manager.send_text(websocket=websocket, message=f"speaker;{audio_filename}")
+        sf.write(
+            STATIC_AUDIO_PATH / audio_filename, audio_array, samplerate=sample_rate
+        )
+        logger.info(
+            f"Saved the audio file '{audio_filename}' into '{STATIC_AUDIO_PATH}'"
+        )
+        await ws_manager.send_text(
+            websocket=websocket, message=f"speaker;{audio_filename}"
+        )
         logger.info("Sent the audio filename to client.")
 
         # Microphone
@@ -396,11 +480,14 @@ def pawpal_router(
         logger.info("Received the audio successfully, trying to play")
         try:
             import sounddevice as sd
+
             sd.play(data=audio_array, samplerate=sample_rate)
             sd.wait()
         except OSError:
             _fp = "tests/conversation-chunking-test-result.wav"
-            logger.info(f"failed to play due to unsupported OS, will just write to '{_fp}'")
+            logger.info(
+                f"failed to play due to unsupported OS, will just write to '{_fp}'"
+            )
             sf.write(_fp, data=audio_array, samplerate=sample_rate)
 
         logger.info("Testing successfully been executed")
@@ -413,6 +500,8 @@ def pawpal_router(
 
     @router.get("/http-wav-file-test")
     async def get_http_wav_file_test():
-        return FileResponse("tests/test1.wav", media_type="audio/wav", filename="example.wav")
+        return FileResponse(
+            "tests/test1.wav", media_type="audio/wav", filename="example.wav"
+        )
 
     return router

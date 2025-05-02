@@ -1,5 +1,7 @@
 class Session:
-    def __init__(self, title, date, startTime, endTime, message, overview, emotion, keypoints):
+    def __init__(
+        self, title, date, startTime, endTime, message, overview, emotion, keypoints
+    ):
         self.title = title
         self.date = date
         self.startTime = startTime

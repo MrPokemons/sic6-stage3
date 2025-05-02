@@ -3,9 +3,9 @@ import requests
 from src.services.pawpal.schemas.user import UserData
 from src.controllers.pawpal import StartConversationInput, TopicParams
 
-if 'configuration' not in st.session_state:
+if "configuration" not in st.session_state:
     st.session_state.configuration = False
-if 'deviceId' not in st.session_state:
+if "deviceId" not in st.session_state:
     st.session_state.deviceId = False
 
 chatConfig = []
@@ -35,16 +35,23 @@ with st.form("child_profile_form"):
     st.session_state.deviceId = deviceIdInput
     # durationInput = st.number_input("⏰ Durasi", min_value=3, step=2)
     sessionsInput = st.number_input("🗣️ Jumlah Sesi", min_value=1, step=1)
-    
-    featureOptions = ["👄 Talk To Me", "🖐️ Math Adventures", "🔤 Spelling Games", "❓ Would You Rather"]
-    selectedFeatures = st.pills("💬 Jenis Interaksi", featureOptions, selection_mode="multi")
+
+    featureOptions = [
+        "👄 Talk To Me",
+        "🖐️ Math Adventures",
+        "🔤 Spelling Games",
+        "❓ Would You Rather",
+    ]
+    selectedFeatures = st.pills(
+        "💬 Jenis Interaksi", featureOptions, selection_mode="multi"
+    )
 
     # untuk styling nya nanti lagi
     # st.markdown(
     #     """<style>
     #         button[data-testid="stBaseButton-pills"]{
     #             height:200px;
-                
+
     #         }
     #     </style>""",
     #     unsafe_allow_html=True,
@@ -55,7 +62,7 @@ with st.form("child_profile_form"):
 # print("testtt => ", st.session_state.durationQuestion)
 
 if st.session_state.configuration:
-# if saveConfiguration:
+    # if saveConfiguration:
     if not (
         nameInput
         and ageInput
@@ -67,18 +74,21 @@ if st.session_state.configuration:
     ):
         st.error("Semua kolom wajib diisi! Mohon dicek kembali.")
         st.stop()
-    
+
     if genderInput == "Pilih Jenis Kelamin":
         st.error("Pilih salah satu jenis kelamin")
         st.stop()
 
-    if not (
-        selectedFeatures
-    ):
+    if not (selectedFeatures):
         st.error("Pilih setidaknya salah satu interaksi")
         st.stop()
 
-    topic_map = {"👄 Talk To Me": "talk_to_me", "🖐️ Math Adventures": "math_games", "🔤 Spelling Games": "spelling_games", "❓ Would You Rather": "would_you_rather"}
+    topic_map = {
+        "👄 Talk To Me": "talk_to_me",
+        "🖐️ Math Adventures": "math_games",
+        "🔤 Spelling Games": "spelling_games",
+        "❓ Would You Rather": "would_you_rather",
+    }
     selectedFeatures = [topic_map.get(feature) for feature in selectedFeatures]
 
     durationInput = 0
@@ -88,15 +98,19 @@ if st.session_state.configuration:
             # range = range(1, 31)
             durationInput = st.select_slider(
                 "⏰ Durasi Interaksi (Talk To Me, Would You Rather)",
-                options=range(1, 31), value=1)
+                options=range(1, 31),
+                value=1,
+            )
             # st.write("You selected wavelengths between", start_color, "and", end_color)
         if "math_games" in selectedFeatures or "spelling_games" in selectedFeatures:
             # range = range(1, 31)
             questionInput = st.select_slider(
                 "🙋‍♂️ Jumlah Pertanyaan (Math Adventure, Spelling Game)",
-                options=range(1, 31), value=1)
+                options=range(1, 31),
+                value=1,
+            )
         startConvo = st.form_submit_button("Mulai Percakapan")
-    
+
     if startConvo:
         st.success("Percakapan dimulai!")
     else:
@@ -115,10 +129,14 @@ if st.session_state.configuration:
             )
 
             topic_param = TopicParams(
-                talk_to_me=TopicParams.TalkToMeParam(duration=durationInput*60),
+                talk_to_me=TopicParams.TalkToMeParam(duration=durationInput * 60),
                 math_game=TopicParams.MathGameParam(total_question=questionInput),
-                spelling_game=TopicParams.SpellingGameParam(total_question=questionInput),
-                would_you_rather=TopicParams.WouldYouRatherParam(duration=durationInput*60  ),
+                spelling_game=TopicParams.SpellingGameParam(
+                    total_question=questionInput
+                ),
+                would_you_rather=TopicParams.WouldYouRatherParam(
+                    duration=durationInput * 60
+                ),
             )
 
             convo_input = StartConversationInput(
@@ -129,23 +147,23 @@ if st.session_state.configuration:
                 total_sessions=sessionsInput,
             )
 
-                # class TopicParams(TypedDict):
-                # class TalkToMeParam(TypedDict):
-                #     duration: Annotated[int, "in seconds"]
+            # class TopicParams(TypedDict):
+            # class TalkToMeParam(TypedDict):
+            #     duration: Annotated[int, "in seconds"]
 
-                # class MathGameParam(TypedDict):
-                #     total_question: int
+            # class MathGameParam(TypedDict):
+            #     total_question: int
 
-                # class SpellingGameParam(TypedDict):
-                #     total_question: int
+            # class SpellingGameParam(TypedDict):
+            #     total_question: int
 
-                # class WouldYouRatherParam(TypedDict):
-                #     duration: Annotated[int, "in seconds"]
+            # class WouldYouRatherParam(TypedDict):
+            #     duration: Annotated[int, "in seconds"]
 
-                # talk_to_me: TalkToMeParam
-                # math_game: MathGameParam
-                # spelling_game: SpellingGameParam
-                # would_you_rather: WouldYouRatherParam
+            # talk_to_me: TalkToMeParam
+            # math_game: MathGameParam
+            # spelling_game: SpellingGameParam
+            # would_you_rather: WouldYouRatherParam
 
             st.json(convo_input.model_dump())  # show for debugging
             resp = requests.post(
@@ -168,7 +186,8 @@ if st.session_state.configuration:
 # options = ["North", "East", "South", "West"]
 # selection = st.pills("Directions", options, selection_mode="multi")
 # st.markdown(f"Your selected options: {selection}.")
-st.markdown("""
+st.markdown(
+    """
     <style>
         button:hover{
             border-color: #1e5677 !important;
@@ -186,4 +205,6 @@ st.markdown("""
         }  
     
     </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)

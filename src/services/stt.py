@@ -24,10 +24,14 @@ class SpeechToText(ABC):
     async def transcribe_raw_async(self, raw_audio_bytes: bytes) -> str:
         raise NotImplementedError("transcribe_raw_async() not implemented.")
 
-    def transcribe_array(self, waveform: Union[torch.Tensor, np.ndarray], sample_rate: int) -> str:
+    def transcribe_array(
+        self, waveform: Union[torch.Tensor, np.ndarray], sample_rate: int
+    ) -> str:
         raise NotImplementedError("transcribe_array() not implemented.")
 
-    async def transcribe_array_async(self, waveform: Union[torch.Tensor, np.ndarray], sample_rate: int) -> str:
+    async def transcribe_array_async(
+        self, waveform: Union[torch.Tensor, np.ndarray], sample_rate: int
+    ) -> str:
         raise NotImplementedError("transcribe_array_async() not implemented.")
 
 
@@ -50,12 +54,16 @@ class WhisperSpeechToText(SpeechToText):
             waveform, sample_rate = torchaudio.load(temp_audio.name)
             return self.transcribe_array(waveform=waveform, sample_rate=sample_rate)
 
-    def transcribe_array(self, waveform: Union[torch.Tensor, np.ndarray], sample_rate: int) -> str:
+    def transcribe_array(
+        self, waveform: Union[torch.Tensor, np.ndarray], sample_rate: int
+    ) -> str:
         if isinstance(waveform, np.ndarray):
             waveform = torch.from_numpy(waveform)
 
         if not isinstance(waveform, torch.Tensor):
-            raise TypeError(f"Invalid type '{type(waveform)}' when trying to transcribe by TTS")
+            raise TypeError(
+                f"Invalid type '{type(waveform)}' when trying to transcribe by TTS"
+            )
 
         if sample_rate != self.SAMPLE_RATE:
             resampler = torchaudio.transforms.Resample(
@@ -63,7 +71,7 @@ class WhisperSpeechToText(SpeechToText):
             )
             waveform = resampler(waveform)
 
-        inputs = self.processor( # must float32
+        inputs = self.processor(  # must float32
             waveform.squeeze(), return_tensors="pt", sampling_rate=self.SAMPLE_RATE
         )
         with torch.no_grad():
@@ -76,7 +84,7 @@ class WhisperSpeechToText(SpeechToText):
 
 class DeepgramSpeechToText:
     def __init__(self, api_keys: str):
-        api_keys: List[str] = api_keys.split(';')
+        api_keys: List[str] = api_keys.split(";")
         self.clients = []
         for _api_key in api_keys:
             self.clients.append(DeepgramClient(api_key=_api_key))
@@ -103,11 +111,17 @@ class DeepgramSpeechToText:
                 if alt.transcript:
                     transcripts.append(alt.transcript)
 
-        return '\n'.join(transcripts)
+        return "\n".join(transcripts)
 
 
 class SpeechToTextCollection:
-    def __init__(self, whisper: WhisperSpeechToText, deepgram: Optional[DeepgramSpeechToText] = None, *, logger: Logger):
+    def __init__(
+        self,
+        whisper: WhisperSpeechToText,
+        deepgram: Optional[DeepgramSpeechToText] = None,
+        *,
+        logger: Logger,
+    ):
         self.whisper = whisper
         self.deepgram = deepgram
         self.logger = logger

@@ -26,5 +26,5 @@ EmotionType: TypeAlias = Literal[
     "Disappointed",
     "Amazed",
     "Bored",
-    "Doubtful"
+    "Doubtful",
 ]
