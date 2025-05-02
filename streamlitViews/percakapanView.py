@@ -6,7 +6,7 @@ from dateutil import parser
 from datetime import datetime
 from pymongo import MongoClient
 
-if 'deviceId' not in st.session_state:
+if "deviceId" not in st.session_state:
     st.session_state.deviceId = False
 
 chatConfig = []
@@ -38,7 +38,7 @@ if st.session_state.deviceId:
         )
         if resp.status_code == 200:
             list_conversation = resp.json()
-            
+
     except Exception:
         pass
 
@@ -54,7 +54,9 @@ if st.session_state.deviceId:
         st.warning("Backend tidak aktif, maka menggunakan alternatif database.")
 
     if not list_conversation:
-        st.error("Tidak ada percakapan yang terekam dari nomor ID perangkat yang dimasukkan, cek kembali pada pengaturan")
+        st.error(
+            "Tidak ada percakapan yang terekam dari nomor ID perangkat yang dimasukkan, cek kembali pada pengaturan"
+        )
         st.stop()
 
     st.json(dumps(list_conversation))
@@ -99,7 +101,8 @@ if st.session_state.deviceId:
             with st.chat_message(msg["sender"]):
                 st.write(msg["text"])
 
-st.markdown("""
+st.markdown(
+    """
     <style>
     
     button:hover{
@@ -181,4 +184,6 @@ st.markdown("""
             
     
     </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)

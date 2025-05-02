@@ -36,13 +36,13 @@ def convert_base_to_specific(message: BaseMessage):
             additional_kwargs=message.additional_kwargs,
             response_metadata=message.response_metadata,
         )
-    elif message.type in ("ai", ):
+    elif message.type in ("ai",):
         return AIMessage(
             content=message.content,
             additional_kwargs=message.additional_kwargs,
             response_metadata=message.response_metadata,
         )
-    elif message.type in ("system", ):
+    elif message.type in ("system",):
         return SystemMessage(
             content=message.content,
             additional_kwargs=message.additional_kwargs,

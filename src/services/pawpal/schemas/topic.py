@@ -12,9 +12,13 @@ from ....utils.typex import EmotionType
 class MathUserAnswerExtraction(BaseModel):
     result: int = Field(description="extract user answer for the appropriate question")
 
+
 class MathUserAnswer(BaseModel):
-    raw_answer: Annotated[str, "user pure answer, then parse to extraction for real result"]
+    raw_answer: Annotated[
+        str, "user pure answer, then parse to extraction for real result"
+    ]
     extraction: MathUserAnswerExtraction
+
 
 class MathQnA(BaseModel):
     sequence: List[int]
@@ -28,14 +32,19 @@ class MathQnA(BaseModel):
 
     @staticmethod
     def generate_sequence(length: int, min_val: int, max_val: int):
-        return [secrets.randbelow(max_val - min_val + 1) + min_val for _ in range(length)]
+        return [
+            secrets.randbelow(max_val - min_val + 1) + min_val for _ in range(length)
+        ]
 
     def fmt_sequence(self):
-        seq_str = ", ".join(f"\"{'' if i == 0 else ('+' if i > 0 else '-')}{i}\"" for i in self.sequence)
+        seq_str = ", ".join(
+            f"\"{'' if i == 0 else ('+' if i > 0 else '-')}{i}\"" for i in self.sequence
+        )
         return f"[{seq_str}]"
 
 
 ### Topic
+
 
 class TopicParams(TypedDict):
     class TalkToMeParam(TypedDict):
@@ -71,12 +80,14 @@ class BaseExtractionTopic(BaseModel):
 class TopicResults(BaseModel):
     class TalkToMeResult(BaseModel):
         class _Extraction(BaseExtractionTopic): ...
+
         extraction: _Extraction
         start_datetime: datetime
         modified_datetime: datetime
 
     class MathGameResult(BaseModel):
         class _Extraction(BaseExtractionTopic): ...
+
         extraction: _Extraction
         list_qna: List[MathQnA]
         start_datetime: datetime

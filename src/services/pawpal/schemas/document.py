@@ -32,6 +32,8 @@ class ConversationDoc(BaseModel):
 
     @property
     def ongoing(self):
-        if self.total_sessions == len(self.sessions):  # check last session is done or not
+        if self.total_sessions == len(
+            self.sessions
+        ):  # check last session is done or not
             return self.sessions[-1].result is None
         return self.total_sessions > len(self.sessions)

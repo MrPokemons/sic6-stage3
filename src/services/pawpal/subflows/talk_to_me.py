@@ -17,7 +17,9 @@ from ..utils import prompt_loader
 
 class TTMSessionState(SessionState):
     start_datetime: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    modified_datetime: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    modified_datetime: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc)
+    )
 
 
 class TalkToMe(Agentic):
@@ -48,8 +50,7 @@ class TalkToMe(Agentic):
         ]
         opening_message = await cls.model.ainvoke([*state.messages, *messages])
         state.add_session(
-            session_type="talk_to_me",
-            messages=[*messages, opening_message]
+            session_type="talk_to_me", messages=[*messages, opening_message]
         )
         return Command(
             update={
@@ -76,28 +77,26 @@ class TalkToMe(Agentic):
         if state.from_node == "start":
             last_ai_msg = state.last_ai_message()
             if last_ai_msg is None:
-                raise Exception(f"How no last ai message? {state.model_dump(mode='json')}")
-            interrupt(
-                [InterruptSchema(action="speaker", message=last_ai_msg.text())]
-            )
+                raise Exception(
+                    f"How no last ai message? {state.model_dump(mode='json')}"
+                )
+            interrupt([InterruptSchema(action="speaker", message=last_ai_msg.text())])
         elif state.from_node == "responding":
             last_ai_msg = state.last_ai_message()
             if last_ai_msg is None:
-                raise Exception(f"How no last ai message? {state.model_dump(mode='json')}")
-            interrupt(
-                [InterruptSchema(action="speaker", message=last_ai_msg.text())]
-            )
+                raise Exception(
+                    f"How no last ai message? {state.model_dump(mode='json')}"
+                )
+            interrupt([InterruptSchema(action="speaker", message=last_ai_msg.text())])
         elif state.from_node == "check_session":
             if state.next_node == END:
                 last_ai_msg = state.last_ai_message()
                 if last_ai_msg is None:
-                    raise Exception(f"How no last ai message? {state.model_dump(mode='json')}")
+                    raise Exception(
+                        f"How no last ai message? {state.model_dump(mode='json')}"
+                    )
                 interrupt(
-                    [
-                        InterruptSchema(
-                            action="speaker", message=last_ai_msg.text()
-                        )
-                    ]
+                    [InterruptSchema(action="speaker", message=last_ai_msg.text())]
                 )
         return Command(goto=state.next_node)
 
@@ -130,8 +129,7 @@ class TalkToMe(Agentic):
         _ = state.verify_last_session(session_type="talk_to_me")
         response_message = await cls.model.ainvoke(state.messages)
         state.add_message_to_last_session(
-            session_type="talk_to_me",
-            messages=response_message
+            session_type="talk_to_me", messages=response_message
         )
         return Command(
             update={
@@ -182,8 +180,8 @@ class TalkToMe(Agentic):
         model_with_session_result = cls.model.with_structured_output(
             TopicResults.TalkToMeResult._Extraction
         )
-        _extracted_result: TopicResults.TalkToMeResult._Extraction = await model_with_session_result.ainvoke(
-            last_session.get_messages()
+        _extracted_result: TopicResults.TalkToMeResult._Extraction = (
+            await model_with_session_result.ainvoke(last_session.get_messages())
         )
 
         modified_datetime = datetime.now(timezone.utc)
@@ -193,7 +191,7 @@ class TalkToMe(Agentic):
                 extraction=_extracted_result,
                 start_datetime=state.start_datetime,
                 modified_datetime=modified_datetime,
-            )
+            ),
         )
         return Command(
             update={

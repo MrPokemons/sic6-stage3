@@ -3,7 +3,7 @@ from pathlib import Path
 
 st.set_page_config(
     page_icon="streamlitViews/image/logo_only.png",  # Bisa juga emoji seperti "🐾"
-    layout="centered"
+    layout="centered",
 )
 
 st.sidebar.image("streamlitViews/image/logo.png")

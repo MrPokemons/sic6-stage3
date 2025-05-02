@@ -1,4 +1,5 @@
 import os
+
 os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "1"
 
 import logging
@@ -12,8 +13,16 @@ from langchain_ollama import ChatOllama
 from config.settings import Settings
 
 from src.services.pawpal import PawPal
-from src.services.stt import WhisperSpeechToText, DeepgramSpeechToText, SpeechToTextCollection
-from src.services.tts import FacebookMMSTextToSpeech, ElevenlabsTextToSpeech, TextToSpeechCollection
+from src.services.stt import (
+    WhisperSpeechToText,
+    DeepgramSpeechToText,
+    SpeechToTextCollection,
+)
+from src.services.tts import (
+    FacebookMMSTextToSpeech,
+    ElevenlabsTextToSpeech,
+    TextToSpeechCollection,
+)
 from src.services.nosql import MongoDBEngine
 
 from src.controllers.pawpal import pawpal_router
@@ -36,9 +45,7 @@ mongodb_engine = MongoDBEngine(
 whisper_stt = WhisperSpeechToText()
 deepgram_stt = DeepgramSpeechToText(api_keys=CONFIG.DEEPGRAM.API_KEYS)
 stt_coll = SpeechToTextCollection(
-    whisper=whisper_stt,
-    deepgram=deepgram_stt,
-    logger=app_logger
+    whisper=whisper_stt, deepgram=deepgram_stt, logger=app_logger
 )
 
 # LLM
@@ -51,13 +58,9 @@ model = ChatOllama(
 
 # Text to Speech
 facebook_mms_tts = FacebookMMSTextToSpeech()
-elevenlabs_tts = ElevenlabsTextToSpeech(
-    api_keys=CONFIG.ELEVENLABS.API_KEYS
-)
+elevenlabs_tts = ElevenlabsTextToSpeech(api_keys=CONFIG.ELEVENLABS.API_KEYS)
 tts_coll = TextToSpeechCollection(
-    facebook_mms=facebook_mms_tts,
-    elevenlabs=elevenlabs_tts,
-    logger=app_logger
+    facebook_mms=facebook_mms_tts, elevenlabs=elevenlabs_tts, logger=app_logger
 )
 
 # Agentic
@@ -82,4 +85,11 @@ app.include_router(
 
 
 if __name__ == "__main__":
-    uvicorn.run("app:app", host="0.0.0.0", port=11080, log_config=None, ws_ping_interval=60, ws_ping_timeout=900)
+    uvicorn.run(
+        "app:app",
+        host="0.0.0.0",
+        port=11080,
+        log_config=None,
+        ws_ping_interval=60,
+        ws_ping_timeout=900,
+    )
