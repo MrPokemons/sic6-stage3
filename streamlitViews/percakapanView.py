@@ -1,7 +1,13 @@
 import streamlit as st
 import requests
-from src.services.pawpal.schemas.user import UserData
-from src.controllers.pawpal import StartConversationInput, TopicParams
+import pandas as pd
+from bson.json_util import dumps
+from dateutil import parser
+from datetime import datetime
+from pymongo import MongoClient
+
+if 'deviceId' not in st.session_state:
+    st.session_state.deviceId = False
 
 chatConfig = []
 # dummyMsg = []
@@ -11,103 +17,168 @@ dummyMsg = [
     {"sender": "user", "text": "Oke siap~"},
 ]
 
-st.title("Mulai Percakapan 🤖")
+st.title("🤖 Percakapan Saat Ini 🧒")
 
-with st.form("child_profile_form"):
-    st.subheader("Biodata Anak")
-    nameInput = st.text_input("🧒 Nama")
-    ageInput = st.number_input("🎂 Umur", min_value=3, max_value=8, step=1)
-    genderInput = st.selectbox(
-        "🚻 Jenis Kelamin", ["Pilih Jenis Kelamin", "Laki-laki", "Perempuan"]
-    )
-    descriptionInput = st.text_area("🚲 Deskripsi Anak (hobi dan minat, kepribadian)")
+if not st.session_state.deviceId:
+    placeholder = st.empty()
+    with placeholder.form("device_id_form"):
+        deviceIdInput = st.text_input("No. ID Perangkat", "")
+        saveDeviceId = st.form_submit_button("Cari percakapan terakhir")
+        if saveDeviceId:
+            st.session_state.deviceId = deviceIdInput
+            placeholder.empty()
 
-    st.subheader("Konfigurasi Percakapan")
-    deviceIdInput = st.text_input("⚙️ No. ID Perangkat", "")
-    durationInput = st.number_input("⏰ Durasi", min_value=3, step=2)
-    sessionsInput = st.number_input("🗣️ Jumlah Sesi", min_value=1, step=1)
-    # topic = st.text_area("💬 Topik Percakapan (Opsional)")
+if st.session_state.deviceId:
+    deviceId = st.session_state.deviceId
+    print("\ndevice id ", deviceId)
+    list_conversation = None
+    try:
+        resp = requests.get(
+            f"http://localhost:11080/api/v1/pawpal/conversation/{deviceId}"
+        )
+        if resp.status_code == 200:
+            list_conversation = resp.json()
+            
+    except Exception:
+        pass
 
-    startConvo = st.form_submit_button("Mulai")
+    if (
+        list_conversation is None
+    ):  # backend offline, connect to read-only demo purposes mongodb
+        _client = MongoClient(
+            "mongodb+srv://pawpal-demo-user:p78Q4EsqPfLmnvtb@sic-cluster.hcqho.mongodb.net/?retryWrites=true&w=majority&appName=SIC-Cluster"
+        )
+        _db = _client["pawpal_v2"]
+        _collection = _db["pawpal-conversation-2"]
+        list_conversation: list = _collection.find({"device_id": deviceId}).to_list()
+        st.warning("Backend tidak aktif, maka menggunakan alternatif database.")
 
-if startConvo:
-
-    if not (
-        nameInput
-        and ageInput
-        and genderInput
-        and descriptionInput
-        and deviceIdInput
-        and durationInput
-        and sessionsInput
-    ):
-        st.error("Semua kolom wajib diisi! Mohon dicek kembali.")
+    if not list_conversation:
+        st.error("Tidak ada percakapan yang terekam dari nomor ID perangkat yang dimasukkan, cek kembali pada pengaturan")
         st.stop()
 
-    gender_map = {"Laki-laki": "male", "Perempuan": "female"}
+    # st.json(dumps(list_conversation))
+    lastConversation = list_conversation[-1]
+    # lastSession = lastConversation["sessions"]
+    # print(lastConversation)
 
-    try:
-        user_data = UserData(
-            name=nameInput,
-            gender=gender_map.get(genderInput),
-            age=ageInput,
-            description=descriptionInput,
-            language="Indonesian",
-        )
+    messageResult = []
+    # for session in lastConversation["sessions"]:
+    #     # dummyMsg.clear()
+    lastSession = lastConversation["sessions"][-1]
+    for message in lastSession["messages"]:
+        # Check message type and handle accordingly
+        if isinstance(message, dict):
+            # if message["content"] == "":
+            #     continue
+            if message["type"] == "ai":
+                sender = "ai"
+                text = message["content"]
+            elif message["type"] == "human":
+                sender = "user"
+                # Assuming content is a list
+                # if (
+                #     isinstance(message["content"], list)
+                #     and len(message["content"]) > 0
+                # ):
+                text = message["content"][0]["text"]
+                if not text:  # This covers both None and empty string
+                    continue
+                # else:
+                #     text = message["content"]
+            else:
+                continue  # Skip other types of messages
 
-        topic_param = TopicParams(
-            talk_to_me=TopicParams.TalkToMeParam(duration=durationInput),
-            math_game=TopicParams.MathGameParam(total_question=durationInput),
-            spelling_game=TopicParams.SpellingGameParam(total_question=durationInput),
-            would_you_rather=TopicParams.WouldYouRatherParam(duration=durationInput),
-        )
+            # Append formatted message to the dummyMsg list
+            messageResult.append({"sender": sender, "text": text})
 
-        convo_input = StartConversationInput(
-            device_id=deviceIdInput,
-            user=user_data,
-            feature_params=topic_param,
-            selected_features=["talk_to_me"],
-            total_sessions=sessionsInput,
-        )
-
-        # class TopicParams(TypedDict):
-        # class TalkToMeParam(TypedDict):
-        #     duration: Annotated[int, "in seconds"]
-
-        # class MathGameParam(TypedDict):
-        #     total_question: int
-
-        # class SpellingGameParam(TypedDict):
-        #     total_question: int
-
-        # class WouldYouRatherParam(TypedDict):
-        #     duration: Annotated[int, "in seconds"]
-
-        # talk_to_me: TalkToMeParam
-        # math_game: MathGameParam
-        # spelling_game: SpellingGameParam
-        # would_you_rather: WouldYouRatherParam
-
-        st.json(convo_input.model_dump())  # show for debugging
-        resp = requests.post(
-            "http://localhost:11080/api/v1/pawpal/conversation/start",
-            json=convo_input.model_dump(),
-        )
-        if resp.status_code != 200:
-            resp.raise_for_status()
-        st.success("Berhasil menginput konfigurasi percakapan baru!!")
-    except Exception as e:
-        st.warning("Jika Backend tidak berjalan, fitur ini tidak dapat dipakai.")
-        st.error(f"Terjadi kesalahan: {e}")
-
-    print("convo started")
-
-# -------------------
-st.subheader("Transkrip")
-with st.expander("💬 Transkrip Percakapan"):
-    if dummyMsg:
-        for msg in dummyMsg:
+    # -------------------
+    # st.subheader("Transkrip")
+    with st.container(border=True, height=500):
+        for msg in messageResult:
             with st.chat_message(msg["sender"]):
                 st.write(msg["text"])
-    else:
-        st.write("Belum ada percakapan yang dimulai!")
+
+st.markdown("""
+    <style>
+    
+    button:hover{
+        border-color: #1e5677 !important;
+        color: #1e5677 !important;
+    }
+
+    button:active{
+        background-color: #1e5677 !important;
+        color: white !important;
+    }
+            
+    button:focus:not(:active) {
+        border-color: #1e5677 !important;
+        color: #1e5677 !important;
+    }
+            
+    /* Geser avatar user ke kanan */
+    div[data-testid="stChatMessage"] div[data-testid="stChatMessageAvatarUser"] {
+        order: 2; /* Biar muncul setelah pesan */
+        margin-left: auto;
+        margin-right: 0;
+        background-color: #fcc06b;
+    }
+            
+    div[data-testid="stChatMessage"] div[data-testid="stChatMessageAvatarAssistant"] {
+        padding: 1rem;
+        background-color: #1e5677;
+    }
+
+    /* Geser konten pesan ke kiri */
+    div[data-testid="stChatMessage"] div[data-testid="stChatMessageContent"] {
+        order: 1;
+    }
+
+    /* Buat layout flex horizontal (jika belum) */
+    div[data-testid="stChatMessage"] {
+        gap: 1rem;
+    }
+    
+    div[data-testid="stChatMessage"] div[data-testid="stChatMessageAvatarUser"] svg {
+        color: #976216;
+    }
+
+            
+    div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatarUser"]) p {
+        text-align: right;
+            color: white;
+    }
+            
+    div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatarUser"]) {
+        margin-left: 6rem;
+        background-color: #1e5677;
+    }
+            
+    div[data-testid="stChatMessage"] div[data-testid="stChatMessageAvatarAssistant"] svg {
+        color: white;
+    }
+            
+    div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatarAssistant"]) {
+        margin-right: 6rem;
+        background-color: #ededed;
+        padding: 1rem;
+    }
+            
+    @media (prefers-color-scheme: dark) {
+        div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatarAssistant"]) p {
+        
+            color: white;
+        }
+    }
+            
+            
+            
+    div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatarAssistant"]) p {
+            
+        
+    }
+            
+    
+    </style>
+""", unsafe_allow_html=True)
