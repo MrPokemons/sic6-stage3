@@ -153,7 +153,13 @@ class TalkToMe(Agentic):
                     {
                         "type": "text",
                         "text": (
-                            "End the Session, while saying thank you for participating for the session."
+                            "Tell the child that the current session is ending."
+                            "You must say thank you for participating for the session. You look forward to the next chat with the child."
+                            "*Say sorry if you had to cut a topic short.*"
+                            "**DO NOT END YOUR RESPONSE WITH A QUESTION.**"
+                            "Your whole response must not exceed 20 words."
+                            "Example:"
+                            "'Wah, sepertinya sesi hari ini udah mau berakhir nih! Terima kasih Adik karena sudah mau mengobrol denganku. Maaf ya kalau tadi ada perkataan yang membuatmu kurang nyaman atau sedih. Ayo kita ketemu di sesi selanjutnya!'"
                             + "\n"
                             + PromptLoader().language_template.format(
                                 user_language=configurable["user"].get(
