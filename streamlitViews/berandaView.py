@@ -12,93 +12,16 @@ from src.services.pawpal.schemas.document import ConversationDoc
 ROOT_PATH = Path(__file__).parents[1]
 
 if "urlBackend" not in st.session_state:
-    st.session_state.urlBackend = False
+    st.session_state.urlBackend = None
+
 if "deviceId" not in st.session_state:
-    st.session_state.deviceId = False
+    st.session_state.deviceId = None
+
 if "page" not in st.session_state:
     st.session_state.page = 0
 
+
 # analytics data declaration here
-
-wordDictionary = {
-    "Kata Asli": [
-        "Kucing",
-        "Mobil",
-        "Makan",
-        "Tidur",
-        "Minum",
-        "Sepeda",
-        "Sekolah",
-        "Buku",
-        "Pensil",
-        "Hujan",
-    ],
-    "Pelafalan Anak": [
-        "Cicing",
-        "Obil",
-        "Maka",
-        "Tiduh",
-        "Minuh",
-        "Sepeda",
-        "Sekola",
-        "Buku",
-        "Pensel",
-        "Ujan",
-    ],
-    "Koreksi": ["✅", "✅", "✅", "✅", "❌", "✅", "✅", "✅", "❌", "✅"],
-}
-
-mathDictionary = {
-    "Pertanyaan": [
-        "1 + 1?",
-        "2 + 3?",
-        "4 - 2?",
-        "5 x 2?",
-        "10 : 2?",
-        "3 + 5?",
-        "9 - 4?",
-        "6 x 3?",
-        "12 : 4?",
-        "7 + 8?",
-    ],
-    "Jawaban Anak": ["2", "4", "2", "12", "5", "7", "5", "18", "2", "15"],
-    "Koreksi": ["✅", "❌", "✅", "❌", "✅", "❌", "✅", "✅", "❌", "✅"],
-}
-
-reasoningGames = {
-    "Pertanyaan": [
-        "Kamu lebih suka hidup di dunia penuh dinosaurus atau penuh robot?",
-        "Kalau bisa pilih satu hewan jadi hewan peliharaan, kamu pilih apa dan kenapa?",
-        "Lebih enak liburan di pegunungan atau di kota besar? Kenapa?",
-        "Kalau bisa mengulang waktu, kamu mau kembali ke masa kapan?",
-        "Kalau kamu jadi presiden, hal pertama yang ingin kamu ubah apa?",
-        "Kamu lebih suka bisa berbicara semua bahasa di dunia, atau bisa bermain semua alat musik?",
-        "Kalau ada pintu ajaib, kamu mau pergi ke mana?",
-        "Lebih suka punya taman bermain di rumah atau kolam renang pribadi?",
-        "Kalau kamu bisa membuat mainan impianmu, mainan seperti apa yang kamu buat?",
-        "Kamu lebih suka membaca pikiran orang lain, atau bisa melihat masa depan?",
-    ],
-    "Contoh Jawaban Anak": [
-        "Dunia robot, karena keren dan canggih!",
-        "Panda, karena gemesin dan lucu banget!",
-        "",
-        "Waktu ulang tahun aku, karena seru dan dapat kado",
-        "Semua anak sekolah gratis!",
-        "Main semua alat musik, bisa bikin band sendiri!",
-        "",
-        "Taman bermain! Biar bisa main sepuasnya tiap hari!",
-        "",
-        "Melihat masa depan, biar tahu nanti aku jadi apa",
-    ],
-    "Status": ["✅", "✅", "❌", "✅", "✅", "✅", "❌", "✅", "❌", "✅"],
-}
-
-dummyMsg = [
-    {"sender": "user", "text": "Hai, kamu lagi apa?"},
-    {"sender": "bot", "text": "Halo! Aku lagi standby nunggu kamu 😄"},
-    {"sender": "user", "text": "Oke siap~"},
-]
-
 bulan = {
     1: "Januari",
     2: "Februari",
@@ -173,16 +96,8 @@ if st.session_state.deviceId:
     except Exception:
         pass
 
+    # backend offline, connect to read-only demo purposes mongodb
     if list_conversation is None:
-        try:
-            with open("static/json/example.json", "r") as f:
-                list_conversation = json.load(f)
-        except FileNotFoundError:
-            pass
-
-    if (
-        list_conversation is None
-    ):  # backend offline, connect to read-only demo purposes mongodb
         _client = MongoClient(
             "mongodb+srv://pawpal-demo-user:p78Q4EsqPfLmnvtb@sic-cluster.hcqho.mongodb.net/?retryWrites=true&w=majority&appName=SIC-Cluster"
         )
@@ -194,12 +109,22 @@ if st.session_state.deviceId:
     list_conversation: List[ConversationDoc] = [
         ConversationDoc.model_validate(convo) for convo in list_conversation
     ]
+
+    # last mode, use the static
+    if list_conversation is None:
+        try:
+            with open("static/json/example.json", "r") as f:
+                list_conversation = json.load(f)
+        except FileNotFoundError:
+            pass
+
     if not list_conversation:
         st.error("No conversation ever recorded from the provided device id")
         st.info(
             "Jika anda ingin melihat demo tampilan dan backend harus tidak berjalan, dapat menggunakan device_id `cincayla`"
         )
         st.stop()
+
 
     st.json([i.model_dump(mode="json") for i in list_conversation])
 
@@ -320,7 +245,7 @@ if st.session_state.deviceId:
         # SHOW DATA
 
         _icon, _title = title_map.get(session.type)
-        title_modified = "Sesi " + str((n + 1)) + " - " + _title
+        title_modified = "Sesi " + str(n + 1) + " - " + _title
 
         with st.expander(title_modified, icon=_icon):
             col1, col2 = st.columns(2)
@@ -357,20 +282,13 @@ if st.session_state.deviceId:
             if session.type == "math_games":
                 listEquation = []
                 st.subheader("Hasil Menghitung")
-                equation = ""
-                # equation_result = ""
                 listAnswer = []
 
                 for qna in session_result.list_qna:
+                    equation = []
                     for n, number in enumerate(qna.sequence):
-                        if number >= 0:
-                            equation += str(number)
-                            if n != len(number) - 1:
-                                equation += "+"
-                        else:
-                            equation += str(abs(number))
-                            if n != len(number) - 1:
-                                equation += "-"
+                        equation.append("+" if number >= 0 else "-")  # order matters, if negative then infront
+                        equation.append(str(abs(number)))
 
                     for n, userAnswer in enumerate(qna.user_answers):
                         answer = userAnswer.extraction.result
@@ -378,6 +296,7 @@ if st.session_state.deviceId:
                             answer = "Anak Tidak Menjawab"
                         listAnswer.append(answer)
 
+                    equation_fmt = ' '.join(equation).strip(" +")  # clear the front if its either space or +
                     listEquation.append(
                         {"Pertanyaan": equation, "Jawaban Anak": listAnswer}
                     )
@@ -487,7 +406,88 @@ st.markdown(
 
 # # -------------------
 # # hard coded values
-# # karena belum setup backend logic & endpoints for retrieving these kinds of data
+# # karena belum setup backend logic & endpoints for retrieving these kinds of data, below just temporary
+# # -------------------
+
+# wordDictionary = {
+#     "Kata Asli": [
+#         "Kucing",
+#         "Mobil",
+#         "Makan",
+#         "Tidur",
+#         "Minum",
+#         "Sepeda",
+#         "Sekolah",
+#         "Buku",
+#         "Pensil",
+#         "Hujan",
+#     ],
+#     "Pelafalan Anak": [
+#         "Cicing",
+#         "Obil",
+#         "Maka",
+#         "Tiduh",
+#         "Minuh",
+#         "Sepeda",
+#         "Sekola",
+#         "Buku",
+#         "Pensel",
+#         "Ujan",
+#     ],
+#     "Koreksi": ["✅", "✅", "✅", "✅", "❌", "✅", "✅", "✅", "❌", "✅"],
+# }
+
+# mathDictionary = {
+#     "Pertanyaan": [
+#         "1 + 1?",
+#         "2 + 3?",
+#         "4 - 2?",
+#         "5 x 2?",
+#         "10 : 2?",
+#         "3 + 5?",
+#         "9 - 4?",
+#         "6 x 3?",
+#         "12 : 4?",
+#         "7 + 8?",
+#     ],
+#     "Jawaban Anak": ["2", "4", "2", "12", "5", "7", "5", "18", "2", "15"],
+#     "Koreksi": ["✅", "❌", "✅", "❌", "✅", "❌", "✅", "✅", "❌", "✅"],
+# }
+
+# reasoningGames = {
+#     "Pertanyaan": [
+#         "Kamu lebih suka hidup di dunia penuh dinosaurus atau penuh robot?",
+#         "Kalau bisa pilih satu hewan jadi hewan peliharaan, kamu pilih apa dan kenapa?",
+#         "Lebih enak liburan di pegunungan atau di kota besar? Kenapa?",
+#         "Kalau bisa mengulang waktu, kamu mau kembali ke masa kapan?",
+#         "Kalau kamu jadi presiden, hal pertama yang ingin kamu ubah apa?",
+#         "Kamu lebih suka bisa berbicara semua bahasa di dunia, atau bisa bermain semua alat musik?",
+#         "Kalau ada pintu ajaib, kamu mau pergi ke mana?",
+#         "Lebih suka punya taman bermain di rumah atau kolam renang pribadi?",
+#         "Kalau kamu bisa membuat mainan impianmu, mainan seperti apa yang kamu buat?",
+#         "Kamu lebih suka membaca pikiran orang lain, atau bisa melihat masa depan?",
+#     ],
+#     "Contoh Jawaban Anak": [
+#         "Dunia robot, karena keren dan canggih!",
+#         "Panda, karena gemesin dan lucu banget!",
+#         "",
+#         "Waktu ulang tahun aku, karena seru dan dapat kado",
+#         "Semua anak sekolah gratis!",
+#         "Main semua alat musik, bisa bikin band sendiri!",
+#         "",
+#         "Taman bermain! Biar bisa main sepuasnya tiap hari!",
+#         "",
+#         "Melihat masa depan, biar tahu nanti aku jadi apa",
+#     ],
+#     "Status": ["✅", "✅", "❌", "✅", "✅", "✅", "❌", "✅", "❌", "✅"],
+# }
+
+# dummyMsg = [
+#     {"sender": "user", "text": "Hai, kamu lagi apa?"},
+#     {"sender": "bot", "text": "Halo! Aku lagi standby nunggu kamu 😄"},
+#     {"sender": "user", "text": "Oke siap~"},
+# ]
+
 # st.subheader("Spelling Games 🔤")
 # # dictionary columns
 # # declare tables and columns
