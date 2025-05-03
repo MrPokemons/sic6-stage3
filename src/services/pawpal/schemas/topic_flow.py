@@ -2,10 +2,10 @@ from typing import TypeAlias, Literal, Dict
 
 
 TopicFlowType: TypeAlias = Literal[
-    "talk_to_me", "math_games", "spelling_games", "would_you_rather"
+    "talk_to_me", "math_games", "guess_the_sound", "would_you_rather"
 ]
 TopicFlowNodeType: TypeAlias = Literal[
-    "talk_to_me_flow", "math_games_flow", "spelling_games_flow", "would_you_rather_flow"
+    "talk_to_me_flow", "math_games_flow", "guess_the_sound", "would_you_rather_flow"
 ]
 TopicFlowNodeMapping: Dict[TopicFlowType, TopicFlowNodeType] = {
     _name: _node
