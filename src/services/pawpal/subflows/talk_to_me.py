@@ -76,7 +76,7 @@ class TalkToMe(Agentic):
 
         This node won't be included into the graph since its just the redirector.
         """
-        if state.from_node == (
+        if state.from_node in (
             "start",
             "responding",
         ):
