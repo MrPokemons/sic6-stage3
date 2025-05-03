@@ -116,7 +116,7 @@ class PawPal(Agentic):
                             "- 'Yuk, hari ini kita mengobrol bebas dalam sesi 'Talk-To-Me!'"
                             # "- 'Aku mau mengajakmu menyelesaikan teka-teki Matematika. Yuk, kita bermain Math Adventures!'"
                             # "- 'Hari ini aku mau bermain Spelling Games! Yuk kita selesaikan tantangan mengeja kata bersama!'"
-                            # "- 'Aku punya ide, deh... Main 'Would-You-Rather' yuk!" 
+                            # "- 'Aku punya ide, deh... Main 'Would-You-Rather' yuk!"
                         )
                         + "\n"
                         + PromptLoader().language_template.format(

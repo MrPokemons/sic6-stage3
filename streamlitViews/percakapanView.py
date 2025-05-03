@@ -1,7 +1,9 @@
-import streamlit as st
+import json
 import requests
+import streamlit as st
+from typing import List
 from pymongo import MongoClient
-from bson.json_util import dumps
+from src.services.pawpal.schemas.document import ConversationDoc
 
 
 if "deviceId" not in st.session_state:
@@ -28,7 +30,7 @@ if not st.session_state.deviceId:
 
 if st.session_state.deviceId:
     deviceId = st.session_state.deviceId
-    print("\ndevice id ", deviceId)
+
     list_conversation = None
     try:
         resp = requests.get(
@@ -36,13 +38,11 @@ if st.session_state.deviceId:
         )
         if resp.status_code == 200:
             list_conversation = resp.json()
-
     except Exception:
         pass
 
-    if (
-        list_conversation is None
-    ):  # backend offline, connect to read-only demo purposes mongodb
+    # backend offline, connect to read-only demo purposes mongodb
+    if list_conversation is None:
         _client = MongoClient(
             "mongodb+srv://pawpal-demo-user:p78Q4EsqPfLmnvtb@sic-cluster.hcqho.mongodb.net/?retryWrites=true&w=majority&appName=SIC-Cluster"
         )
@@ -51,50 +51,49 @@ if st.session_state.deviceId:
         list_conversation: list = _collection.find({"device_id": deviceId}).to_list()
         st.warning("Backend tidak aktif, maka menggunakan alternatif database.")
 
-    if not list_conversation:
-        st.error(
-            "Tidak ada percakapan yang terekam dari nomor ID perangkat yang dimasukkan, cek kembali pada pengaturan"
+    # last mode, use the static
+    if list_conversation is None:
+        try:
+            with open("static/json/example.json", "r") as f:
+                list_conversation = json.load(f)
+        except FileNotFoundError:
+            pass
+
+    if list_conversation is None:
+        st.error("No conversation ever recorded from the provided device id")
+        st.info(
+            "Jika anda ingin melihat demo tampilan dan backend harus tidak berjalan, dapat menggunakan device_id `cincayla`"
         )
         st.stop()
 
-    st.json(dumps(list_conversation))
-    lastConversation = list_conversation[-1]
-    # lastSession = lastConversation["sessions"]
-    # print(lastConversation)
+    list_conversation: List[ConversationDoc] = [
+        ConversationDoc.model_validate(convo) for convo in list_conversation
+    ]
 
-    messageResult = []
-    # for session in lastConversation["sessions"]:
-    #     # dummyMsg.clear()
-    if lastConversation["sessions"] is None:
+    st.json([i.model_dump(mode="json") for i in list_conversation])
+
+    liveConversation = list_conversation[0]
+
+    if not liveConversation.sessions:
         st.error("Sesi belum dimulai")
         st.stop()
-    
-    lastSession = lastConversation["sessions"][-1]
-    for message in lastSession["messages"]:
-        # Check message type and handle accordingly
-        if isinstance(message, dict):
-            # if message["content"] == "":
-            #     continue
-            if message["type"] == "ai":
-                sender = "ai"
-                text = message["content"]
-            elif message["type"] == "human":
-                sender = "user"
-                # Assuming content is a list
-                # if (
-                #     isinstance(message["content"], list)
-                #     and len(message["content"]) > 0
-                # ):
-                text = message["content"][0]["text"]
-                if not text:  # This covers both None and empty string
-                    continue
-                # else:
-                #     text = message["content"]
-            else:
-                continue  # Skip other types of messages
 
-            # Append formatted message to the dummyMsg list
-            messageResult.append({"sender": sender, "text": text})
+    lastSession = liveConversation.sessions[-1]
+
+    messageResult = []
+    for message in lastSession.messages:
+        if message.type in ("ai",):
+            sender = "ai"
+            text = message.text()
+        elif message.type in ("human",):
+            sender = "user"
+            text = message.text().strip()
+            if not text:
+                continue
+        else:
+            continue
+
+        messageResult.append({"sender": sender, "text": text})
 
     # -------------------
     # st.subheader("Transkrip")

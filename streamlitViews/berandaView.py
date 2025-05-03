@@ -106,10 +106,6 @@ if st.session_state.deviceId:
         list_conversation: list = _collection.find({"device_id": deviceId}).to_list()
         st.warning("Backend tidak aktif, maka menggunakan alternatif database.")
 
-    list_conversation: List[ConversationDoc] = [
-        ConversationDoc.model_validate(convo) for convo in list_conversation
-    ]
-
     # last mode, use the static
     if list_conversation is None:
         try:
@@ -118,13 +114,16 @@ if st.session_state.deviceId:
         except FileNotFoundError:
             pass
 
-    if not list_conversation:
+    if list_conversation is None:
         st.error("No conversation ever recorded from the provided device id")
         st.info(
             "Jika anda ingin melihat demo tampilan dan backend harus tidak berjalan, dapat menggunakan device_id `cincayla`"
         )
         st.stop()
 
+    list_conversation: List[ConversationDoc] = [
+        ConversationDoc.model_validate(convo) for convo in list_conversation
+    ]
 
     st.json([i.model_dump(mode="json") for i in list_conversation])
 
@@ -287,7 +286,9 @@ if st.session_state.deviceId:
                 for qna in session_result.list_qna:
                     equation = []
                     for n, number in enumerate(qna.sequence):
-                        equation.append("+" if number >= 0 else "-")  # order matters, if negative then infront
+                        equation.append(
+                            "+" if number >= 0 else "-"
+                        )  # order matters, if negative then infront
                         equation.append(str(abs(number)))
 
                     for n, userAnswer in enumerate(qna.user_answers):
@@ -296,7 +297,9 @@ if st.session_state.deviceId:
                             answer = "Anak Tidak Menjawab"
                         listAnswer.append(answer)
 
-                    equation_fmt = ' '.join(equation).strip(" +")  # clear the front if its either space or +
+                    equation_fmt = " ".join(equation).strip(
+                        " +"
+                    )  # clear the front if its either space or +
                     listEquation.append(
                         {"Pertanyaan": equation, "Jawaban Anak": listAnswer}
                     )
