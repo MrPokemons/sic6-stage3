@@ -98,7 +98,7 @@ class MathGame(Agentic):
 
         This node won't be included into the graph since its just the redirector.
         """
-        if state.from_node in ("start", "evaluate",):
+        if state.from_node in ("start", "evaluate", "elaborate"):
             last_ai_msg = state.last_ai_message(raise_if_none=True, details=state.model_dump(mode='json'))
             interrupt([InterruptSchema(action="speaker", message=last_ai_msg.text())])
         elif state.from_node == "ask_question":
@@ -288,7 +288,7 @@ class MathGame(Agentic):
     @classmethod
     async def _evaluate(
         cls, state: MGSessionState, config: ConfigSchema
-    ) -> Command[Literal["evaluate", "elaborate", "ask_question"]]:
+    ) -> Command[Literal["listening", "elaborate", "ask_question"]]:
         _ = state.verify_last_session(session_type="math_games")
         qna: MathQnA = state.get_next_question(raise_if_none=True)
         if qna.is_correct():
@@ -309,7 +309,7 @@ class MathGame(Agentic):
             ]
         else:
             latest_user_answer = qna.latest_user_answer
-            next_node = "evaluate"
+            next_node = "listening"
             if latest_user_answer is None:
                 messages = [
                     SystemMessage(
@@ -361,7 +361,41 @@ class MathGame(Agentic):
     @classmethod
     async def _elaborate(
         cls, state: MGSessionState, config: ConfigSchema
-    ) -> Command[Literal["ask_question"]]: ...
+    ) -> Command[Literal["ask_question"]]:
+        messages = [
+            SystemMessage(
+                content=[
+                    {
+                        "type": "text",
+                        "text": "Elaborate and explain how to solve the question step by step."
+                    }
+                ]
+            ),
+            HumanMessage(
+                content=[
+                    {
+                        "type": "text",
+                        "text": ""
+                    }
+                ]
+            )
+        ]
+        state.get_next_question()
+        elaborate_response = await cls.model.ainvoke([*state.messages, *messages])
+        state.add_message_to_last_session(
+            session_type="math_games",
+            messages=messages,
+        )
+        return Command(
+            update={
+                "modified_datetime": datetime.now(timezone.utc),
+                "messages": [*messages, elaborate_response],
+                "sessions": state.get_sessions(deep=True),
+                "from_node": "elaborate",
+                "next_node": "ask_question",
+            },
+            goto="talk",
+        )
 
     @classmethod
     def build_workflow(self) -> CompiledStateGraph:
