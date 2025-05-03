@@ -1,9 +1,5 @@
 import streamlit as st
 import requests
-import pandas as pd
-from bson.json_util import dumps
-from dateutil import parser
-from datetime import datetime
 from pymongo import MongoClient
 
 if "deviceId" not in st.session_state:
@@ -104,7 +100,7 @@ if st.session_state.deviceId:
 st.markdown(
     """
     <style>
-    
+
     button:hover{
         border-color: #1e5677 !important;
         color: #1e5677 !important;
@@ -114,12 +110,12 @@ st.markdown(
         background-color: #1e5677 !important;
         color: white !important;
     }
-            
+
     button:focus:not(:active) {
         border-color: #1e5677 !important;
         color: #1e5677 !important;
     }
-            
+
     /* Geser avatar user ke kanan */
     div[data-testid="stChatMessage"] div[data-testid="stChatMessageAvatarUser"] {
         order: 2; /* Biar muncul setelah pesan */
@@ -127,7 +123,7 @@ st.markdown(
         margin-right: 0;
         background-color: #fcc06b;
     }
-            
+
     div[data-testid="stChatMessage"] div[data-testid="stChatMessageAvatarAssistant"] {
         padding: 1rem;
         background-color: #1e5677;
@@ -142,47 +138,42 @@ st.markdown(
     div[data-testid="stChatMessage"] {
         gap: 1rem;
     }
-    
+
     div[data-testid="stChatMessage"] div[data-testid="stChatMessageAvatarUser"] svg {
         color: #976216;
     }
 
-            
+
     div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatarUser"]) p {
         text-align: right;
             color: white;
     }
-            
+
     div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatarUser"]) {
         margin-left: 6rem;
         background-color: #1e5677;
     }
-            
+
     div[data-testid="stChatMessage"] div[data-testid="stChatMessageAvatarAssistant"] svg {
         color: white;
     }
-            
+
     div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatarAssistant"]) {
         margin-right: 6rem;
         background-color: #ededed;
         padding: 1rem;
     }
-            
+
     @media (prefers-color-scheme: dark) {
         div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatarAssistant"]) p {
-        
             color: white;
         }
     }
-            
-            
-            
+
     div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatarAssistant"]) p {
-            
-        
+
     }
-            
-    
+
     </style>
 """,
     unsafe_allow_html=True,

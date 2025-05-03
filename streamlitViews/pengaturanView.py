@@ -198,12 +198,12 @@ st.markdown(
             background-color: #1e5677 !important;
             color: white !important;
         }
-                
+
         button:focus:not(:active) {
             border-color: #1e5677 !important;
             color: #1e5677 !important;
-        }  
-    
+        }
+
     </style>
 """,
     unsafe_allow_html=True,
