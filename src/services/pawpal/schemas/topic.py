@@ -1,4 +1,5 @@
 import secrets
+import json
 from typing import Annotated, List, TypeAlias, Union, Optional, Literal
 from typing_extensions import TypedDict
 from pydantic import BaseModel, Field
@@ -10,7 +11,7 @@ from ....utils.typex import EmotionType
 
 ### Math
 class MathUserAnswerExtraction(BaseModel):
-    result: int = Field(description="extract user answer for the appropriate question")
+    result: Optional[int] = Field(description="extract user answer for the appropriate question, if user doesn't answer or give unrelated answer within the number")
 
 
 class MathUserAnswer(BaseModel):
@@ -18,6 +19,7 @@ class MathUserAnswer(BaseModel):
         str, "user pure answer, then parse to extraction for real result"
     ]
     extraction: MathUserAnswerExtraction
+    feedback: Optional[str] = None
 
 
 class MathQnA(BaseModel):
@@ -29,6 +31,16 @@ class MathQnA(BaseModel):
     @property
     def answer(self):
         return sum(self.sequence)
+
+    @property
+    def latest_user_answer(self):
+        if not self.user_answers:
+            raise Exception(f"How does this suppose to happen? MathQnA hasn't been answered.\n{json.dumps(self, indent=2)}")
+        return self.user_answers[-1].extraction.result
+
+    def is_correct(self, *, index: int = -1):
+        index = min(len(self.user_answers) - 1, max(-1, index))
+        return not self.user_answers or (self.user_answers[index].extraction.result == self.answer)
 
     @staticmethod
     def generate_sequence(length: int, min_val: int, max_val: int):
@@ -44,8 +56,6 @@ class MathQnA(BaseModel):
 
 
 ### Topic
-
-
 class TopicParams(TypedDict):
     class TalkToMeParam(TypedDict):
         duration: Annotated[int, "in seconds"]
@@ -53,7 +63,7 @@ class TopicParams(TypedDict):
     class MathGameParam(TypedDict):
         total_question: int
 
-    class SpellingGameParam(TypedDict):
+    class GuessTheSoundParam(TypedDict):
         total_question: int
 
     class WouldYouRatherParam(TypedDict):
@@ -61,7 +71,7 @@ class TopicParams(TypedDict):
 
     talk_to_me: TalkToMeParam
     math_game: MathGameParam
-    spelling_game: SpellingGameParam
+    guess_the_sound: GuessTheSoundParam
     would_you_rather: WouldYouRatherParam
 
 
@@ -95,14 +105,22 @@ class TopicResults(BaseModel):
         start_datetime: datetime
         modified_datetime: datetime
 
-    class SpellingGameResult(BaseModel): ...
+    class GuessTheSoundResult(BaseModel):
+        class _Extraction(BaseExtractionTopic): ...
 
-    class WouldYouRatherResult(BaseModel): ...
+        type: Literal["guess_the_sound"] = "guess_the_sound"
+        extraction: _Extraction
+
+    class WouldYouRatherResult(BaseModel):
+        class _Extraction(BaseExtractionTopic): ...
+
+        type: Literal["would_you_rather"] = "would_you_rather"
+        extraction: _Extraction
 
 
 TopicResultsType: TypeAlias = Union[
     TopicResults.TalkToMeResult,
     TopicResults.MathGameResult,
-    TopicResults.SpellingGameResult,
+    TopicResults.GuessTheSoundResult,
     TopicResults.WouldYouRatherResult,
 ]
