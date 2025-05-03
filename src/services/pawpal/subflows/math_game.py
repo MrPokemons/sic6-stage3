@@ -3,7 +3,7 @@ from typing import List, Literal, Optional
 from datetime import datetime, timezone
 from pydantic import Field
 
-from langchain_core.messages import BaseMessage, SystemMessage, HumanMessage
+from langchain_core.messages import SystemMessage, HumanMessage
 from langgraph.types import Command, interrupt
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.state import CompiledStateGraph
@@ -344,7 +344,7 @@ class MathGame(Agentic):
         evaluate_response = await cls.model.ainvoke([*state.messages, *messages])
         state.add_message_to_last_session(
             session_type="math_games",
-            messages=messages,
+            messages=[*messages, evaluate_response],
         )
         return Command(
             update={
@@ -362,6 +362,8 @@ class MathGame(Agentic):
     async def _elaborate(
         cls, state: MGSessionState, config: ConfigSchema
     ) -> Command[Literal["ask_question"]]:
+        _ = state.verify_last_session(session_type="math_games")
+        qna = state.get_next_question(raise_if_none=True)
         messages = [
             SystemMessage(
                 content=[
@@ -375,16 +377,18 @@ class MathGame(Agentic):
                 content=[
                     {
                         "type": "text",
-                        "text": ""
+                        "text": (
+                            f"The question is {qna.question}, can you help elaborate to me the thinking? "
+                            "Try explain in very-very efficient manner. "
+                        )
                     }
                 ]
             )
         ]
-        state.get_next_question()
         elaborate_response = await cls.model.ainvoke([*state.messages, *messages])
         state.add_message_to_last_session(
             session_type="math_games",
-            messages=messages,
+            messages=[*messages, elaborate_response],
         )
         return Command(
             update={
