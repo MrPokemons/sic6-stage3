@@ -120,7 +120,7 @@ bulan = {
 title_map = {
     "talk_to_me": ("👄", "Talk To Me"),
     "math_games": ("🖐️", "Math Adventure"),
-    "spelling_games": ("🔤", "Spelling Game"),
+    "guess_the_sound": ("🔤", "Spelling Game"),
     "would_you_rather": ("❓", "Would You Rather"),
 }
 
@@ -210,7 +210,7 @@ if st.session_state.deviceId:
                 "math_game": {
                     "total_question": 2
                 },
-                "spelling_game": {
+                "guess_the_sound": {
                     "total_question": 5
                 },
                 "would_you_rather": {
@@ -1069,7 +1069,7 @@ if st.session_state.deviceId:
                 "math_game": {
                     "total_question": 5
                 },
-                "spelling_game": {
+                "guess_the_sound": {
                     "total_question": 5
                 },
                 "would_you_rather": {
