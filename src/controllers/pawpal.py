@@ -307,8 +307,7 @@ def pawpal_router(
                                                     data=audio_array,
                                                     samplerate=sample_rate,
                                                 )
-                                                await asyncio.sleep(5)
-                                                # sd.wait()
+                                                sd.wait()
                                             except OSError:
                                                 audio_filename = datetime.now(
                                                     timezone.utc
