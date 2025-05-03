@@ -1,6 +1,8 @@
 import streamlit as st
 import requests
 from pymongo import MongoClient
+from bson.json_util import dumps
+
 
 if "deviceId" not in st.session_state:
     st.session_state.deviceId = False
@@ -30,7 +32,7 @@ if st.session_state.deviceId:
     list_conversation = None
     try:
         resp = requests.get(
-            f"http://localhost:11080/api/v1/pawpal/conversation/{deviceId}"
+            f"http://localhost:11080/api/v1/pawpal/conversation/{deviceId}/live"
         )
         if resp.status_code == 200:
             list_conversation = resp.json()
@@ -55,7 +57,7 @@ if st.session_state.deviceId:
         )
         st.stop()
 
-    # st.json(dumps(list_conversation))
+    st.json(dumps(list_conversation))
     lastConversation = list_conversation[-1]
     # lastSession = lastConversation["sessions"]
     # print(lastConversation)
@@ -63,32 +65,36 @@ if st.session_state.deviceId:
     messageResult = []
     # for session in lastConversation["sessions"]:
     #     # dummyMsg.clear()
-    lastSession = lastConversation["sessions"][-1]
-    for message in lastSession["messages"]:
-        # Check message type and handle accordingly
-        if isinstance(message, dict):
-            # if message["content"] == "":
-            #     continue
-            if message["type"] == "ai":
-                sender = "ai"
-                text = message["content"]
-            elif message["type"] == "human":
-                sender = "user"
-                # Assuming content is a list
-                # if (
-                #     isinstance(message["content"], list)
-                #     and len(message["content"]) > 0
-                # ):
-                text = message["content"][0]["text"]
-                if not text:  # This covers both None and empty string
-                    continue
-                # else:
-                #     text = message["content"]
-            else:
-                continue  # Skip other types of messages
+    if lastConversation["sessions"] is None:
+        st.error("Sesi belum dimulai")
+        st.stop()
+    else:
+        lastSession = lastConversation["sessions"][-1]
+        for message in lastSession["messages"]:
+            # Check message type and handle accordingly
+            if isinstance(message, dict):
+                # if message["content"] == "":
+                #     continue
+                if message["type"] == "ai":
+                    sender = "ai"
+                    text = message["content"]
+                elif message["type"] == "human":
+                    sender = "user"
+                    # Assuming content is a list
+                    # if (
+                    #     isinstance(message["content"], list)
+                    #     and len(message["content"]) > 0
+                    # ):
+                    text = message["content"][0]["text"]
+                    if not text:  # This covers both None and empty string
+                        continue
+                    # else:
+                    #     text = message["content"]
+                else:
+                    continue  # Skip other types of messages
 
-            # Append formatted message to the dummyMsg list
-            messageResult.append({"sender": sender, "text": text})
+                # Append formatted message to the dummyMsg list
+                messageResult.append({"sender": sender, "text": text})
 
     # -------------------
     # st.subheader("Transkrip")

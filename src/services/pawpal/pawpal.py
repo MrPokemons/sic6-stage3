@@ -104,9 +104,7 @@ class PawPal(Agentic):
                     {
                         "type": "text",
                         "text": (
-                            "Say something fun and playful, like PawPal is drawing a surprise session from a magical mystery box. "
-                            "Build excitement with a little drumroll or silly sound effect, then reveal the session name and jump right in, "
-                            f"which next session name will be '{next_feature.replace('_', ' ').capitalize()}'."
+                            f"Say something fun and playful, like PawPal is drawing a surprise session from a magical mystery box. Build excitement by adding a sense of suspense, then, in just 1-2 sentences, reveal the name of the next session, which will be '{next_feature.replace('_', ' ').capitalize()}'. Make sure the tone is engaging and friendly, keeping it short, exciting, and direct. The message should be quick and impactful to keep the child interested, so don't exceed 2 sentences!"
                         )
                         + "\n"
                         + prompt_loader.language_template.format(
@@ -158,7 +156,7 @@ class PawPal(Agentic):
         messages = [
             SystemMessage(
                 content=(
-                    "End the Conversation, while saying thank you for the participation and encourage to be strong."
+                    "Generate a short, warm, and friendly goodbye message from PawPal, written entirely in the child's language. The message should include a gentle thank-you for spending time together, a note about how fun it was, and a sweet goodbye. Adjust the tone based on the child's age use playful and simple language for younger children, and a slightly more expressive, thoughtful tone for older ones. Reflect the child's personality in the message to maintain connection. The farewell should feel safe, caring, and emotionally reassuring, ending with excitement about meeting or playing again soon. Keep it short—just 2 to 3 sentences—and respond only with the message."
                     + "\n"
                     + prompt_loader.language_template.format(
                         user_language=configurable["user"].get("language", "English")
