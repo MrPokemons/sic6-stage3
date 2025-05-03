@@ -18,7 +18,7 @@ from ..schemas.topic import (
     MathQnA,
     TopicResults,
 )
-from ..utils import prompt_loader
+from ..utils import PromptLoader
 
 
 class MGSessionState(SessionState):
@@ -214,7 +214,7 @@ class MathGame(Agentic):
                         "text": (
                             "End the Session, while saying thank you for participating for the session."
                             + "\n"
-                            + prompt_loader.language_template.format(
+                            + PromptLoader().language_template.format(
                                 user_language=configurable["user"].get(
                                     "language", "English"
                                 )
