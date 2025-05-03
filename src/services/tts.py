@@ -48,7 +48,10 @@ class ElevenlabsTextToSpeech(TextToSpeech):
             self.clients.append(AsyncElevenLabs(api_key=_api_key))
         self.voice_id = "Xb7hH8MSUJpSbSDYk0k2"
         self.voice_settings = VoiceSettings(
-            speed=0.95, stability=0.60, similarity_boost=0.75, style=.15,
+            speed=0.95,
+            stability=0.60,
+            similarity_boost=0.75,
+            style=0.15,
         )
         self.model_id = "eleven_flash_v2_5"
         # self.model_id = None

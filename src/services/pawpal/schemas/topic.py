@@ -11,7 +11,9 @@ from ....utils.typex import EmotionType
 
 ### Math
 class MathUserAnswerExtraction(BaseModel):
-    result: Optional[int] = Field(description="extract user answer for the appropriate question, if user doesn't answer or give unrelated answer within the number")
+    result: Optional[int] = Field(
+        description="extract user answer for the appropriate question, if user doesn't answer or give unrelated answer within the number"
+    )
 
 
 class MathUserAnswer(BaseModel):
@@ -35,12 +37,16 @@ class MathQnA(BaseModel):
     @property
     def latest_user_answer(self):
         if not self.user_answers:
-            raise Exception(f"How does this suppose to happen? MathQnA hasn't been answered.\n{json.dumps(self, indent=2)}")
+            raise Exception(
+                f"How does this suppose to happen? MathQnA hasn't been answered.\n{json.dumps(self, indent=2)}"
+            )
         return self.user_answers[-1].extraction.result
 
     def is_correct(self, *, index: int = -1):
         index = min(len(self.user_answers) - 1, max(-1, index))
-        return not self.user_answers or (self.user_answers[index].extraction.result == self.answer)
+        return not self.user_answers or (
+            self.user_answers[index].extraction.result == self.answer
+        )
 
     @staticmethod
     def generate_sequence(length: int, min_val: int, max_val: int):

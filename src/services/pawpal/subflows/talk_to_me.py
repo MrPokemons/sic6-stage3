@@ -33,7 +33,7 @@ class TalkToMe(Agentic):
         messages = [
             SystemMessage(
                 content=[
-                {
+                    {
                         "type": "text",
                         "text": (
                             'Introduce the "Talk to Me" session warmly and naturally in the child\'s language. '
@@ -74,12 +74,19 @@ class TalkToMe(Agentic):
 
         This node won't be included into the graph since its just the redirector.
         """
-        if state.from_node == ("start", "responding", ):
-            last_ai_msg = state.last_ai_message(raise_if_none=True, details=state.model_dump(mode='json'))
+        if state.from_node == (
+            "start",
+            "responding",
+        ):
+            last_ai_msg = state.last_ai_message(
+                raise_if_none=True, details=state.model_dump(mode="json")
+            )
             interrupt([InterruptSchema(action="speaker", message=last_ai_msg.text())])
         elif state.from_node == "check_session":
             if state.next_node == END:
-                last_ai_msg = state.last_ai_message(raise_if_none=True, details=state.model_dump(mode='json'))
+                last_ai_msg = state.last_ai_message(
+                    raise_if_none=True, details=state.model_dump(mode="json")
+                )
                 interrupt(
                     [InterruptSchema(action="speaker", message=last_ai_msg.text())]
                 )

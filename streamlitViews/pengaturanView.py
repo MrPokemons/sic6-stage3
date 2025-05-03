@@ -134,12 +134,8 @@ if st.session_state.configuration:
             )
 
             topic_param = TopicParams(
-                talk_to_me=TopicParams.TalkToMeParam(
-                    duration=durationInput * 60
-                ),
-                math_game=TopicParams.MathGameParam(
-                    total_question=questionInput
-                ),
+                talk_to_me=TopicParams.TalkToMeParam(duration=durationInput * 60),
+                math_game=TopicParams.MathGameParam(total_question=questionInput),
                 guess_the_sound=TopicParams.GuessTheSoundParam(
                     total_question=questionInput
                 ),

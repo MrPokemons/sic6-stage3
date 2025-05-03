@@ -12,7 +12,12 @@ from langgraph.checkpoint.memory import MemorySaver
 from ..agentic import Agentic
 from ..schemas.config import ConfigSchema, ConfigurableSchema
 from ..schemas.state import SessionState, InterruptSchema
-from ..schemas.topic import MathUserAnswerExtraction, MathUserAnswer, MathQnA, TopicResults
+from ..schemas.topic import (
+    MathUserAnswerExtraction,
+    MathUserAnswer,
+    MathQnA,
+    TopicResults,
+)
 from ..utils import prompt_loader
 
 
@@ -99,19 +104,21 @@ class MathGame(Agentic):
         This node won't be included into the graph since its just the redirector.
         """
         if state.from_node in ("start", "evaluate", "elaborate"):
-            last_ai_msg = state.last_ai_message(raise_if_none=True, details=state.model_dump(mode='json'))
+            last_ai_msg = state.last_ai_message(
+                raise_if_none=True, details=state.model_dump(mode="json")
+            )
             interrupt([InterruptSchema(action="speaker", message=last_ai_msg.text())])
         elif state.from_node == "ask_question":
             if state.next_node == END:
-                last_ai_msg = state.last_ai_message(raise_if_none=True, details=state.model_dump(mode='json'))
+                last_ai_msg = state.last_ai_message(
+                    raise_if_none=True, details=state.model_dump(mode="json")
+                )
                 interrupt(
                     [InterruptSchema(action="speaker", message=last_ai_msg.text())]
                 )
             else:
                 qna: MathQnA = state.get_next_question(raise_if_none=True)
-                interrupt(
-                    [InterruptSchema(action="speaker", message=qna.question)]
-                )
+                interrupt([InterruptSchema(action="speaker", message=qna.question)])
         return Command(goto=state.next_node)
 
     @classmethod
@@ -269,10 +276,7 @@ class MathGame(Agentic):
         )
         qna: MathQnA = state.get_next_question(raise_if_none=True)
         qna.user_answers.append(
-            MathUserAnswer(
-                raw_answer=user_response,
-                extraction=_math_extracted_result
-            )
+            MathUserAnswer(raw_answer=user_response, extraction=_math_extracted_result)
         )
         return Command(
             update={
@@ -302,7 +306,7 @@ class MathGame(Agentic):
                             "text": (
                                 "Congratulate user for answering the answer correctly and accurately. "
                                 "Praise his/hers hardworking for solving the question."
-                            )
+                            ),
                         }
                     ]
                 )
@@ -318,7 +322,7 @@ class MathGame(Agentic):
                                 "type": "text",
                                 "text": (
                                     "Motivate the user to answer, telling don't gives up, and lets answer correctly"
-                                )
+                                ),
                             }
                         ]
                     )
@@ -332,7 +336,7 @@ class MathGame(Agentic):
                                 "text": (
                                     "Tell the user the answer is wrong, and let's take another chance to solve the question. "
                                     "Encourage to think step by step, and don't give up."
-                                )
+                                ),
                             }
                         ]
                     )
@@ -357,7 +361,6 @@ class MathGame(Agentic):
             goto="talk",
         )
 
-
     @classmethod
     async def _elaborate(
         cls, state: MGSessionState, config: ConfigSchema
@@ -369,7 +372,7 @@ class MathGame(Agentic):
                 content=[
                     {
                         "type": "text",
-                        "text": "Elaborate and explain how to solve the question step by step."
+                        "text": "Elaborate and explain how to solve the question step by step.",
                     }
                 ]
             ),
@@ -380,10 +383,10 @@ class MathGame(Agentic):
                         "text": (
                             f"The question is {qna.question}, can you help elaborate to me the thinking? "
                             "Try explain in very-very efficient manner. "
-                        )
+                        ),
                     }
                 ]
-            )
+            ),
         ]
         elaborate_response = await cls.model.ainvoke([*state.messages, *messages])
         state.add_message_to_last_session(

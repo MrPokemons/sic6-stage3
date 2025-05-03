@@ -111,7 +111,7 @@ bulan = {
     9: "September",
     10: "Oktober",
     11: "November",
-    12: "Desember"
+    12: "Desember",
 }
 
 title_map = {
@@ -191,8 +191,9 @@ if st.session_state.deviceId:
         list_conversation: list = _collection.find({"device_id": deviceId}).to_list()
         st.warning("Backend tidak aktif, maka menggunakan alternatif database.")
 
-
-    list_conversation: List[ConversationDoc] = [ConversationDoc.model_validate(convo) for convo in list_conversation]
+    list_conversation: List[ConversationDoc] = [
+        ConversationDoc.model_validate(convo) for convo in list_conversation
+    ]
     if not list_conversation:
         st.error("No conversation ever recorded from the provided device id")
         st.info(
@@ -200,7 +201,7 @@ if st.session_state.deviceId:
         )
         st.stop()
 
-    st.json([i.model_dump(mode='json') for i in list_conversation])
+    st.json([i.model_dump(mode="json") for i in list_conversation])
 
     with st.container():
         pageCol1, pageCol2, pageCol3 = st.columns([1, 14, 1])
@@ -221,14 +222,18 @@ if st.session_state.deviceId:
 
     currentConversation: ConversationDoc = list_conversation[-page - 1]
     currentDateTime = parser.isoparse(currentConversation.created_datetime)
-    currentDate = f"{currentDateTime.day} {bulan[currentDateTime.month]} {currentDateTime.year}"
+    currentDate = (
+        f"{currentDateTime.day} {bulan[currentDateTime.month]} {currentDateTime.year}"
+    )
     currentTime = currentDateTime.strftime("%H:%M")
 
-    if currentConversation.sessions:  
+    if currentConversation.sessions:
         startDateTime = currentConversation.sessions[0].result.start_datetime
         endDateTime = currentConversation.sessions[-1].result.modified_datetime
 
-        startDate = f"{startDateTime.day} {bulan[startDateTime.month]} {startDateTime.year}"
+        startDate = (
+            f"{startDateTime.day} {bulan[startDateTime.month]} {startDateTime.year}"
+        )
         startTime = startDateTime.strftime("%H:%M")
 
         endDate = f"{endDateTime.day} {bulan[endDateTime.month]} {endDateTime.year}"
@@ -250,33 +255,33 @@ if st.session_state.deviceId:
             col1, col2, col3, col4, col5 = st.columns([2, 5, 1, 5, 2])
             with col2:
                 st.markdown(
-                f"""
+                    f"""
                     <h3 style="text-align: center; padding-top: 0; padding-bottom: 0.2rem; font-weight:650;">
-                        🗓️ {startDate} 
+                        🗓️ {startDate}
                     </h3>
                     <h5 style="text-align: center; padding: 0.5rem 0px 1.2rem; font-size: 1.1rem; ">
                         ⏰ {startTime} WIB
                     </h5>
                     """,
-                        unsafe_allow_html=True,
-                )   
+                    unsafe_allow_html=True,
+                )
             with col3:
-                st.subheader("\-")
+                st.subheader("-")
             with col4:
                 st.markdown(
-                f"""
+                    f"""
                     <h3 style="text-align: center; padding-top: 0; padding-bottom: 0.2rem; font-weight:650;">
-                        🗓️ {endDate} 
+                        🗓️ {endDate}
                     </h3>
                     <h5 style="text-align: center; padding: 0.5rem 0px 1.2rem; font-size: 1.1rem; ">
                         ⏰ {endTime} WIB
                     </h5>
                     """,
-                        unsafe_allow_html=True,
-                )   
+                    unsafe_allow_html=True,
+                )
     else:
         st.markdown(
-                f"""
+            f"""
             <h3 style="text-align: center; padding-top: 0; padding-bottom: 0.2rem; font-weight:650;">
                 🗓️ {currentDate}
             </h3>
@@ -284,13 +289,15 @@ if st.session_state.deviceId:
                 ⏰ {currentTime} WIB
             </h5>
             """,
-                unsafe_allow_html=True,
+            unsafe_allow_html=True,
         )
         st.error("Sesi belum dimulai")
 
     for n, session in enumerate(currentConversation.sessions):
         convoStartTime = session.result.start_datetime
-        convoStartTimeDate = f"{convoStartTime.day} {bulan[convoStartTime.month]} {convoStartTime.year}"
+        convoStartTimeDate = (
+            f"{convoStartTime.day} {bulan[convoStartTime.month]} {convoStartTime.year}"
+        )
         convoStartTimeHour = convoStartTime.strftime("%H:%M")
 
         convoEndTime = session.result.modified_datetime
@@ -298,10 +305,10 @@ if st.session_state.deviceId:
 
         messageResult = []
         for message in session.messages:
-            if message.type in ("ai", ):
+            if message.type in ("ai",):
                 sender = "ai"
                 text = message.text()
-            elif message.type in ("human", ):
+            elif message.type in ("human",):
                 sender = "user"
                 text = message.text().strip()
                 if not text:
@@ -357,11 +364,11 @@ if st.session_state.deviceId:
                 for qna in session_result.list_qna:
                     for n, number in enumerate(qna.sequence):
                         if number >= 0:
-                            equation += (str(number))
+                            equation += str(number)
                             if n != len(number) - 1:
                                 equation += "+"
                         else:
-                            equation += (str(abs(number)))
+                            equation += str(abs(number))
                             if n != len(number) - 1:
                                 equation += "-"
 
@@ -371,8 +378,9 @@ if st.session_state.deviceId:
                             answer = "Anak Tidak Menjawab"
                         listAnswer.append(answer)
 
-                    listEquation.append({"Pertanyaan":equation, "Jawaban Anak":listAnswer})
-
+                    listEquation.append(
+                        {"Pertanyaan": equation, "Jawaban Anak": listAnswer}
+                    )
 
     # --------------------
     # custom styling

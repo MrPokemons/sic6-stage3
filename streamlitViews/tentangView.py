@@ -63,9 +63,9 @@ with st.container():
             st.markdown(
                 "Contoh, "
                 "jika Anda memasukkan 2 sesi, maka PawPal bisa menjalankan:<br>"
-                "📌 10 menit bermain \"Talk to Me\"<br>"
-                "📌 7 pertanyaan untuk bermain \"Math Adventures\"",
-                unsafe_allow_html=True
+                '📌 10 menit bermain "Talk to Me"<br>'
+                '📌 7 pertanyaan untuk bermain "Math Adventures"',
+                unsafe_allow_html=True,
             )
     st.write(
         "Ini memberikan variasi agar anak tidak bosan dan tetap belajar secara menyenangkan."
