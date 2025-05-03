@@ -332,7 +332,8 @@ class MathGame(Agentic):
                             "type": "text",
                             "text": (
                                 "Congratulate user for answering the answer correctly and accurately. "
-                                "Praise his/hers hardworking for solving the question."
+                                "Praise his/hers hardworking for solving the question. "
+                                "DON'T ASK ANOTHER QUESTION, YOUR JOB ONLY CONGRATULATE. "
                             ),
                         }
                     ]
@@ -350,6 +351,7 @@ class MathGame(Agentic):
                                 "text": (
                                     "Encourage the user to try to answer, just encourage words and tell him/her to try again. "
                                     "JUST ENCOURAGEMENT, DON'T GIVE OUT THE ANSWER OR ANY CLUE."
+                                    "DON'T ASK ANOTHER QUESTION, YOUR JOB ONLY CONGRATULATE. "
                                 ),
                             }
                         ]
@@ -365,6 +367,7 @@ class MathGame(Agentic):
                                     "Inform the user that their answer is WRONG. Motivate them to try again since there's still available attempt. "
                                     "Encourage the user to think step by step, and never give up. "
                                     "JUST ENCOURAGEMENT, DON'T GIVE OUT THE ANSWER OR ANY CLUE. "
+                                    "DON'T ASK ANOTHER QUESTION, YOUR JOB ONLY CONGRATULATE. "
                                 ),
                             }
                         ]
