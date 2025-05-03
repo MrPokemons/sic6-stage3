@@ -50,7 +50,7 @@ class SessionState(BaseModel):
         return copy.deepcopy(self.sessions)
 
     def last_ai_message(
-        self, *, raise_if_none: bool = False, details: Optional[Any] = None
+        self, *, raise_if_none: bool = False, detail_for_error: Optional[Any] = None
     ) -> Optional[BaseMessage]:
         try:
             return next(
@@ -60,7 +60,7 @@ class SessionState(BaseModel):
             )
         except StopIteration:
             if raise_if_none:
-                raise Exception(f"How no last ai message? {details}")
+                raise Exception(f"How no last ai message? {detail_for_error}")
 
 
 InterruptAction: TypeAlias = Literal["speaker", "microphone"]

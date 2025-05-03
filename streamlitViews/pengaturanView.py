@@ -52,7 +52,7 @@ with st.form("child_profile_form"):
     featureOptions = [
         "👄 Talk To Me",
         "🖐️ Math Adventures",
-        "🔤 Spelling Games",
+        "🔊 Guess The Sound",
         "❓ Would You Rather",
     ]
     selectedFeatures = st.pills(
@@ -108,18 +108,16 @@ if st.session_state.configuration:
     questionInput = 0
     with st.form("duration_and_total_question"):
         if "talk_to_me" in selectedFeatures or "would_you_rather" in selectedFeatures:
-            durationOptions = [f"{i} Menit" for i in range(1, 31)]
             durationInput = st.select_slider(
                 "⏰ Durasi Interaksi dalam Menit (Talk To Me, Would You Rather)",
-                options=durationOptions,
-                value="1 Menit",
+                options=range(1, 31),
+                value=1,
             )
         if "math_games" in selectedFeatures or "guess_the_sound" in selectedFeatures:
-            questionOptions = [f"{i} Pertanyaan" for i in range(1, 31)]
             questionInput = st.select_slider(
                 "🙋‍♂️ Jumlah Pertanyaan (Math Adventure, Guess The Sound)",
-                options=questionOptions,
-                value="1 Pertanyaan",
+                options=range(1, 31),
+                value=1,
             )
 
         startConvo = st.form_submit_button("Mulai Percakapan")

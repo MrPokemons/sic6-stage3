@@ -92,9 +92,9 @@ class ConnectionManager:
         sample_rate = None
         while 1:
             packet = await asyncio.wait_for(websocket.receive_bytes(), timeout=15)
-            self.logger.info("\n\nReceived packet")
+            self.logger.info("Received packet")
             metadata, chunk = self.message_packer.unpack(packet=packet)
-            self.logger.info(f"Client's Metadata: {metadata}\n\n")
+            self.logger.info(f"Client's Metadata: {metadata}\n")
             if list_chunk is None:
                 list_chunk = [None] * metadata["total_seq"]
 
@@ -307,8 +307,7 @@ def pawpal_router(
                                                     data=audio_array,
                                                     samplerate=sample_rate,
                                                 )
-                                                await asyncio.sleep(5)
-                                                # sd.wait()
+                                                sd.wait()
                                             except OSError:
                                                 audio_filename = datetime.now(
                                                     timezone.utc
