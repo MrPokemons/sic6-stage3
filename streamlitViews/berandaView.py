@@ -362,10 +362,10 @@ st.markdown(
     }
     
     button:disabled:hover{
-        border-color: #31333f33;
-        background-color: transparent;
-        color: #31333f66;
-        cursor: not-allowed;
+        border-color: #31333f33 !important;
+        background-color: transparent !important;
+        color: #31333f66 !important;
+        cursor: not-allowed !important;
     }
 
     button:active{
