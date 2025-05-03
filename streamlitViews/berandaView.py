@@ -248,6 +248,10 @@ if st.session_state.deviceId:
     #         with st.chat_message(msg["sender"]):
     #             st.write(msg["text"])
 
+    if not listSession:
+        st.error("No session has been conducted")
+        st.stop()
+
     startDate = listSession[0].date
     endDate = listSession[-1].date
     startTime = listSession[0].startTime

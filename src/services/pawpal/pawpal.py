@@ -18,7 +18,7 @@ from .schemas.topic_flow import (
     TopicFlowNodeType,
     TopicFlowNodeMapping,
 )
-from .utils import prompt_loader
+from .utils import PromptLoader
 
 
 class AgentState(SessionState):
@@ -34,12 +34,12 @@ class PawPal(Agentic):
     ) -> Command[Literal["randomize_features"]]:
         user_data = config["configurable"]["user"]
         messages = [
-            SystemMessage(content=[{"type": "text", "text": prompt_loader.baseline}]),
+            SystemMessage(content=[{"type": "text", "text": PromptLoader().baseline}]),
             SystemMessage(
                 content=[
                     {
                         "type": "text",
-                        "text": prompt_loader.welcome_template.format(
+                        "text": PromptLoader().welcome_template.format(
                             user_name=user_data.get("name", ""),
                             user_gender=user_data.get("gender", ""),
                             user_age=user_data.get("age", ""),
@@ -104,12 +104,22 @@ class PawPal(Agentic):
                     {
                         "type": "text",
                         "text": (
-                            "Say something fun and playful, like PawPal is drawing a surprise session from a magical mystery box. "
-                            "Build excitement with a little drumroll or silly sound effect, then reveal the session name and jump right in, "
-                            f"which next session name will be '{next_feature.replace('_', ' ').capitalize()}'."
+                            # """Say something fun and playful, like PawPal is drawing a surprise session from a magical mystery box. "
+                            # "Build excitement with a little drumroll or silly sound effect, then reveal the session name and jump right in, """
+                            "Introduce the next session. **EXPLICITLY MENTION THE WHOLE SESSION NAME**, WHICH IS: {next_feature.replace('_', ' ').capitalize()}'"
+                            "If the next session is 'talk-to-me', mention that you want to invite the child to talk freely about their interests."
+                            # "If the next session is 'math adventures', mention that you want to invite the child to play pretend in a given storyline and solve math questions in order to advance the story."
+                            # "If the next session is 'spelling games', mention that you want to playfully challenge the child to spelling words."
+                            # "If the next session is 'would-you-rather', mention that you want to invite the child to imagine and discuss playful scenarios."
+                            "Explain the session in less than 10 words."
+                            "Example:"
+                            "- 'Yuk, hari ini kita mengobrol bebas dalam sesi 'Talk-To-Me!'"
+                            # "- 'Aku mau mengajakmu menyelesaikan teka-teki Matematika. Yuk, kita bermain Math Adventures!'"
+                            # "- 'Hari ini aku mau bermain Spelling Games! Yuk kita selesaikan tantangan mengeja kata bersama!'"
+                            # "- 'Aku punya ide, deh... Main 'Would-You-Rather' yuk!" 
                         )
                         + "\n"
-                        + prompt_loader.language_template.format(
+                        + PromptLoader().language_template.format(
                             user_language=user_data.get("language", "English")
                         ),
                     }
@@ -160,7 +170,7 @@ class PawPal(Agentic):
                 content=(
                     "End the Conversation, while saying thank you for the participation and encourage to be strong."
                     + "\n"
-                    + prompt_loader.language_template.format(
+                    + PromptLoader().language_template.format(
                         user_language=configurable["user"].get("language", "English")
                     )
                 )

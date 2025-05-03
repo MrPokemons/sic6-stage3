@@ -12,7 +12,7 @@ from ..agentic import Agentic
 from ..schemas.config import ConfigSchema, ConfigurableSchema
 from ..schemas.state import SessionState, InterruptSchema
 from ..schemas.topic import TopicResults
-from ..utils import prompt_loader
+from ..utils import PromptLoader
 
 
 class TTMSessionState(SessionState):
@@ -37,15 +37,17 @@ class TalkToMe(Agentic):
                         "type": "text",
                         "text": (
                             'Introduce the "Talk to Me" session warmly and naturally in the child\'s language. '
-                            "Invite the child to share anything on their mind—their day, their feelings, something fun, something that bothered them, "
-                            "or anything at all. Be gentle, caring, and respectful. Show that you're here to listen fully, without judgment. "
-                            "Make them feel safe, heard, and supported—like you're their closest friend. Keep it short, kind, and encouraging."
+                            "Invite the child to share anything on their mind. "
+                            "You can ask them about their day, feelings, something fun, something that bothered them or anything at all. Be gentle, caring, and respectful. "
+                            "Show that you're here to listen fully, without judgment. "
+                            "Make them feel safe, heard, and supported."
+                            "**Keep it short, no more than 10 words per response."
                         ),
                     }
                 ]
             ),
             SystemMessage(
-                content=[{"type": "text", "text": prompt_loader.talk_to_me.opening}]
+                content=[{"type": "text", "text": PromptLoader().talk_to_me.opening}]
             ),
         ]
         opening_message = await cls.model.ainvoke([*state.messages, *messages])
@@ -162,7 +164,7 @@ class TalkToMe(Agentic):
                         "text": (
                             "End the Session, while saying thank you for participating for the session."
                             + "\n"
-                            + prompt_loader.language_template.format(
+                            + PromptLoader().language_template.format(
                                 user_language=configurable["user"].get(
                                     "language", "English"
                                 )

@@ -67,6 +67,10 @@ if st.session_state.deviceId:
     messageResult = []
     # for session in lastConversation["sessions"]:
     #     # dummyMsg.clear()
+    if not lastConversation["sessions"]:
+        st.error("No session has been conducted")
+        st.stop()
+
     lastSession = lastConversation["sessions"][-1]
     for message in lastSession["messages"]:
         # Check message type and handle accordingly

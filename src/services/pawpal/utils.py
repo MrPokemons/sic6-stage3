@@ -26,9 +26,6 @@ class PromptLoader(BaseModel):
     talk_to_me: TalkToMe = Field(default_factory=TalkToMe)
 
 
-prompt_loader = PromptLoader()
-
-
 def convert_base_to_specific(message: BaseMessage):
     if message.type in ("human", "user"):
         return HumanMessage(
