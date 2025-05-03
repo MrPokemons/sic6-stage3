@@ -10,7 +10,6 @@ if "deviceId" not in st.session_state:
     st.session_state.deviceId = False
 
 chatConfig = []
-# dummyMsg = []
 dummyMsg = [
     {"sender": "user", "text": "Hai, kamu lagi apa?"},
     {"sender": "bot", "text": "Halo! Aku lagi standby nunggu kamu 😄"},
@@ -19,14 +18,11 @@ dummyMsg = [
 
 st.title("🤖 Percakapan Saat Ini 🧒")
 
-if not st.session_state.deviceId:
-    placeholder = st.empty()
-    with placeholder.form("device_id_form"):
-        deviceIdInput = st.text_input("No. ID Perangkat", "")
-        saveDeviceId = st.form_submit_button("Cari percakapan terakhir")
-        if saveDeviceId:
-            st.session_state.deviceId = deviceIdInput
-            placeholder.empty()
+with st.form("device_id_form"):
+    deviceIdInput = st.text_input("No. ID Perangkat", value=st.session_state.deviceId or "")
+    st.session_state.deviceId = deviceIdInput
+    saveDeviceId = st.form_submit_button("Cari percakapan terakhir")
+
 
 if st.session_state.deviceId:
     deviceId = st.session_state.deviceId
@@ -59,7 +55,7 @@ if st.session_state.deviceId:
         except FileNotFoundError:
             pass
 
-    if list_conversation is None:
+    if not list_conversation:
         st.error("No conversation ever recorded from the provided device id")
         st.info(
             "Jika anda ingin melihat demo tampilan dan backend harus tidak berjalan, dapat menggunakan device_id `cincayla`"

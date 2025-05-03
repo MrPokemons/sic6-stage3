@@ -11,9 +11,6 @@ from src.services.pawpal.schemas.document import ConversationDoc
 
 ROOT_PATH = Path(__file__).parents[1]
 
-if "urlBackend" not in st.session_state:
-    st.session_state.urlBackend = None
-
 if "deviceId" not in st.session_state:
     st.session_state.deviceId = None
 
@@ -70,17 +67,10 @@ emotion_map = {
 # st.title("PawPal 🐾")
 st.image(ROOT_PATH / "streamlitViews" / "image" / "logo.png")
 
-if not st.session_state.deviceId:
-    with st.form("device_id_form"):
-        deviceIdInput = st.text_input("No. ID Perangkat", "")
-        st.session_state.deviceId = deviceIdInput
-        saveDeviceId = st.form_submit_button("Cari percakapan terakhir")
-
-if not st.session_state.urlBackend:
-    with st.form("url_backend_form"):
-        backendURLInput = st.text_input("URL Backend", "")
-        st.session_state.urlBackend = backendURLInput
-        saveDeviceId = st.form_submit_button("Simpan")
+with st.form("device_id_form"):
+    deviceIdInput = st.text_input("No. ID Perangkat", value=st.session_state.deviceId or "")
+    st.session_state.deviceId = deviceIdInput
+    saveDeviceId = st.form_submit_button("Cari percakapan terakhir")
 
 if st.session_state.deviceId:
     deviceId = st.session_state.deviceId
@@ -114,7 +104,7 @@ if st.session_state.deviceId:
         except FileNotFoundError:
             pass
 
-    if list_conversation is None:
+    if not list_conversation:
         st.error("No conversation ever recorded from the provided device id")
         st.info(
             "Jika anda ingin melihat demo tampilan dan backend harus tidak berjalan, dapat menggunakan device_id `cincayla`"
