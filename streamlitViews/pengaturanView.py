@@ -1,7 +1,19 @@
-import streamlit as st
 import requests
+import streamlit as st
+from typing import List, Annotated
+from pydantic import BaseModel, PositiveInt
 from src.services.pawpal.schemas.user import UserData
-from src.controllers.pawpal import StartConversationInput, TopicParams
+from src.services.pawpal.schemas.topic import TopicParams
+from src.services.pawpal.schemas.topic_flow import TopicFlowType
+
+
+class StartConversationInput(BaseModel):
+    device_id: Annotated[str, "iot_device_id"]
+    user: UserData
+    feature_params: TopicParams
+    selected_features: List[TopicFlowType]
+    total_sessions: PositiveInt
+
 
 
 if "configuration" not in st.session_state:
@@ -96,31 +108,26 @@ if st.session_state.configuration:
     questionInput = 0
     with st.form("duration_and_total_question"):
         if "talk_to_me" in selectedFeatures or "would_you_rather" in selectedFeatures:
-            # range = range(1, 31)
             durationOptions = [f"{i} Menit" for i in range(1, 31)]
             durationInput = st.select_slider(
-                "⏰ Durasi Interaksi dalam Menit(Talk To Me, Would You Rather)",
+                "⏰ Durasi Interaksi dalam Menit (Talk To Me, Would You Rather)",
                 options=durationOptions,
                 value="1 Menit",
             )
-            # st.write("You selected wavelengths between", start_color, "and", end_color)
         if "math_games" in selectedFeatures or "guess_the_sound" in selectedFeatures:
-            # range = range(1, 31)
             questionOptions = [f"{i} Pertanyaan" for i in range(1, 31)]
             questionInput = st.select_slider(
                 "🙋‍♂️ Jumlah Pertanyaan (Math Adventure, Guess The Sound)",
                 options=questionOptions,
                 value="1 Pertanyaan",
             )
-        durationInputInt = int(durationInput.split()[0])
-        questionInputInt = int(questionInput.split()[0])
+
         startConvo = st.form_submit_button("Mulai Percakapan")
 
     if startConvo:
         st.success("Percakapan dimulai!")
     else:
         st.info("Konfigurasi sudah sesuai? Klik tombol mulai percakapan!")
-    # print(startConvo)
 
     if startConvo:
         gender_map = {"Laki-laki": "male", "Perempuan": "female"}
@@ -152,25 +159,7 @@ if st.session_state.configuration:
                 total_sessions=sessionsInput,
             )
 
-            # class TopicParams(TypedDict):
-            # class TalkToMeParam(TypedDict):
-            #     duration: Annotated[int, "in seconds"]
-
-            # class MathGameParam(TypedDict):
-            #     total_question: int
-
-            # class SpellingGameParam(TypedDict):
-            #     total_question: int
-
-            # class WouldYouRatherParam(TypedDict):
-            #     duration: Annotated[int, "in seconds"]
-
-            # talk_to_me: TalkToMeParam
-            # math_game: MathGameParam
-            # spelling_game: SpellingGameParam
-            # would_you_rather: WouldYouRatherParam
-
-            st.json(convo_input.model_dump())  # show for debugging
+            # st.json(convo_input.model_dump())  # show for debugging
             resp = requests.post(
                 "http://localhost:11080/api/v1/pawpal/conversation/start",
                 json=convo_input.model_dump(),
@@ -182,11 +171,8 @@ if st.session_state.configuration:
             st.warning("Jika Backend tidak berjalan, fitur ini tidak dapat dipakai.")
             st.error(f"Terjadi kesalahan: {e}")
 
-        print("convo started")
 
 # -------------------
-
-
 # import streamlit as st
 # options = ["North", "East", "South", "West"]
 # selection = st.pills("Directions", options, selection_mode="multi")
