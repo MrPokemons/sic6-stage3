@@ -37,7 +37,7 @@ bulan = {
 title_map = {
     "talk_to_me": ("👄", "Talk To Me"),
     "math_games": ("🖐️", "Math Adventure"),
-    "guess_the_sound": ("🔤", "Spelling Game"),
+    "guess_the_sound": ("🔊", "Guess The Sound"),
     "would_you_rather": ("❓", "Would You Rather"),
 }
 
