@@ -44,7 +44,6 @@ class StartConversationInput(BaseModel):
 class ConversationOutput(ConversationDoc): ...
 
 
-# need to debug the send and recv chunking audio.
 class ConnectionManager:
     def __init__(
         self,
