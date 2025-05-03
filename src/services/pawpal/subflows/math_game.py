@@ -1,3 +1,4 @@
+import secrets
 import json
 from typing import List, Literal, Optional
 from datetime import datetime, timezone
@@ -128,7 +129,7 @@ class MathGame(Agentic):
         configurable = config["configurable"]
         _curr_config = configurable["feature_params"]["math_game"]
         total_question = _curr_config["total_question"]
-        LENGTH, MIN_VAL, MAX_VAL = 5, -5, 5  # generate
+        LENGTH, MIN_VAL, MAX_VAL = secrets.randbelow(2) + 2, -2, 10  # generate param for difficulty
         list_qna: List[MathQnA] = [
             MathQnA(
                 sequence=(
