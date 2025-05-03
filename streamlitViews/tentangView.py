@@ -85,25 +85,24 @@ st.markdown(
             background-color: #1e5677 !important;
             border: 0;
         }
-        
+
         div[data-testid="stExpanderDetails"] {
             background-color: #ededed;
             padding-top: 1rem;
         }
-            
+
         div[data-testid="stExpanderDetails"] p {
             color: black !important;
         }
-            
-            
+
         summary, summary svg {
             color: white !important;
         }
-            
+
         summary:hover span{
             color: white !important;
         }
-            
+
         summary:hover svg{
             fill: white !important;
         }
