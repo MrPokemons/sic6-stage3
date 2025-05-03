@@ -105,13 +105,13 @@ class MathGame(Agentic):
         """
         if state.from_node in ("start", "evaluate", "elaborate"):
             last_ai_msg = state.last_ai_message(
-                raise_if_none=True, details=state.model_dump(mode="json")
+                raise_if_none=True, detail_for_error=state.model_dump(mode="json")
             )
             interrupt([InterruptSchema(action="speaker", message=last_ai_msg.text())])
         elif state.from_node == "ask_question":
             if state.next_node == END:
                 last_ai_msg = state.last_ai_message(
-                    raise_if_none=True, details=state.model_dump(mode="json")
+                    raise_if_none=True, detail_for_error=state.model_dump(mode="json")
                 )
                 interrupt(
                     [InterruptSchema(action="speaker", message=last_ai_msg.text())]
