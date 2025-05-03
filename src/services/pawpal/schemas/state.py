@@ -1,5 +1,5 @@
 import copy
-from typing import Literal, Annotated, Optional, List, Sequence, TypeAlias
+from typing import Literal, Annotated, Optional, List, Sequence, TypeAlias, Any
 from typing_extensions import TypedDict
 from pydantic import BaseModel, PositiveInt
 
@@ -49,7 +49,9 @@ class SessionState(BaseModel):
     def get_sessions(self, *, deep=False):
         return copy.deepcopy(self.sessions)
 
-    def last_ai_message(self) -> Optional[BaseMessage]:
+    def last_ai_message(
+        self, *, raise_if_none: bool = False, details: Optional[Any] = None
+    ) -> Optional[BaseMessage]:
         try:
             return next(
                 self.messages[i]
@@ -57,7 +59,8 @@ class SessionState(BaseModel):
                 if self.messages[i].type in ("ai",)
             )
         except StopIteration:
-            pass
+            if raise_if_none:
+                raise Exception(f"How no last ai message? {details}")
 
 
 InterruptAction: TypeAlias = Literal["speaker", "microphone"]

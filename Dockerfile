@@ -27,9 +27,6 @@ COPY --from=builder /app/requirements.txt .
 RUN pip install --no-cache /wheels/* && \
     rm -rf /wheels
 
-ENV HF_HUB_ENABLE_HF_TRANSFER=1
-RUN python -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='cahya/whisper-medium-id'); snapshot_download(repo_id='facebook/mms-tts-ind')"
-
 COPY . .
 
 EXPOSE 11080

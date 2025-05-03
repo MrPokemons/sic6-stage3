@@ -1,10 +1,8 @@
 import streamlit as st
 import requests
-import pandas as pd
-from bson.json_util import dumps
-from dateutil import parser
-from datetime import datetime
 from pymongo import MongoClient
+from bson.json_util import dumps
+
 
 if "deviceId" not in st.session_state:
     st.session_state.deviceId = False
@@ -34,7 +32,7 @@ if st.session_state.deviceId:
     list_conversation = None
     try:
         resp = requests.get(
-            f"http://localhost:11080/api/v1/pawpal/conversation/{deviceId}"
+            f"http://localhost:11080/api/v1/pawpal/conversation/{deviceId}/live"
         )
         if resp.status_code == 200:
             list_conversation = resp.json()
@@ -59,7 +57,7 @@ if st.session_state.deviceId:
         )
         st.stop()
 
-    # st.json(dumps(list_conversation))
+    st.json(dumps(list_conversation))
     lastConversation = list_conversation[-1]
     # lastSession = lastConversation["sessions"]
     # print(lastConversation)
@@ -67,10 +65,10 @@ if st.session_state.deviceId:
     messageResult = []
     # for session in lastConversation["sessions"]:
     #     # dummyMsg.clear()
-    if not lastConversation["sessions"]:
-        st.error("No session has been conducted")
+    if lastConversation["sessions"] is None:
+        st.error("Sesi belum dimulai")
         st.stop()
-
+    
     lastSession = lastConversation["sessions"][-1]
     for message in lastSession["messages"]:
         # Check message type and handle accordingly
@@ -108,7 +106,7 @@ if st.session_state.deviceId:
 st.markdown(
     """
     <style>
-    
+
     button:hover{
         border-color: #1e5677 !important;
         color: #1e5677 !important;
@@ -118,12 +116,12 @@ st.markdown(
         background-color: #1e5677 !important;
         color: white !important;
     }
-            
+
     button:focus:not(:active) {
         border-color: #1e5677 !important;
         color: #1e5677 !important;
     }
-            
+
     /* Geser avatar user ke kanan */
     div[data-testid="stChatMessage"] div[data-testid="stChatMessageAvatarUser"] {
         order: 2; /* Biar muncul setelah pesan */
@@ -131,7 +129,7 @@ st.markdown(
         margin-right: 0;
         background-color: #fcc06b;
     }
-            
+
     div[data-testid="stChatMessage"] div[data-testid="stChatMessageAvatarAssistant"] {
         padding: 1rem;
         background-color: #1e5677;
@@ -146,47 +144,42 @@ st.markdown(
     div[data-testid="stChatMessage"] {
         gap: 1rem;
     }
-    
+
     div[data-testid="stChatMessage"] div[data-testid="stChatMessageAvatarUser"] svg {
         color: #976216;
     }
 
-            
+
     div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatarUser"]) p {
         text-align: right;
             color: white;
     }
-            
+
     div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatarUser"]) {
         margin-left: 6rem;
         background-color: #1e5677;
     }
-            
+
     div[data-testid="stChatMessage"] div[data-testid="stChatMessageAvatarAssistant"] svg {
         color: white;
     }
-            
+
     div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatarAssistant"]) {
         margin-right: 6rem;
         background-color: #ededed;
         padding: 1rem;
     }
-            
+
     @media (prefers-color-scheme: dark) {
         div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatarAssistant"]) p {
-        
             color: white;
         }
     }
-            
-            
-            
+
     div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatarAssistant"]) p {
-            
-        
+
     }
-            
-    
+
     </style>
 """,
     unsafe_allow_html=True,

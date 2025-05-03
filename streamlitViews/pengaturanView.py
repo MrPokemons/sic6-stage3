@@ -3,6 +3,7 @@ import requests
 from src.services.pawpal.schemas.user import UserData
 from src.controllers.pawpal import StartConversationInput, TopicParams
 
+
 if "configuration" not in st.session_state:
     st.session_state.configuration = False
 if "deviceId" not in st.session_state:
@@ -86,7 +87,7 @@ if st.session_state.configuration:
     topic_map = {
         "👄 Talk To Me": "talk_to_me",
         "🖐️ Math Adventures": "math_games",
-        "🔤 Spelling Games": "spelling_games",
+        "🔊 Guess The Sound": "guess_the_sound",
         "❓ Would You Rather": "would_you_rather",
     }
     selectedFeatures = [topic_map.get(feature) for feature in selectedFeatures]
@@ -96,19 +97,23 @@ if st.session_state.configuration:
     with st.form("duration_and_total_question"):
         if "talk_to_me" in selectedFeatures or "would_you_rather" in selectedFeatures:
             # range = range(1, 31)
+            durationOptions = [f"{i} Menit" for i in range(1, 31)]
             durationInput = st.select_slider(
-                "⏰ Durasi Interaksi (Talk To Me, Would You Rather)",
-                options=range(1, 31),
-                value=1,
+                "⏰ Durasi Interaksi dalam Menit(Talk To Me, Would You Rather)",
+                options=durationOptions,
+                value="1 Menit",
             )
             # st.write("You selected wavelengths between", start_color, "and", end_color)
-        if "math_games" in selectedFeatures or "spelling_games" in selectedFeatures:
+        if "math_games" in selectedFeatures or "guess_the_sound" in selectedFeatures:
             # range = range(1, 31)
+            questionOptions = [f"{i} Pertanyaan" for i in range(1, 31)]
             questionInput = st.select_slider(
-                "🙋‍♂️ Jumlah Pertanyaan (Math Adventure, Spelling Game)",
-                options=range(1, 31),
-                value=1,
+                "🙋‍♂️ Jumlah Pertanyaan (Math Adventure, Guess The Sound)",
+                options=questionOptions,
+                value="1 Pertanyaan",
             )
+        durationInputInt = int(durationInput.split()[0])
+        questionInputInt = int(questionInput.split()[0])
         startConvo = st.form_submit_button("Mulai Percakapan")
 
     if startConvo:
@@ -131,7 +136,7 @@ if st.session_state.configuration:
             topic_param = TopicParams(
                 talk_to_me=TopicParams.TalkToMeParam(duration=durationInput * 60),
                 math_game=TopicParams.MathGameParam(total_question=questionInput),
-                spelling_game=TopicParams.SpellingGameParam(
+                guess_the_sound=TopicParams.GuessTheSoundParam(
                     total_question=questionInput
                 ),
                 would_you_rather=TopicParams.WouldYouRatherParam(
@@ -198,12 +203,12 @@ st.markdown(
             background-color: #1e5677 !important;
             color: white !important;
         }
-                
+
         button:focus:not(:active) {
             border-color: #1e5677 !important;
             color: #1e5677 !important;
-        }  
-    
+        }
+
     </style>
 """,
     unsafe_allow_html=True,

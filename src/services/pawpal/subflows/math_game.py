@@ -1,4 +1,5 @@
-from typing import List, Literal
+import json
+from typing import List, Literal, Optional
 from datetime import datetime, timezone
 from pydantic import Field
 
@@ -11,7 +12,13 @@ from langgraph.checkpoint.memory import MemorySaver
 from ..agentic import Agentic
 from ..schemas.config import ConfigSchema, ConfigurableSchema
 from ..schemas.state import SessionState, InterruptSchema
-from ..schemas.topic import MathQnA, TopicResults
+from ..schemas.topic import (
+    MathUserAnswerExtraction,
+    MathUserAnswer,
+    MathQnA,
+    TopicResults,
+)
+from ..utils import prompt_loader
 
 
 class MGSessionState(SessionState):
@@ -20,6 +27,15 @@ class MGSessionState(SessionState):
     modified_datetime: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc)
     )
+
+    def get_next_question(self, raise_if_none: bool = False) -> Optional[MathQnA]:
+        try:
+            return next(_qna for _qna in self.list_qna if not _qna.is_answered)
+        except StopIteration:
+            if raise_if_none:
+                raise Exception(
+                    f"One of the Math QnA question is empty, please debug why having None:\n{json.dumps([_qna.model_dump(mode='json') for _qna in self.list_qna], indent=2)}"
+                )
 
 
 class MathGame(Agentic):
@@ -87,23 +103,22 @@ class MathGame(Agentic):
 
         This node won't be included into the graph since its just the redirector.
         """
-        if state.from_node in ("start", "generate_question"):
-            last_ai_msg = state.last_ai_message()
-            if last_ai_msg is None:
-                raise Exception(
-                    f"How no last ai message? {state.model_dump(mode='json')}"
-                )
+        if state.from_node in ("start", "evaluate", "elaborate"):
+            last_ai_msg = state.last_ai_message(
+                raise_if_none=True, details=state.model_dump(mode="json")
+            )
             interrupt([InterruptSchema(action="speaker", message=last_ai_msg.text())])
-        elif state.from_node == "check_session":
+        elif state.from_node == "ask_question":
             if state.next_node == END:
-                last_ai_msg = state.last_ai_message()
-                if last_ai_msg is None:
-                    raise Exception(
-                        f"How no last ai message? {state.model_dump(mode='json')}"
-                    )
+                last_ai_msg = state.last_ai_message(
+                    raise_if_none=True, details=state.model_dump(mode="json")
+                )
                 interrupt(
                     [InterruptSchema(action="speaker", message=last_ai_msg.text())]
                 )
+            else:
+                qna: MathQnA = state.get_next_question(raise_if_none=True)
+                interrupt([InterruptSchema(action="speaker", message=qna.question)])
         return Command(goto=state.next_node)
 
     @classmethod
@@ -172,8 +187,8 @@ class MathGame(Agentic):
 
         return Command(
             update={
+                "modified_datetime": datetime.now(timezone.utc),
                 "list_qna": list_qna,
-                "sessions": state.get_sessions(deep=True),
                 "from_node": "generate_question",
                 "next_node": "ask_question",
             },
@@ -182,22 +197,212 @@ class MathGame(Agentic):
 
     @classmethod
     async def _ask_question(cls, state: MGSessionState, config: ConfigSchema) -> Command[Literal["listening", END]]:  # type: ignore
-        ...
+        configurable = config["configurable"]
+        qna = state.get_next_question()
+        if qna is not None:
+            return Command(
+                update={"from_node": "ask_question", "next_node": "listening"},
+                goto="listening",
+            )
+
+        last_session = state.verify_last_session(session_type="math_games")
+        messages = [
+            SystemMessage(
+                content=[
+                    {
+                        "type": "text",
+                        "text": (
+                            "End the Session, while saying thank you for participating for the session."
+                            + "\n"
+                            + prompt_loader.language_template.format(
+                                user_language=configurable["user"].get(
+                                    "language", "English"
+                                )
+                            )
+                        ),
+                    }
+                ]
+            ),
+        ]
+        end_conversation_message = await cls.model.ainvoke([*state.messages, *messages])
+        state.add_message_to_last_session(
+            session_type="math_games",
+            messages=[*messages, end_conversation_message],
+        )
+        model_with_session_result = cls.model.with_structured_output(
+            TopicResults.MathGameResult._Extraction
+        )
+        _extracted_result: TopicResults.MathGameResult._Extraction = (
+            await model_with_session_result.ainvoke(last_session.get_messages())
+        )
+
+        modified_datetime = datetime.now(timezone.utc)
+        state.add_result_to_last_session(
+            session_type="math_games",
+            result=TopicResults.MathGameResult(
+                extraction=_extracted_result,
+                list_qna=state.list_qna,
+                start_datetime=state.start_datetime,
+                modified_datetime=modified_datetime,
+            ),
+        )
+        return Command(
+            update={
+                "modified_datetime": modified_datetime,
+                "messages": [*messages, end_conversation_message],
+                "sessions": state.get_sessions(deep=True),
+                "from_node": "ask_question",
+                "next_node": END,
+            },
+            goto="talk",
+        )
 
     @classmethod
     async def _listening(
         cls, state: MGSessionState, config: ConfigSchema
-    ) -> Command[Literal["evaluate"]]: ...
+    ) -> Command[Literal["evaluate"]]:
+        _ = state.verify_last_session(session_type="math_games")
+        user_response: str = interrupt([InterruptSchema(action="microphone")])
+        messages = [HumanMessage(content=[{"type": "text", "text": user_response}])]
+        state.add_message_to_last_session(
+            session_type="math_games",
+            messages=messages,
+        )
+        model_with_math_user_answer = cls.model.with_structured_output(
+            MathUserAnswerExtraction
+        )
+        _math_extracted_result: MathUserAnswerExtraction = (
+            await model_with_math_user_answer.ainvoke(messages)
+        )
+        qna: MathQnA = state.get_next_question(raise_if_none=True)
+        qna.user_answers.append(
+            MathUserAnswer(raw_answer=user_response, extraction=_math_extracted_result)
+        )
+        return Command(
+            update={
+                "modified_datetime": datetime.now(timezone.utc),
+                "messages": messages,
+                "sessions": state.get_sessions(deep=True),
+                "from_node": "listening",
+                "next_node": "evaluate",
+            },
+            goto="evaluate",
+        )
 
     @classmethod
     async def _evaluate(
         cls, state: MGSessionState, config: ConfigSchema
-    ) -> Command[Literal["evaluate", "elaborate", "ask_question"]]: ...
+    ) -> Command[Literal["listening", "elaborate", "ask_question"]]:
+        _ = state.verify_last_session(session_type="math_games")
+        qna: MathQnA = state.get_next_question(raise_if_none=True)
+        if qna.is_correct():
+            qna.is_answered = True
+            next_node = "ask_question"
+            messages = [
+                SystemMessage(
+                    content=[
+                        {
+                            "type": "text",
+                            "text": (
+                                "Congratulate user for answering the answer correctly and accurately. "
+                                "Praise his/hers hardworking for solving the question."
+                            ),
+                        }
+                    ]
+                )
+            ]
+        else:
+            latest_user_answer = qna.latest_user_answer
+            next_node = "listening"
+            if latest_user_answer is None:
+                messages = [
+                    SystemMessage(
+                        content=[
+                            {
+                                "type": "text",
+                                "text": (
+                                    "Motivate the user to answer, telling don't gives up, and lets answer correctly"
+                                ),
+                            }
+                        ]
+                    )
+                ]
+            else:
+                messages = [
+                    SystemMessage(
+                        content=[
+                            {
+                                "type": "text",
+                                "text": (
+                                    "Tell the user the answer is wrong, and let's take another chance to solve the question. "
+                                    "Encourage to think step by step, and don't give up."
+                                ),
+                            }
+                        ]
+                    )
+                ]
+
+            if len(qna.user_answers) >= 3:  # end the trial
+                next_node = "elaborate"
+
+        evaluate_response = await cls.model.ainvoke([*state.messages, *messages])
+        state.add_message_to_last_session(
+            session_type="math_games",
+            messages=[*messages, evaluate_response],
+        )
+        return Command(
+            update={
+                "modified_datetime": datetime.now(timezone.utc),
+                "messages": [*messages, evaluate_response],
+                "sessions": state.get_sessions(deep=True),
+                "from_node": "evaluate",
+                "next_node": next_node,
+            },
+            goto="talk",
+        )
 
     @classmethod
     async def _elaborate(
         cls, state: MGSessionState, config: ConfigSchema
-    ) -> Command[Literal["ask_question"]]: ...
+    ) -> Command[Literal["ask_question"]]:
+        _ = state.verify_last_session(session_type="math_games")
+        qna = state.get_next_question(raise_if_none=True)
+        messages = [
+            SystemMessage(
+                content=[
+                    {
+                        "type": "text",
+                        "text": "Elaborate and explain how to solve the question step by step.",
+                    }
+                ]
+            ),
+            HumanMessage(
+                content=[
+                    {
+                        "type": "text",
+                        "text": (
+                            f"The question is {qna.question}, can you help elaborate to me the thinking? "
+                            "Try explain in very-very efficient manner. "
+                        ),
+                    }
+                ]
+            ),
+        ]
+        elaborate_response = await cls.model.ainvoke([*state.messages, *messages])
+        state.add_message_to_last_session(
+            session_type="math_games",
+            messages=[*messages, elaborate_response],
+        )
+        return Command(
+            update={
+                "modified_datetime": datetime.now(timezone.utc),
+                "messages": [*messages, elaborate_response],
+                "sessions": state.get_sessions(deep=True),
+                "from_node": "elaborate",
+                "next_node": "ask_question",
+            },
+            goto="talk",
+        )
 
     @classmethod
     def build_workflow(self) -> CompiledStateGraph:

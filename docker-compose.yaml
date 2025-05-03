@@ -29,3 +29,4 @@ services:
       - "11080:11080"
     volumes:
       - .:/app
+      - ~/.cache/huggingface:/root/.cache/huggingface

@@ -76,27 +76,19 @@ class TalkToMe(Agentic):
 
         This node won't be included into the graph since its just the redirector.
         """
-        if state.from_node == "start":
-            last_ai_msg = state.last_ai_message()
-            if last_ai_msg is None:
-                raise Exception(
-                    f"How no last ai message? {state.model_dump(mode='json')}"
-                )
-            interrupt([InterruptSchema(action="speaker", message=last_ai_msg.text())])
-        elif state.from_node == "responding":
-            last_ai_msg = state.last_ai_message()
-            if last_ai_msg is None:
-                raise Exception(
-                    f"How no last ai message? {state.model_dump(mode='json')}"
-                )
+        if state.from_node == (
+            "start",
+            "responding",
+        ):
+            last_ai_msg = state.last_ai_message(
+                raise_if_none=True, details=state.model_dump(mode="json")
+            )
             interrupt([InterruptSchema(action="speaker", message=last_ai_msg.text())])
         elif state.from_node == "check_session":
             if state.next_node == END:
-                last_ai_msg = state.last_ai_message()
-                if last_ai_msg is None:
-                    raise Exception(
-                        f"How no last ai message? {state.model_dump(mode='json')}"
-                    )
+                last_ai_msg = state.last_ai_message(
+                    raise_if_none=True, details=state.model_dump(mode="json")
+                )
                 interrupt(
                     [InterruptSchema(action="speaker", message=last_ai_msg.text())]
                 )
@@ -146,8 +138,6 @@ class TalkToMe(Agentic):
 
     @classmethod
     async def _check_session(cls, state: TTMSessionState, config: ConfigSchema) -> Command[Literal["listening", END]]:  # type: ignore
-        last_session = state.verify_last_session(session_type="talk_to_me")
-
         configurable = config["configurable"]
         ongoing_duration = (datetime.now(timezone.utc) - state.start_datetime).seconds
         if ongoing_duration < configurable["feature_params"]["talk_to_me"]["duration"]:
@@ -156,6 +146,7 @@ class TalkToMe(Agentic):
                 goto="talk",
             )
 
+        last_session = state.verify_last_session(session_type="talk_to_me")
         messages = [
             SystemMessage(
                 content=[

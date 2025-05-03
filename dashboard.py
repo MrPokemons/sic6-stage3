@@ -1,5 +1,4 @@
 import streamlit as st
-from pathlib import Path
 
 st.set_page_config(
     page_icon="streamlitViews/image/logo_only.png",  # Bisa juga emoji seperti "🐾"
@@ -14,9 +13,6 @@ pages = [
     st.Page("streamlitViews/tentangView.py", title="🐾 Tentang PawPal"),
     st.Page("streamlitViews/percakapanView.py", title="🤖 Percakapan Saat Ini 🧒"),
 ]
-
-# ROOT_PATH = Path(__file__).parents[1]
-
 
 pg = st.navigation(pages)
 pg.run()

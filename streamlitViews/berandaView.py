@@ -1,102 +1,70 @@
-import streamlit as st
-import requests
+import json
+from typing import List
 from pathlib import Path
-import pandas as pd
-from bson.json_util import dumps
 from dateutil import parser
-from datetime import datetime
+
+import requests
+import streamlit as st
 from pymongo import MongoClient
-from streamlitViews.utils.session import Session
+from src.services.pawpal.schemas.document import ConversationDoc
 
 
 ROOT_PATH = Path(__file__).parents[1]
 
+if "urlBackend" not in st.session_state:
+    st.session_state.urlBackend = None
 
 if "deviceId" not in st.session_state:
-    st.session_state.deviceId = False
+    st.session_state.deviceId = None
+
 if "page" not in st.session_state:
     st.session_state.page = 0
 
+
 # analytics data declaration here
-
-wordDictionary = {
-    "Kata Asli": [
-        "Kucing",
-        "Mobil",
-        "Makan",
-        "Tidur",
-        "Minum",
-        "Sepeda",
-        "Sekolah",
-        "Buku",
-        "Pensil",
-        "Hujan",
-    ],
-    "Pelafalan Anak": [
-        "Cicing",
-        "Obil",
-        "Maka",
-        "Tiduh",
-        "Minuh",
-        "Sepeda",
-        "Sekola",
-        "Buku",
-        "Pensel",
-        "Ujan",
-    ],
-    "Koreksi": ["✅", "✅", "✅", "✅", "❌", "✅", "✅", "✅", "❌", "✅"],
+bulan = {
+    1: "Januari",
+    2: "Februari",
+    3: "Maret",
+    4: "April",
+    5: "Mei",
+    6: "Juni",
+    7: "Juli",
+    8: "Agustus",
+    9: "September",
+    10: "Oktober",
+    11: "November",
+    12: "Desember",
 }
 
-mathDictionary = {
-    "Pertanyaan": [
-        "1 + 1?",
-        "2 + 3?",
-        "4 - 2?",
-        "5 x 2?",
-        "10 : 2?",
-        "3 + 5?",
-        "9 - 4?",
-        "6 x 3?",
-        "12 : 4?",
-        "7 + 8?",
-    ],
-    "Jawaban Anak": ["2", "4", "2", "12", "5", "7", "5", "18", "2", "15"],
-    "Koreksi": ["✅", "❌", "✅", "❌", "✅", "❌", "✅", "✅", "❌", "✅"],
+title_map = {
+    "talk_to_me": ("👄", "Talk To Me"),
+    "math_games": ("🖐️", "Math Adventure"),
+    "guess_the_sound": ("🔤", "Spelling Game"),
+    "would_you_rather": ("❓", "Would You Rather"),
 }
 
-reasoningGames = {
-    "Pertanyaan": [
-        "Kamu lebih suka hidup di dunia penuh dinosaurus atau penuh robot?",
-        "Kalau bisa pilih satu hewan jadi hewan peliharaan, kamu pilih apa dan kenapa?",
-        "Lebih enak liburan di pegunungan atau di kota besar? Kenapa?",
-        "Kalau bisa mengulang waktu, kamu mau kembali ke masa kapan?",
-        "Kalau kamu jadi presiden, hal pertama yang ingin kamu ubah apa?",
-        "Kamu lebih suka bisa berbicara semua bahasa di dunia, atau bisa bermain semua alat musik?",
-        "Kalau ada pintu ajaib, kamu mau pergi ke mana?",
-        "Lebih suka punya taman bermain di rumah atau kolam renang pribadi?",
-        "Kalau kamu bisa membuat mainan impianmu, mainan seperti apa yang kamu buat?",
-        "Kamu lebih suka membaca pikiran orang lain, atau bisa melihat masa depan?",
-    ],
-    "Contoh Jawaban Anak": [
-        "Dunia robot, karena keren dan canggih!",
-        "Panda, karena gemesin dan lucu banget!",
-        "",
-        "Waktu ulang tahun aku, karena seru dan dapat kado",
-        "Semua anak sekolah gratis!",
-        "Main semua alat musik, bisa bikin band sendiri!",
-        "",
-        "Taman bermain! Biar bisa main sepuasnya tiap hari!",
-        "",
-        "Melihat masa depan, biar tahu nanti aku jadi apa",
-    ],
-    "Status": ["✅", "✅", "❌", "✅", "✅", "✅", "❌", "✅", "❌", "✅"],
+emotion_map = {
+    "Happy": "😄 Bahagia",
+    "Sad": "😢 Sedih",
+    "Angry": "😠 Marah",
+    "Afraid": "😨 Takut",
+    "Embarrassed": "",
+    "Loving": "😍 Sayang",
+    "Confused": "😕 Bingung",
+    "Frustrated": "😣 Frustrasi",
+    "Confident": "😎 Percaya Diri",
+    "Proud": "😇 Bangga",
+    "Jealous": "😤 Cemburu",
+    "Relieved": "😌 Lega",
+    "Tired": "😫 Lelah",
+    "Excited": "🤗 Semangat",
+    "Nervous": "😬 Gugup",
+    "Disappointed": "🥺 Kecewa",
+    "Amazed": "🤩 Kagum",
+    "Bored": "😐 Bosan",
+    "Doubtful": "🫤 Ragu",
 }
-
-dummyMsg = [
-    {"sender": "user", "text": "Hai, kamu lagi apa?"},
-    {"sender": "bot", "text": "Halo! Aku lagi standby nunggu kamu 😄"},
-    {"sender": "user", "text": "Oke siap~"},
-]
 
 
 # st.title("PawPal 🐾")
@@ -108,11 +76,16 @@ if not st.session_state.deviceId:
         st.session_state.deviceId = deviceIdInput
         saveDeviceId = st.form_submit_button("Cari percakapan terakhir")
 
+if not st.session_state.urlBackend:
+    with st.form("url_backend_form"):
+        backendURLInput = st.text_input("URL Backend", "")
+        st.session_state.urlBackend = backendURLInput
+        saveDeviceId = st.form_submit_button("Simpan")
+
 if st.session_state.deviceId:
     deviceId = st.session_state.deviceId
     page = st.session_state.page
 
-    print("\ndevice id ", deviceId)
     list_conversation = None
     try:
         resp = requests.get(
@@ -123,9 +96,8 @@ if st.session_state.deviceId:
     except Exception:
         pass
 
-    if (
-        list_conversation is None
-    ):  # backend offline, connect to read-only demo purposes mongodb
+    # backend offline, connect to read-only demo purposes mongodb
+    if list_conversation is None:
         _client = MongoClient(
             "mongodb+srv://pawpal-demo-user:p78Q4EsqPfLmnvtb@sic-cluster.hcqho.mongodb.net/?retryWrites=true&w=majority&appName=SIC-Cluster"
         )
@@ -134,6 +106,18 @@ if st.session_state.deviceId:
         list_conversation: list = _collection.find({"device_id": deviceId}).to_list()
         st.warning("Backend tidak aktif, maka menggunakan alternatif database.")
 
+    list_conversation: List[ConversationDoc] = [
+        ConversationDoc.model_validate(convo) for convo in list_conversation
+    ]
+
+    # last mode, use the static
+    if list_conversation is None:
+        try:
+            with open("static/json/example.json", "r") as f:
+                list_conversation = json.load(f)
+        except FileNotFoundError:
+            pass
+
     if not list_conversation:
         st.error("No conversation ever recorded from the provided device id")
         st.info(
@@ -141,88 +125,8 @@ if st.session_state.deviceId:
         )
         st.stop()
 
-    # st.json(dumps(list_conversation))
-    current_conversastion = list_conversation[-page - 1]
-    # print(current_conversastion)
 
-    # sessionTitle = []
-    # messageResult = []
-    # session = Session()
-    listSession = []
-    for session in current_conversastion["sessions"]:
-        # dummyMsg.clear()
-        title = session["type"]
-        result = session["result"]
-
-        convoStartTime = result["start_datetime"]
-        convoStartTime = parser.isoparse(convoStartTime)
-        convoStartTimeDate = convoStartTime.strftime("%d %B %Y")
-        convoStartTimeHour = convoStartTime.strftime("%H:%M")
-
-        convoEndTime = result["modified_datetime"]
-        convoEndTime = parser.isoparse(convoEndTime)
-        convoEndTimeHour = convoStartTime.strftime("%H:%M")
-
-        # convoEndTime = datetime.now()
-        # for message in reversed(current_conversastion["sessions"][0]["messages"]):
-        #     if (
-        #         "response_metadata" in message
-        #         and "created_at" in message["response_metadata"]
-        #     ):
-        #         convoEndTime = message["response_metadata"]["created_at"]
-        #         break
-
-        #     convoEndTime = parser.isoparse(convoEndTime)
-        #     convoEndTimeHour = convoEndTime.strftime("%H:%M")
-        #     # convoEndTimeHour = 0
-
-        #     emotion = current_conversastion["sessions"][0]["result"]["emotion"]
-        # convoEndTimeHour = 0
-
-        messageResult = []
-        for message in session["messages"]:
-            # Check message type and handle accordingly
-            if isinstance(message, dict):
-                if message["type"] == "ai":
-                    sender = "ai"
-                    text = message["content"]
-                elif message["type"] == "human":
-                    sender = "user"
-                    # Assuming content is a list
-                    # if (
-                    #     isinstance(message["content"], list)
-                    #     and len(message["content"]) > 0
-                    # ):
-                    text = message["content"][0]["text"]
-                    if not text:
-                        continue
-                    # else:
-                    #     text = message["content"]
-                else:
-                    continue  # Skip other types of messages
-
-                # Append formatted message to the dummyMsg list
-                messageResult.append({"sender": sender, "text": text})
-
-        overview = result["extraction"]["overview"]
-        emotion = result["extraction"]["emotion"]
-        keypoints = result["extraction"]["keypoints"]
-
-        newSession = Session(
-            title,
-            convoStartTimeDate,
-            convoStartTimeHour,
-            convoEndTimeHour,
-            messageResult,
-            overview,
-            emotion,
-            keypoints,
-        )
-        listSession.append(newSession)
-
-    print(listSession)
-
-    # -------------------
+    st.json([i.model_dump(mode="json") for i in list_conversation])
 
     with st.container():
         pageCol1, pageCol2, pageCol3 = st.columns([1, 14, 1])
@@ -241,53 +145,107 @@ if st.session_state.deviceId:
                 st.session_state.page += 1
                 st.rerun()
 
-    # -------------------
-    # st.subheader("Transkrip")
-    # with st.expander("💬 Transkrip Percakapan Terakhir"):
-    #     for msg in messageResult:
-    #         with st.chat_message(msg["sender"]):
-    #             st.write(msg["text"])
+    currentConversation: ConversationDoc = list_conversation[-page - 1]
+    currentDateTime = parser.isoparse(currentConversation.created_datetime)
+    currentDate = (
+        f"{currentDateTime.day} {bulan[currentDateTime.month]} {currentDateTime.year}"
+    )
+    currentTime = currentDateTime.strftime("%H:%M")
 
-    if not listSession:
-        st.error("No session has been conducted")
-        st.stop()
+    if currentConversation.sessions:
+        startDateTime = currentConversation.sessions[0].result.start_datetime
+        endDateTime = currentConversation.sessions[-1].result.modified_datetime
 
-    startDate = listSession[0].date
-    endDate = listSession[-1].date
-    startTime = listSession[0].startTime
-    endTime = listSession[-1].endTime
-
-    if startDate == endDate:
-        st.markdown(
-            f"""
-        <h3 style="text-align: center; padding-top: 0; padding-bottom: 0.2rem; font-weight:650;">
-            🗓️ {startDate}
-        </h3>
-        <h5 style="text-align: center; padding: 0.5rem 0px 1.2rem; font-size: 1.1rem; ">
-            ⏰ {startTime} - {endTime} WIB
-        </h5>
-        """,
-            unsafe_allow_html=True,
+        startDate = (
+            f"{startDateTime.day} {bulan[startDateTime.month]} {startDateTime.year}"
         )
+        startTime = startDateTime.strftime("%H:%M")
+
+        endDate = f"{endDateTime.day} {bulan[endDateTime.month]} {endDateTime.year}"
+        endTime = startDateTime.strftime("%H:%M")
+
+        if startDate == endDate:
+            st.markdown(
+                f"""
+            <h3 style="text-align: center; padding-top: 0; padding-bottom: 0.2rem; font-weight:650;">
+                🗓️ {startDate}
+            </h3>
+            <h5 style="text-align: center; padding: 0.5rem 0px 1.2rem; font-size: 1.1rem; ">
+                ⏰ {startTime} - {endTime} WIB
+            </h5>
+            """,
+                unsafe_allow_html=True,
+            )
+        else:
+            col1, col2, col3, col4, col5 = st.columns([2, 5, 1, 5, 2])
+            with col2:
+                st.markdown(
+                    f"""
+                    <h3 style="text-align: center; padding-top: 0; padding-bottom: 0.2rem; font-weight:650;">
+                        🗓️ {startDate}
+                    </h3>
+                    <h5 style="text-align: center; padding: 0.5rem 0px 1.2rem; font-size: 1.1rem; ">
+                        ⏰ {startTime} WIB
+                    </h5>
+                    """,
+                    unsafe_allow_html=True,
+                )
+            with col3:
+                st.subheader("-")
+            with col4:
+                st.markdown(
+                    f"""
+                    <h3 style="text-align: center; padding-top: 0; padding-bottom: 0.2rem; font-weight:650;">
+                        🗓️ {endDate}
+                    </h3>
+                    <h5 style="text-align: center; padding: 0.5rem 0px 1.2rem; font-size: 1.1rem; ">
+                        ⏰ {endTime} WIB
+                    </h5>
+                    """,
+                    unsafe_allow_html=True,
+                )
     else:
         st.markdown(
             f"""
-        <h5 style="text-align: center; padding: 0.5rem 0px 1.2rem; ">
-            {startDate} {startTime} - {endDate} {endTime}
-        </h5>
-        """,
+            <h3 style="text-align: center; padding-top: 0; padding-bottom: 0.2rem; font-weight:650;">
+                🗓️ {currentDate}
+            </h3>
+            <h5 style="text-align: center; padding: 0.5rem 0px 1.2rem; font-size: 1.1rem; ">
+                ⏰ {currentTime} WIB
+            </h5>
+            """,
             unsafe_allow_html=True,
         )
+        st.error("Sesi belum dimulai")
 
-    for n, session in enumerate(listSession):
-        title_map = {
-            "talk_to_me": ("👄", "Talk To Me"),
-            "math_games": ("🖐️", "Math Adventure"),
-            "spelling_games": ("🔤", "Spelling Game"),
-            "would_you_rather": ("❓", "Would You Rather"),
-        }
-        _icon, _title = title_map.get(session.title)
-        title_modified = "Sesi " + str((n + 1)) + " - " + _title
+    for n, session in enumerate(currentConversation.sessions):
+        convoStartTime = session.result.start_datetime
+        convoStartTimeDate = (
+            f"{convoStartTime.day} {bulan[convoStartTime.month]} {convoStartTime.year}"
+        )
+        convoStartTimeHour = convoStartTime.strftime("%H:%M")
+
+        convoEndTime = session.result.modified_datetime
+        convoEndTimeHour = convoEndTime.strftime("%H:%M")
+
+        messageResult = []
+        for message in session.messages:
+            if message.type in ("ai",):
+                sender = "ai"
+                text = message.text()
+            elif message.type in ("human",):
+                sender = "user"
+                text = message.text().strip()
+                if not text:
+                    continue
+            else:
+                continue
+
+            messageResult.append({"sender": sender, "text": text})
+        # SHOW DATA
+
+        _icon, _title = title_map.get(session.type)
+        title_modified = "Sesi " + str(n + 1) + " - " + _title
 
         with st.expander(title_modified, icon=_icon):
             col1, col2 = st.columns(2)
@@ -296,55 +254,52 @@ if st.session_state.deviceId:
                 st.subheader("Tanggal dan Waktu")
                 with st.container(border=True):
                     st.write(
-                        f"🗓️ {session.date}  ⏰ {session.startTime} - {session.endTime} WIB"
+                        f"🗓️ {convoStartTimeDate}  ⏰ {convoStartTimeHour} - {convoEndTimeHour} WIB"
                     )
-                    # st.write(f"⏰ {convoStartTimeHour} - {convoEndTimeHour} WIB")
-                    # col3, col4 = st.columns(2)
-                    # with col3:
-                    #     st.write(f"🗓️ {convoStartTimeDate}")
-                    # with col4:
-                    #     st.write(f"⏰ {convoStartTimeHour} - {convoEndTimeHour} WIB")
             with col2:
                 st.subheader("Perasaan")
-                emotion_map = {
-                    "Happy": "😄 Bahagia",
-                    "Sad": "😢 Sedih",
-                    "Angry": "😠 Marah",
-                    "Afraid": "😨 Takut",
-                    "Embarrassed": "",
-                    "Loving": "😍 Sayang",
-                    "Confused": "😕 Bingung",
-                    "Frustrated": "😣 Frustrasi",
-                    "Confident": "😎 Percaya Diri",
-                    "Proud": "😇 Bangga",
-                    "Jealous": "😤 Cemburu",
-                    "Relieved": "😌 Lega",
-                    "Tired": "😫 Lelah",
-                    "Excited": "🤗 Semangat",
-                    "Nervous": "😬 Gugup",
-                    "Disappointed": "🥺 Kecewa",
-                    "Amazed": "🤩 Kagum",
-                    "Bored": "😐 Bosan",
-                    "Doubtful": "🫤 Ragu",
-                }
                 with st.container(border=True):
-                    st.write(emotion_map.get(session.emotion.title()))
+                    st.write(emotion_map.get(session.result.extraction.emotion))
 
             st.subheader("Transkrip Percakapan")
             with st.container(height=500):
-                for msg in session.message:
-                    # if not msg["text"].strip():
-                    #     continue
+                for msg in messageResult:
                     with st.chat_message(msg["sender"]):
                         st.write(msg["text"])
 
+            session_result = session.result
+            if session_result is None:
+                continue
+
             st.subheader("Ringkasan")
-            st.write(session.overview)
+            st.write(session_result.extraction.overview)
 
             with st.container():
                 st.subheader("Poin Utama")
-                for keypoint in session.keypoints:
+                for keypoint in session_result.extraction.keypoints:
                     st.write("✨ ", keypoint)
+
+            if session.type == "math_games":
+                listEquation = []
+                st.subheader("Hasil Menghitung")
+                listAnswer = []
+
+                for qna in session_result.list_qna:
+                    equation = []
+                    for n, number in enumerate(qna.sequence):
+                        equation.append("+" if number >= 0 else "-")  # order matters, if negative then infront
+                        equation.append(str(abs(number)))
+
+                    for n, userAnswer in enumerate(qna.user_answers):
+                        answer = userAnswer.extraction.result
+                        if answer is None:
+                            answer = "Anak Tidak Menjawab"
+                        listAnswer.append(answer)
+
+                    equation_fmt = ' '.join(equation).strip(" +")  # clear the front if its either space or +
+                    listEquation.append(
+                        {"Pertanyaan": equation, "Jawaban Anak": listAnswer}
+                    )
 
     # --------------------
     # custom styling
@@ -352,40 +307,39 @@ st.markdown(
     """
 <style>
     h3#riwayat-percakapan{
-        text-align: center;  
-        padding: 0;          
+        text-align: center;
+        padding: 0;
     }
-    
+
     div[data-testid="stFullScreenFrame"] img {
         width: 20vw;
     }
-    
+
     button:hover{
         border-color: #1e5677 !important;
         color: #1e5677 !important;
     }
-    
+
     button:disabled:hover{
-        border-color: #31333f33;
-        background-color: transparent;
-        color: #31333f66;
-        cursor: not-allowed;
+        border-color: #31333f33 !important;
+        background-color: transparent !important;
+        color: #31333f66 !important;
+        cursor: not-allowed !important;
     }
 
     button:active{
         background-color: #1e5677 !important;
         color: white !important;
     }
-            
+
     button:focus:not(:active) {
         border-color: #1e5677 !important;
         color: #1e5677 !important;
     }
-            
+
     summary:hover {
         color: #1e5677 !important;
     }
-                        
 
     div[data-testid="stChatMessage"] div[data-testid="stChatMessageAvatarUser"] {
         order: 2; /* Biar muncul setelah pesan */
@@ -393,7 +347,7 @@ st.markdown(
         margin-right: 0;
         background-color: #fcc06b;
     }
-        
+
     div[data-testid="stChatMessage"] div[data-testid="stChatMessageAvatarAssistant"] {
         padding: 1rem;
         background-color: #1e5677;
@@ -408,54 +362,132 @@ st.markdown(
     div[data-testid="stChatMessage"] {
         gap: 1rem;
     }
-    
+
     div[data-testid="stChatMessage"] div[data-testid="stChatMessageAvatarUser"] svg {
         color: #976216;
     }
 
-            
     div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatarUser"]) p {
         text-align: right;
             color: white;
     }
-            
+
     div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatarUser"]) {
         margin-left: 4rem;
         background-color: #1e5677;
     }
-            
+
     div[data-testid="stChatMessage"] div[data-testid="stChatMessageAvatarAssistant"] svg {
         color: white;
     }
-            
+
     div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatarAssistant"]) {
         margin-right: 4rem;
         background-color: #ededed;
         padding: 1rem;
     }
-            
+
     @media (prefers-color-scheme: dark) {
         div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatarAssistant"]) p {
-        
             color: white;
         }
     }
-            
-            
-            
+
     div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatarAssistant"]) p {
-            
-        
+
     }
-            
+
 
 </style>
 """,
     unsafe_allow_html=True,
 )
-# -------------------
-# hard coded values
-# karena belum setup backend logic & endpoints for retrieving these kinds of data
+
+
+# # -------------------
+# # hard coded values
+# # karena belum setup backend logic & endpoints for retrieving these kinds of data, below just temporary
+# # -------------------
+
+# wordDictionary = {
+#     "Kata Asli": [
+#         "Kucing",
+#         "Mobil",
+#         "Makan",
+#         "Tidur",
+#         "Minum",
+#         "Sepeda",
+#         "Sekolah",
+#         "Buku",
+#         "Pensil",
+#         "Hujan",
+#     ],
+#     "Pelafalan Anak": [
+#         "Cicing",
+#         "Obil",
+#         "Maka",
+#         "Tiduh",
+#         "Minuh",
+#         "Sepeda",
+#         "Sekola",
+#         "Buku",
+#         "Pensel",
+#         "Ujan",
+#     ],
+#     "Koreksi": ["✅", "✅", "✅", "✅", "❌", "✅", "✅", "✅", "❌", "✅"],
+# }
+
+# mathDictionary = {
+#     "Pertanyaan": [
+#         "1 + 1?",
+#         "2 + 3?",
+#         "4 - 2?",
+#         "5 x 2?",
+#         "10 : 2?",
+#         "3 + 5?",
+#         "9 - 4?",
+#         "6 x 3?",
+#         "12 : 4?",
+#         "7 + 8?",
+#     ],
+#     "Jawaban Anak": ["2", "4", "2", "12", "5", "7", "5", "18", "2", "15"],
+#     "Koreksi": ["✅", "❌", "✅", "❌", "✅", "❌", "✅", "✅", "❌", "✅"],
+# }
+
+# reasoningGames = {
+#     "Pertanyaan": [
+#         "Kamu lebih suka hidup di dunia penuh dinosaurus atau penuh robot?",
+#         "Kalau bisa pilih satu hewan jadi hewan peliharaan, kamu pilih apa dan kenapa?",
+#         "Lebih enak liburan di pegunungan atau di kota besar? Kenapa?",
+#         "Kalau bisa mengulang waktu, kamu mau kembali ke masa kapan?",
+#         "Kalau kamu jadi presiden, hal pertama yang ingin kamu ubah apa?",
+#         "Kamu lebih suka bisa berbicara semua bahasa di dunia, atau bisa bermain semua alat musik?",
+#         "Kalau ada pintu ajaib, kamu mau pergi ke mana?",
+#         "Lebih suka punya taman bermain di rumah atau kolam renang pribadi?",
+#         "Kalau kamu bisa membuat mainan impianmu, mainan seperti apa yang kamu buat?",
+#         "Kamu lebih suka membaca pikiran orang lain, atau bisa melihat masa depan?",
+#     ],
+#     "Contoh Jawaban Anak": [
+#         "Dunia robot, karena keren dan canggih!",
+#         "Panda, karena gemesin dan lucu banget!",
+#         "",
+#         "Waktu ulang tahun aku, karena seru dan dapat kado",
+#         "Semua anak sekolah gratis!",
+#         "Main semua alat musik, bisa bikin band sendiri!",
+#         "",
+#         "Taman bermain! Biar bisa main sepuasnya tiap hari!",
+#         "",
+#         "Melihat masa depan, biar tahu nanti aku jadi apa",
+#     ],
+#     "Status": ["✅", "✅", "❌", "✅", "✅", "✅", "❌", "✅", "❌", "✅"],
+# }
+
+# dummyMsg = [
+#     {"sender": "user", "text": "Hai, kamu lagi apa?"},
+#     {"sender": "bot", "text": "Halo! Aku lagi standby nunggu kamu 😄"},
+#     {"sender": "user", "text": "Oke siap~"},
+# ]
+
 # st.subheader("Spelling Games 🔤")
 # # dictionary columns
 # # declare tables and columns

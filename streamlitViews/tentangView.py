@@ -21,9 +21,9 @@ with st.container():
                 "Permainan pemecahan masalah interaktif yang membangun konsep dasar matematika melalui cerita yang seru."
             )
     with col2:
-        with st.expander("🔤 Spelling Games"):
+        with st.expander("🔊 Guess The Sound"):
             st.write(
-                "Latihan mengeja yang dipandu suara untuk memperkuat kosakata dan pengenalan huruf."
+                "Permainan edukatif yang dirancang untuk membantu anak-anak melatih kemampuan mendengar dan mengenali suara."
             )
         with st.expander("❓ Would you Rather"):
             st.write(
@@ -63,8 +63,8 @@ with st.container():
             st.markdown(
                 "Contoh, "
                 "jika Anda memasukkan 2 sesi, maka PawPal bisa menjalankan:<br>"
-                "📌 10 menit bermain “Talk to Me”<br>"
-                "📌 7 pertanyaan untuk bermain “Math Adventures”",
+                '📌 10 menit bermain "Talk to Me"<br>'
+                '📌 7 pertanyaan untuk bermain "Math Adventures"',
                 unsafe_allow_html=True,
             )
     st.write(
@@ -85,25 +85,24 @@ st.markdown(
             background-color: #1e5677 !important;
             border: 0;
         }
-        
+
         div[data-testid="stExpanderDetails"] {
             background-color: #ededed;
             padding-top: 1rem;
         }
-            
+
         div[data-testid="stExpanderDetails"] p {
             color: black !important;
         }
-            
-            
+
         summary, summary svg {
             color: white !important;
         }
-            
+
         summary:hover span{
             color: white !important;
         }
-            
+
         summary:hover svg{
             fill: white !important;
         }

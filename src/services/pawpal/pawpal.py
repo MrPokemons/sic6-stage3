@@ -106,7 +106,7 @@ class PawPal(Agentic):
                         "text": (
                             # """Say something fun and playful, like PawPal is drawing a surprise session from a magical mystery box. "
                             # "Build excitement with a little drumroll or silly sound effect, then reveal the session name and jump right in, """
-                            "Introduce the next session. **EXPLICITLY MENTION THE WHOLE SESSION NAME**, WHICH IS: {next_feature.replace('_', ' ').capitalize()}'"
+                            f"Introduce the next session. **EXPLICITLY MENTION THE WHOLE SESSION NAME**, WHICH IS: {next_feature.replace('_', ' ').capitalize()}'"
                             "If the next session is 'talk-to-me', mention that you want to invite the child to talk freely about their interests."
                             # "If the next session is 'math adventures', mention that you want to invite the child to play pretend in a given storyline and solve math questions in order to advance the story."
                             # "If the next session is 'spelling games', mention that you want to playfully challenge the child to spelling words."
@@ -168,7 +168,7 @@ class PawPal(Agentic):
         messages = [
             SystemMessage(
                 content=(
-                    "End the Conversation, while saying thank you for the participation and encourage to be strong."
+                    "Generate a short, warm, and friendly goodbye message from PawPal, written entirely in the child's language. The message should include a gentle thank-you for spending time together, a note about how fun it was, and a sweet goodbye. Adjust the tone based on the child's age use playful and simple language for younger children, and a slightly more expressive, thoughtful tone for older ones. Reflect the child's personality in the message to maintain connection. The farewell should feel safe, caring, and emotionally reassuring, ending with excitement about meeting or playing again soon. Keep it short—just 2 to 3 sentences—and respond only with the message."
                     + "\n"
                     + PromptLoader().language_template.format(
                         user_language=configurable["user"].get("language", "English")

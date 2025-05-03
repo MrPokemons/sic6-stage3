@@ -1,0 +1,904 @@
+[
+    {
+        "_id": {
+            "$oid": "68143446d0cff0ed103b1865"
+        },
+        "id": "68143446d0cff0ed103b1865",
+        "device_id": "cincayla",
+        "user": {
+            "name": "Adeline",
+            "gender": "female",
+            "age": 5,
+            "description": "suka menggambar, suka kucing",
+            "language": "Indonesian"
+        },
+        "feature_params": {
+            "talk_to_me": {
+                "duration": 300
+            },
+            "math_game": {
+                "total_question": 2
+            },
+            "guess_the_sound": {
+                "total_question": 5
+            },
+            "would_you_rather": {
+                "duration": 5
+            }
+        },
+        "selected_features": [
+            "talk_to_me",
+            "math_games"
+        ],
+        "total_sessions": 2,
+        "sessions": [
+            {
+                "type": "talk_to_me",
+                "messages": [
+                    {
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Introduce the \"Math Game\" session warmly and naturally in the child's language. Invite the child to share anything on their mind\u2014their day, their feelings, something fun, something that bothered them, or anything at all. Be gentle, caring, and respectful. Show that you're here to listen fully, without judgment. Make them feel safe, heard, and supported\u2014like you're their closest friend. Keep it short, kind, and encouraging."
+                            }
+                        ],
+                        "additional_kwargs": {},
+                        "response_metadata": {},
+                        "type": "system",
+                        "name": null,
+                        "id": null
+                    },
+                    {
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Start the \u201cMath Game\u201d session with a short, warm greeting in the child\u2019s language. Gently invite them to share how they\u2019re feeling, how their day has been, or anything they\u2019d like to talk about\u2014whether happy, silly, confusing, or a little tough. Always listen with kindness and without judgment. Keep the tone friendly, calm, and safe. Below are a few example questions you can ask:\n\n**Examples, you are freely to explore another question as long its relevant to the topic:**\n\n- \"How are you feeling right now? I\u2019d really love to know.\"  \n- \"What\u2019s something that made you smile today?\"  \n- \"Did anything today feel a little weird or tricky?\"  \n- \"If your day was a song, what would it sound like?\"  \n- \"Is there something on your mind that you\u2019d like to talk about?\"  \n- \"What\u2019s something fun or funny that happened lately?\"  \n- \"If your feelings could wear costumes, what would they look like today?\"  \n\nOnly ask one question at a time. Adjust your tone based on the child\u2019s age and mood, and always speak in the child\u2019s language."
+                            }
+                        ],
+                        "additional_kwargs": {},
+                        "response_metadata": {},
+                        "type": "system",
+                        "name": null,
+                        "id": null
+                    },
+                    {
+                        "content": "Halo Adeline, udah siapkan bayangan dan kucing-kucingan tercinta? Saya sudah menungguku dengan antusias. Bagaimana ya, ada sesuatu yang lucu atau aneh tentang hari ini yang ingin kamu ceritakan? Yuk kita mulai dari **Math Game**!",
+                        "additional_kwargs": {},
+                        "response_metadata": {
+                            "model": "qwen2.5:3b",
+                            "created_at": "2025-05-02T03:00:48.243211Z",
+                            "done": true,
+                            "done_reason": "stop",
+                            "total_duration": {
+                                "low": -1560118005,
+                                "high": 0,
+                                "unsigned": false
+                            },
+                            "load_duration": 401566500,
+                            "prompt_eval_count": 1123,
+                            "prompt_eval_duration": 1283027208,
+                            "eval_count": 71,
+                            "eval_duration": 1035544208,
+                            "message": {
+                                "role": "assistant",
+                                "content": "",
+                                "images": null,
+                                "tool_calls": null
+                            }
+                        },
+                        "type": "ai",
+                        "name": null,
+                        "id": "run-b5b96bde-ef43-4e02-bf07-dabdfbbb32e2-0"
+                    },
+                    {
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Halo namaku Adlin. Aku suka menggambar kucing karena kucing hewan kesukaanku."
+                            }
+                        ],
+                        "additional_kwargs": {},
+                        "response_metadata": {},
+                        "type": "human",
+                        "name": null,
+                        "id": null
+                    },
+                    {
+                        "content": "Halo Adelin! Selamat ya, Adelin. Senang mendengar bahwa kau suka menggambar kucingmu. Kucing benar dan lucu banget kan? \n\nApa ada gambar kucing lucu terbaru yang ingin kau ceritakan atau mungkin kalian udah pernah bincang apa masalah favorit kalian sepanjang hari ini? Saya selalu siap untuk mendengarkan, Adelin.",
+                        "additional_kwargs": {},
+                        "response_metadata": {
+                            "model": "qwen2.5:3b",
+                            "created_at": "2025-05-02T03:01:26.192145Z",
+                            "done": true,
+                            "done_reason": "stop",
+                            "total_duration": {
+                                "low": -977425630,
+                                "high": 0,
+                                "unsigned": false
+                            },
+                            "load_duration": 404133166,
+                            "prompt_eval_count": 1228,
+                            "prompt_eval_duration": 1434972250,
+                            "eval_count": 98,
+                            "eval_duration": 1460936083,
+                            "message": {
+                                "role": "assistant",
+                                "content": "",
+                                "images": null,
+                                "tool_calls": null
+                            }
+                        },
+                        "type": "ai",
+                        "name": null,
+                        "id": "run-4c1abba1-d3a9-4dbe-8aa8-e9450fc638d0-0"
+                    },
+                    {
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Aku punya kucing tiga warna. Warnanya hitam putih kuning. Aku suka banget kucing aku."
+                            }
+                        ],
+                        "additional_kwargs": {},
+                        "response_metadata": {},
+                        "type": "human",
+                        "name": null,
+                        "id": null
+                    },
+                    {
+                        "content": "Halo Adelin! Senang sekali mendengar bahwa kau memiliki kucing tiga warna yang super lucu dan kau sangat menyukainya.\n\nApa ada gambar lucu kucing tiga warnamu yang ingin kalian bagikan? Atau mungkin ada sesuatu yang sedang dibicarakan di hatimu tentang kucing hitam putih kuningmu? Saya selalu siap untuk mendengarkan dan berbagi perasaanmu, Adelin.",
+                        "additional_kwargs": {},
+                        "response_metadata": {
+                            "model": "qwen2.5:3b",
+                            "created_at": "2025-05-02T03:02:08.693448Z",
+                            "done": true,
+                            "done_reason": "stop",
+                            "total_duration": {
+                                "low": -744321379,
+                                "high": 0,
+                                "unsigned": false
+                            },
+                            "load_duration": 400947875,
+                            "prompt_eval_count": 1365,
+                            "prompt_eval_duration": 1494074916,
+                            "eval_count": 107,
+                            "eval_duration": 1631629959,
+                            "message": {
+                                "role": "assistant",
+                                "content": "",
+                                "images": null,
+                                "tool_calls": null
+                            }
+                        },
+                        "type": "ai",
+                        "name": null,
+                        "id": "run-630d791e-9074-4dd1-b24b-723629e2ed6d-0"
+                    },
+                    {
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Iya kucing acennya Adit dia perempuan dia sangat berbulu dan sangat halus kalau dipegang"
+                            }
+                        ],
+                        "additional_kwargs": {},
+                        "response_metadata": {},
+                        "type": "human",
+                        "name": null,
+                        "id": null
+                    },
+                    {
+                        "content": "Halo Adelin! Wow, kalian punya kucing yang super lucu! Kucing hitam putih kuning dengan warna akarnya yang cantik. Saya senang mendengar tentang kucing perempuanku, Adit. Dia sangat berbulu dan halus ketika dipandang.\n\nAda sesuatu lain juga yang ingin kalian ceritakan? Atau mungkin kalian bisa ceritaikan gambar lucu dari kucing hitam putih kuningmu? Saya selalu siap untuk mendengarkan semua perasaan dan kejutan positip yang ada dalam hatimu, Adelin.",
+                        "additional_kwargs": {},
+                        "response_metadata": {
+                            "model": "qwen2.5:3b",
+                            "created_at": "2025-05-02T03:02:54.637886Z",
+                            "done": true,
+                            "done_reason": "stop",
+                            "total_duration": {
+                                "low": -54079838,
+                                "high": 0,
+                                "unsigned": false
+                            },
+                            "load_duration": 403745458,
+                            "prompt_eval_count": 1508,
+                            "prompt_eval_duration": 1662551542,
+                            "eval_count": 137,
+                            "eval_duration": 2146573417,
+                            "message": {
+                                "role": "assistant",
+                                "content": "",
+                                "images": null,
+                                "tool_calls": null
+                            }
+                        },
+                        "type": "ai",
+                        "name": null,
+                        "id": "run-97cdb18d-1998-4753-a3cd-117430aa4930-0"
+                    },
+                    {
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Iya, dulu aku juga punya kucing satu lagi tapi dia kabur sekarang aku cuma punya satu"
+                            }
+                        ],
+                        "additional_kwargs": {},
+                        "response_metadata": {},
+                        "type": "human",
+                        "name": null,
+                        "id": null
+                    },
+                    {
+                        "content": "Halo Adelin! Itu sangat lucu mendengar tentang kalian memiliki dua kucing yang cantik. Kucing hitam putih kuningmu pernah kabur dan hanya kalian masih punya satu, apa ada sesuatu yang membuat hatimu sedikit gelisah atau manis tentang itu?\n\nApa ada gambar lucu dari kalian dengan kucing tiga warna atau kalian bisa ceritaikan masa depannya? Saya selalu siap untuk mendengarkan semua perasaan dan kejutan positip yang ada dalam hatimu, Adelin.",
+                        "additional_kwargs": {},
+                        "response_metadata": {
+                            "model": "qwen2.5:3b",
+                            "created_at": "2025-05-02T03:03:46.276176Z",
+                            "done": true,
+                            "done_reason": "stop",
+                            "total_duration": {
+                                "low": 380972829,
+                                "high": 1,
+                                "unsigned": false
+                            },
+                            "load_duration": 411781791,
+                            "prompt_eval_count": 1681,
+                            "prompt_eval_duration": {
+                                "low": -2062812838,
+                                "high": 0,
+                                "unsigned": false
+                            },
+                            "eval_count": 125,
+                            "eval_duration": 1998189667,
+                            "message": {
+                                "role": "assistant",
+                                "content": "",
+                                "images": null,
+                                "tool_calls": null
+                            }
+                        },
+                        "type": "ai",
+                        "name": null,
+                        "id": "run-5a35d29e-34b9-42e4-a766-fbafe5017082-0"
+                    },
+                    {
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": ""
+                            }
+                        ],
+                        "additional_kwargs": {},
+                        "response_metadata": {},
+                        "type": "human",
+                        "name": null,
+                        "id": null
+                    },
+                    {
+                        "content": "Halo Adelin! Senang sekali mendengar tentang kalian memiliki dua kucing lucu itu.\n\nApakah ada sesuatu dari kalian dengan kucing hitam putih kuningmu yang ingin kalian ceritakan? Atau mungkin kalian bisa mencoba berbagi perasaan kalian saat kucingnya kabur?\n\nSaya selalu siap untuk mendengarkan apa pun yang ada dalam hatimu, Adelin. Bersikaplah sendu atau manis tentang semua ini dan saya akan hadir di sini membantu mengekspresikan perasaannya.",
+                        "additional_kwargs": {},
+                        "response_metadata": {
+                            "model": "qwen2.5:3b",
+                            "created_at": "2025-05-02T03:04:37.413013Z",
+                            "done": true,
+                            "done_reason": "stop",
+                            "total_duration": {
+                                "low": 842260412,
+                                "high": 1,
+                                "unsigned": false
+                            },
+                            "load_duration": 406332083,
+                            "prompt_eval_count": 1815,
+                            "prompt_eval_duration": {
+                                "low": -1677593754,
+                                "high": 0,
+                                "unsigned": false
+                            },
+                            "eval_count": 128,
+                            "eval_duration": 2073397041,
+                            "message": {
+                                "role": "assistant",
+                                "content": "",
+                                "images": null,
+                                "tool_calls": null
+                            }
+                        },
+                        "type": "ai",
+                        "name": null,
+                        "id": "run-103d6784-a689-4048-9761-b5a612faab8d-0"
+                    },
+                    {
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": ""
+                            }
+                        ],
+                        "additional_kwargs": {},
+                        "response_metadata": {},
+                        "type": "human",
+                        "name": null,
+                        "id": null
+                    },
+                    {
+                        "content": "Halo Adelin! Senang sekali mendengar tentang kalian memiliki dua kucing lucu itu.\n\nApakah ada sesuatu dari kalian dengan kucing hitam putih kuningmu yang ingin kalian ceritakan? Atau mungkin kalian bisa mencoba berbagi perasaan kalian saat kucingnya kabur?\n\nSaya selalu siap untuk mendengarkan apa pun yang ada dalam hatimu, Adelin. Bersikaplah sendu atau manis tentang semua ini dan saya akan hadir di sini membantu mengekspresikan perasaannya.\n\nBagaimana kalau kita mulai dengan **Math Game**? Ada sesuatu kalian ingin ceritakan sekarang?",
+                        "additional_kwargs": {},
+                        "response_metadata": {
+                            "model": "qwen2.5:3b",
+                            "created_at": "2025-05-02T03:05:29.18789Z",
+                            "done": true,
+                            "done_reason": "stop",
+                            "total_duration": {
+                                "low": 896580871,
+                                "high": 1,
+                                "unsigned": false
+                            },
+                            "load_duration": 406284542,
+                            "prompt_eval_count": 1952,
+                            "prompt_eval_duration": 2133437208,
+                            "eval_count": 157,
+                            "eval_duration": {
+                                "low": -1691477546,
+                                "high": 0,
+                                "unsigned": false
+                            },
+                            "message": {
+                                "role": "assistant",
+                                "content": "",
+                                "images": null,
+                                "tool_calls": null
+                            }
+                        },
+                        "type": "ai",
+                        "name": null,
+                        "id": "run-af1c8869-10f0-4d0d-9c36-2b2b0e3fdbef-0"
+                    },
+                    {
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "End the Session, while saying thank you for participating for the session.\n## **Always respond using Indonesian only\u2014this is the only language the child understands.**"
+                            }
+                        ],
+                        "additional_kwargs": {},
+                        "response_metadata": {},
+                        "type": "system",
+                        "name": null,
+                        "id": null
+                    },
+                    {
+                        "content": "Halo Adelin! Senang sekali mendengar tentang dua kucing lucu yang kalian punyai. Apakah ada perasaan tertentu dari kalian dengan kucing hitam putih kuningmu yang ingin kalian bagikan?\n\nAtau mungkin kalian bisa berbagi apa saja, mulai dari kenapa kucingnya kabur atau gimana rasanya saat kalian masih punya dua kucing? Saya selalu siap untuk mendengarkan dan membantu mengekspresikan perasaanmu.\n\nBerikut ini adalah **Math Game**-mu! Ada sesuatu yang ingin kalian ceritakan sekarang?",
+                        "additional_kwargs": {},
+                        "response_metadata": {
+                            "model": "qwen2.5:3b",
+                            "created_at": "2025-05-02T03:06:14.433922Z",
+                            "done": true,
+                            "done_reason": "stop",
+                            "total_duration": {
+                                "low": 1256944537,
+                                "high": 1,
+                                "unsigned": false
+                            },
+                            "load_duration": 406043333,
+                            "prompt_eval_count": 2145,
+                            "prompt_eval_duration": {
+                                "low": -1651422296,
+                                "high": 0,
+                                "unsigned": false
+                            },
+                            "eval_count": 144,
+                            "eval_duration": {
+                                "low": -1850879213,
+                                "high": 0,
+                                "unsigned": false
+                            },
+                            "message": {
+                                "role": "assistant",
+                                "content": "",
+                                "images": null,
+                                "tool_calls": null
+                            }
+                        },
+                        "type": "ai",
+                        "name": null,
+                        "id": "run-ad21850f-b2ab-4d59-929b-fd8c340017f1-0"
+                    }
+                ],
+                "result": {
+                    "extraction": {
+                        "overview": "Halo Adelin, senang sekali mendengar tentang dua kucing lucu yang kalian punyai. Apakah ada perasaan tertentu dari kalian dengan kucing hitam putih kuningmu yang ingin kalian bagikan?",
+                        "emotion": "Happy",
+                        "keypoints": [
+                            "Dua kucing",
+                            "Rasa tersinggung saat kucingnya kabur"
+                        ]
+                    },
+                    "start_datetime": "2025-05-02T03:00:48.244620Z",
+                    "modified_datetime": "2025-05-02T03:06:18.138182Z"
+                }
+            },
+            {
+                "type": "math_games",
+                "messages": [
+                    {
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Introduce the \"Math Game\" session warmly and naturally in the child's language. Invite the child to share anything on their mind\u2014their day, their feelings, something fun, something that bothered them, or anything at all. Be gentle, caring, and respectful. Show that you're here to listen fully, without judgment. Make them feel safe, heard, and supported\u2014like you're their closest friend. Keep it short, kind, and encouraging."
+                            }
+                        ],
+                        "additional_kwargs": {},
+                        "response_metadata": {},
+                        "type": "system",
+                        "name": null,
+                        "id": null
+                    },
+                    {
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Start the \u201cMath Game\u201d session with a short, warm greeting in the child\u2019s language. Gently invite them to share how they\u2019re feeling, how their day has been, or anything they\u2019d like to talk about\u2014whether happy, silly, confusing, or a little tough. Always listen with kindness and without judgment. Keep the tone friendly, calm, and safe. Below are a few example questions you can ask:\n\n**Examples, you are freely to explore another question as long its relevant to the topic:**\n\n- \"How are you feeling right now? I\u2019d really love to know.\"  \n- \"What\u2019s something that made you smile today?\"  \n- \"Did anything today feel a little weird or tricky?\"  \n- \"If your day was a song, what would it sound like?\"  \n- \"Is there something on your mind that you\u2019d like to talk about?\"  \n- \"What\u2019s something fun or funny that happened lately?\"  \n- \"If your feelings could wear costumes, what would they look like today?\"  \n\nOnly ask one question at a time. Adjust your tone based on the child\u2019s age and mood, and always speak in the child\u2019s language."
+                            }
+                        ],
+                        "additional_kwargs": {},
+                        "response_metadata": {},
+                        "type": "system",
+                        "name": null,
+                        "id": null
+                    },
+                    {
+                        "content": "Halo Adeline, udah siapkan bayangan dan kucing-kucingan tercinta? Saya sudah menungguku dengan antusias. Bagaimana ya, ada sesuatu yang lucu atau aneh tentang hari ini yang ingin kamu ceritakan? Yuk kita mulai dari **Math Game**!",
+                        "additional_kwargs": {},
+                        "response_metadata": {
+                            "model": "qwen2.5:3b",
+                            "created_at": "2025-05-02T03:00:48.243211Z",
+                            "done": true,
+                            "done_reason": "stop",
+                            "total_duration": {
+                                "low": -1560118005,
+                                "high": 0,
+                                "unsigned": false
+                            },
+                            "load_duration": 401566500,
+                            "prompt_eval_count": 1123,
+                            "prompt_eval_duration": 1283027208,
+                            "eval_count": 71,
+                            "eval_duration": 1035544208,
+                            "message": {
+                                "role": "assistant",
+                                "content": "",
+                                "images": null,
+                                "tool_calls": null
+                            }
+                        },
+                        "type": "ai",
+                        "name": null,
+                        "id": "run-b5b96bde-ef43-4e02-bf07-dabdfbbb32e2-0"
+                    },
+                    {
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Halo namaku Adlin. Aku suka menggambar kucing karena kucing hewan kesukaanku."
+                            }
+                        ],
+                        "additional_kwargs": {},
+                        "response_metadata": {},
+                        "type": "human",
+                        "name": null,
+                        "id": null
+                    },
+                    {
+                        "content": "Halo Adelin! Selamat ya, Adelin. Senang mendengar bahwa kau suka menggambar kucingmu. Kucing benar dan lucu banget kan? \n\nApa ada gambar kucing lucu terbaru yang ingin kau ceritakan atau mungkin kalian udah pernah bincang apa masalah favorit kalian sepanjang hari ini? Saya selalu siap untuk mendengarkan, Adelin.",
+                        "additional_kwargs": {},
+                        "response_metadata": {
+                            "model": "qwen2.5:3b",
+                            "created_at": "2025-05-02T03:01:26.192145Z",
+                            "done": true,
+                            "done_reason": "stop",
+                            "total_duration": {
+                                "low": -977425630,
+                                "high": 0,
+                                "unsigned": false
+                            },
+                            "load_duration": 404133166,
+                            "prompt_eval_count": 1228,
+                            "prompt_eval_duration": 1434972250,
+                            "eval_count": 98,
+                            "eval_duration": 1460936083,
+                            "message": {
+                                "role": "assistant",
+                                "content": "",
+                                "images": null,
+                                "tool_calls": null
+                            }
+                        },
+                        "type": "ai",
+                        "name": null,
+                        "id": "run-4c1abba1-d3a9-4dbe-8aa8-e9450fc638d0-0"
+                    },
+                    {
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Aku punya kucing tiga warna. Warnanya hitam putih kuning. Aku suka banget kucing aku."
+                            }
+                        ],
+                        "additional_kwargs": {},
+                        "response_metadata": {},
+                        "type": "human",
+                        "name": null,
+                        "id": null
+                    },
+                    {
+                        "content": "Halo Adelin! Senang sekali mendengar bahwa kau memiliki kucing tiga warna yang super lucu dan kau sangat menyukainya.\n\nApa ada gambar lucu kucing tiga warnamu yang ingin kalian bagikan? Atau mungkin ada sesuatu yang sedang dibicarakan di hatimu tentang kucing hitam putih kuningmu? Saya selalu siap untuk mendengarkan dan berbagi perasaanmu, Adelin.",
+                        "additional_kwargs": {},
+                        "response_metadata": {
+                            "model": "qwen2.5:3b",
+                            "created_at": "2025-05-02T03:02:08.693448Z",
+                            "done": true,
+                            "done_reason": "stop",
+                            "total_duration": {
+                                "low": -744321379,
+                                "high": 0,
+                                "unsigned": false
+                            },
+                            "load_duration": 400947875,
+                            "prompt_eval_count": 1365,
+                            "prompt_eval_duration": 1494074916,
+                            "eval_count": 107,
+                            "eval_duration": 1631629959,
+                            "message": {
+                                "role": "assistant",
+                                "content": "",
+                                "images": null,
+                                "tool_calls": null
+                            }
+                        },
+                        "type": "ai",
+                        "name": null,
+                        "id": "run-630d791e-9074-4dd1-b24b-723629e2ed6d-0"
+                    },
+                    {
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Iya kucing acennya Adit dia perempuan dia sangat berbulu dan sangat halus kalau dipegang"
+                            }
+                        ],
+                        "additional_kwargs": {},
+                        "response_metadata": {},
+                        "type": "human",
+                        "name": null,
+                        "id": null
+                    },
+                    {
+                        "content": "Halo Adelin! Wow, kalian punya kucing yang super lucu! Kucing hitam putih kuning dengan warna akarnya yang cantik. Saya senang mendengar tentang kucing perempuanku, Adit. Dia sangat berbulu dan halus ketika dipandang.\n\nAda sesuatu lain juga yang ingin kalian ceritakan? Atau mungkin kalian bisa ceritaikan gambar lucu dari kucing hitam putih kuningmu? Saya selalu siap untuk mendengarkan semua perasaan dan kejutan positip yang ada dalam hatimu, Adelin.",
+                        "additional_kwargs": {},
+                        "response_metadata": {
+                            "model": "qwen2.5:3b",
+                            "created_at": "2025-05-02T03:02:54.637886Z",
+                            "done": true,
+                            "done_reason": "stop",
+                            "total_duration": {
+                                "low": -54079838,
+                                "high": 0,
+                                "unsigned": false
+                            },
+                            "load_duration": 403745458,
+                            "prompt_eval_count": 1508,
+                            "prompt_eval_duration": 1662551542,
+                            "eval_count": 137,
+                            "eval_duration": 2146573417,
+                            "message": {
+                                "role": "assistant",
+                                "content": "",
+                                "images": null,
+                                "tool_calls": null
+                            }
+                        },
+                        "type": "ai",
+                        "name": null,
+                        "id": "run-97cdb18d-1998-4753-a3cd-117430aa4930-0"
+                    },
+                    {
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "Iya, dulu aku juga punya kucing satu lagi tapi dia kabur sekarang aku cuma punya satu"
+                            }
+                        ],
+                        "additional_kwargs": {},
+                        "response_metadata": {},
+                        "type": "human",
+                        "name": null,
+                        "id": null
+                    },
+                    {
+                        "content": "Halo Adelin! Itu sangat lucu mendengar tentang kalian memiliki dua kucing yang cantik. Kucing hitam putih kuningmu pernah kabur dan hanya kalian masih punya satu, apa ada sesuatu yang membuat hatimu sedikit gelisah atau manis tentang itu?\n\nApa ada gambar lucu dari kalian dengan kucing tiga warna atau kalian bisa ceritaikan masa depannya? Saya selalu siap untuk mendengarkan semua perasaan dan kejutan positip yang ada dalam hatimu, Adelin.",
+                        "additional_kwargs": {},
+                        "response_metadata": {
+                            "model": "qwen2.5:3b",
+                            "created_at": "2025-05-02T03:03:46.276176Z",
+                            "done": true,
+                            "done_reason": "stop",
+                            "total_duration": {
+                                "low": 380972829,
+                                "high": 1,
+                                "unsigned": false
+                            },
+                            "load_duration": 411781791,
+                            "prompt_eval_count": 1681,
+                            "prompt_eval_duration": {
+                                "low": -2062812838,
+                                "high": 0,
+                                "unsigned": false
+                            },
+                            "eval_count": 125,
+                            "eval_duration": 1998189667,
+                            "message": {
+                                "role": "assistant",
+                                "content": "",
+                                "images": null,
+                                "tool_calls": null
+                            }
+                        },
+                        "type": "ai",
+                        "name": null,
+                        "id": "run-5a35d29e-34b9-42e4-a766-fbafe5017082-0"
+                    },
+                    {
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": ""
+                            }
+                        ],
+                        "additional_kwargs": {},
+                        "response_metadata": {},
+                        "type": "human",
+                        "name": null,
+                        "id": null
+                    },
+                    {
+                        "content": "Halo Adelin! Senang sekali mendengar tentang kalian memiliki dua kucing lucu itu.\n\nApakah ada sesuatu dari kalian dengan kucing hitam putih kuningmu yang ingin kalian ceritakan? Atau mungkin kalian bisa mencoba berbagi perasaan kalian saat kucingnya kabur?\n\nSaya selalu siap untuk mendengarkan apa pun yang ada dalam hatimu, Adelin. Bersikaplah sendu atau manis tentang semua ini dan saya akan hadir di sini membantu mengekspresikan perasaannya.",
+                        "additional_kwargs": {},
+                        "response_metadata": {
+                            "model": "qwen2.5:3b",
+                            "created_at": "2025-05-02T03:04:37.413013Z",
+                            "done": true,
+                            "done_reason": "stop",
+                            "total_duration": {
+                                "low": 842260412,
+                                "high": 1,
+                                "unsigned": false
+                            },
+                            "load_duration": 406332083,
+                            "prompt_eval_count": 1815,
+                            "prompt_eval_duration": {
+                                "low": -1677593754,
+                                "high": 0,
+                                "unsigned": false
+                            },
+                            "eval_count": 128,
+                            "eval_duration": 2073397041,
+                            "message": {
+                                "role": "assistant",
+                                "content": "",
+                                "images": null,
+                                "tool_calls": null
+                            }
+                        },
+                        "type": "ai",
+                        "name": null,
+                        "id": "run-103d6784-a689-4048-9761-b5a612faab8d-0"
+                    },
+                    {
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": ""
+                            }
+                        ],
+                        "additional_kwargs": {},
+                        "response_metadata": {},
+                        "type": "human",
+                        "name": null,
+                        "id": null
+                    },
+                    {
+                        "content": "Halo Adelin! Senang sekali mendengar tentang kalian memiliki dua kucing lucu itu.\n\nApakah ada sesuatu dari kalian dengan kucing hitam putih kuningmu yang ingin kalian ceritakan? Atau mungkin kalian bisa mencoba berbagi perasaan kalian saat kucingnya kabur?\n\nSaya selalu siap untuk mendengarkan apa pun yang ada dalam hatimu, Adelin. Bersikaplah sendu atau manis tentang semua ini dan saya akan hadir di sini membantu mengekspresikan perasaannya.\n\nBagaimana kalau kita mulai dengan **Math Game**? Ada sesuatu kalian ingin ceritakan sekarang?",
+                        "additional_kwargs": {},
+                        "response_metadata": {
+                            "model": "qwen2.5:3b",
+                            "created_at": "2025-05-02T03:05:29.18789Z",
+                            "done": true,
+                            "done_reason": "stop",
+                            "total_duration": {
+                                "low": 896580871,
+                                "high": 1,
+                                "unsigned": false
+                            },
+                            "load_duration": 406284542,
+                            "prompt_eval_count": 1952,
+                            "prompt_eval_duration": 2133437208,
+                            "eval_count": 157,
+                            "eval_duration": {
+                                "low": -1691477546,
+                                "high": 0,
+                                "unsigned": false
+                            },
+                            "message": {
+                                "role": "assistant",
+                                "content": "",
+                                "images": null,
+                                "tool_calls": null
+                            }
+                        },
+                        "type": "ai",
+                        "name": null,
+                        "id": "run-af1c8869-10f0-4d0d-9c36-2b2b0e3fdbef-0"
+                    },
+                    {
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": "End the Session, while saying thank you for participating for the session.\n## **Always respond using Indonesian only\u2014this is the only language the child understands.**"
+                            }
+                        ],
+                        "additional_kwargs": {},
+                        "response_metadata": {},
+                        "type": "system",
+                        "name": null,
+                        "id": null
+                    },
+                    {
+                        "content": "Halo Adelin! Senang sekali mendengar tentang dua kucing lucu yang kalian punyai. Apakah ada perasaan tertentu dari kalian dengan kucing hitam putih kuningmu yang ingin kalian bagikan?\n\nAtau mungkin kalian bisa berbagi apa saja, mulai dari kenapa kucingnya kabur atau gimana rasanya saat kalian masih punya dua kucing? Saya selalu siap untuk mendengarkan dan membantu mengekspresikan perasaanmu.\n\nBerikut ini adalah **Math Game**-mu! Ada sesuatu yang ingin kalian ceritakan sekarang?",
+                        "additional_kwargs": {},
+                        "response_metadata": {
+                            "model": "qwen2.5:3b",
+                            "created_at": "2025-05-02T03:06:14.433922Z",
+                            "done": true,
+                            "done_reason": "stop",
+                            "total_duration": {
+                                "low": 1256944537,
+                                "high": 1,
+                                "unsigned": false
+                            },
+                            "load_duration": 406043333,
+                            "prompt_eval_count": 2145,
+                            "prompt_eval_duration": {
+                                "low": -1651422296,
+                                "high": 0,
+                                "unsigned": false
+                            },
+                            "eval_count": 144,
+                            "eval_duration": {
+                                "low": -1850879213,
+                                "high": 0,
+                                "unsigned": false
+                            },
+                            "message": {
+                                "role": "assistant",
+                                "content": "",
+                                "images": null,
+                                "tool_calls": null
+                            }
+                        },
+                        "type": "ai",
+                        "name": null,
+                        "id": "run-ad21850f-b2ab-4d59-929b-fd8c340017f1-0"
+                    }
+                ],
+                "result": {
+                    "extraction": {
+                        "overview": "good job, kamu menjawab hampir semua nya benar",
+                        "emotion": "Tired",
+                        "keypoints": [
+                            "bisa tambah kurang",
+                            "bisa minus positive"
+                        ]
+                    },
+                    "start_datetime": "2025-05-03T05:00:48.244620Z",
+                    "modified_datetime": "2025-05-03T06:06:18.138182Z",
+                    "list_qna": [
+                        {
+                            "sequence": [
+                                1,
+                                2,
+                                -2,
+                                3
+                            ],
+                            "question": "Kamu ada 1 apel. Kamu menemukan 2 apel dikolong meja, lalu anda kasih ke kuda 2 apel tersebut. Selepas orang tua kamu kembali dari kerja, mereka memberikan lu 3 apel. Sekarang anda memiliki berapa apel?",
+                            "is_answered": true,
+                            "user_answers": [
+                                {
+                                    "raw_answer": "Saya pikir jawabannya 3 apel",
+                                    "extraction": {
+                                        "result": 3
+                                    },
+                                    "feedback": "Jawaban kamu salah, coba lagi"
+                                },
+                                {
+                                    "raw_answer": "Owh, jawabannya seperti 4 apel",
+                                    "extraction": {
+                                        "result": 4
+                                    },
+                                    "feedback": "Jawaban kamu benar sekali, selamat"
+                                }
+                            ]
+                        },
+                        {
+                            "sequence": [
+                                2,
+                                -2,
+                                3
+                            ],
+                            "question": "Kamu ada 2 telur, kamu tidak sengaja jatuhin dua-duanya, lalu anda diberi 3 telur oleh nenek mu karena baru kembali dari peternakan. Berapa telur yang anda miliki sekarang?",
+                            "is_answered": true,
+                            "user_answers": [
+                                {
+                                    "raw_answer": "Saya pikir jawabannya 4",
+                                    "extraction": {
+                                        "result": 4
+                                    },
+                                    "feedback": "Jawaban kamu salah, coba lagi"
+                                },
+                                {
+                                    "raw_answer": "kenapa susah banget",
+                                    "extraction": {
+                                        "result": null
+                                    },
+                                    "feedback": "ayo kamu pasti bisa, ayo coba lagi"
+                                },
+                                {
+                                    "raw_answer": "Saya pikir jawabannya 3 apel",
+                                    "extraction": {
+                                        "result": 3
+                                    },
+                                    "feedback": "betul jawabannya benar"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        ],
+        "created_datetime": "2025-05-02T03:06:56.932783+00:00"
+    },
+    {
+        "_id": {
+            "$oid": "68143446d0cff0ed103b1866"
+        },
+        "id": "68143446d0cff0ed103b1866",
+        "device_id": "cincayla",
+        "user": {
+            "name": "Adeline",
+            "gender": "female",
+            "age": 5,
+            "description": "suka menggambar, suka kucing",
+            "language": "Indonesian"
+        },
+        "feature_params": {
+            "talk_to_me": {
+                "duration": 300
+            },
+            "math_game": {
+                "total_question": 5
+            },
+            "guess_the_sound": {
+                "total_question": 5
+            },
+            "would_you_rather": {
+                "duration": 5
+            }
+        },
+        "selected_features": [
+            "talk_to_me"
+        ],
+        "total_sessions": 1,
+        "sessions": [],
+        "created_datetime": "2025-05-02T03:06:56.932783+00:00"
+    }
+]

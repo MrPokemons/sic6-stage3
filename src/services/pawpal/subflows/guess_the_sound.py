@@ -8,22 +8,22 @@ from ..schemas.config import ConfigSchema, ConfigurableSchema
 from ..schemas.state import SessionState
 
 
-class SGSessionState(SessionState):
+class GTSSessionState(SessionState):
     question: dict
 
 
-class SpellingGame(Agentic):
-    COLLECTION_NAME = "spelling_game-topic"
+class GuessTheSound(Agentic):
+    COLLECTION_NAME = "guess_the_sound-topic"
 
     @staticmethod
     async def _start(state: SessionState, config: ConfigSchema):
-        print("spellinggame", state, config["configurable"]["thread_id"])
+        print("guessthesound", state, config["configurable"]["thread_id"])
         return Command(goto=END)
 
     @classmethod
     def build_workflow(self) -> CompiledStateGraph:
         builder = StateGraph(
-            SGSessionState, input=SessionState, config_schema=ConfigurableSchema
+            GTSSessionState, input=SessionState, config_schema=ConfigurableSchema
         )
 
         # Node
