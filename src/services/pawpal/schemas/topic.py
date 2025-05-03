@@ -1,5 +1,5 @@
 import secrets
-from typing import Annotated, List, TypeAlias, Union, Optional
+from typing import Annotated, List, TypeAlias, Union, Optional, Literal
 from typing_extensions import TypedDict
 from pydantic import BaseModel, Field
 
@@ -81,6 +81,7 @@ class TopicResults(BaseModel):
     class TalkToMeResult(BaseModel):
         class _Extraction(BaseExtractionTopic): ...
 
+        type: Literal["talk_to_me"] = "talk_to_me"
         extraction: _Extraction
         start_datetime: datetime
         modified_datetime: datetime
@@ -88,6 +89,7 @@ class TopicResults(BaseModel):
     class MathGameResult(BaseModel):
         class _Extraction(BaseExtractionTopic): ...
 
+        type: Literal["math_games"] = "math_games"
         extraction: _Extraction
         list_qna: List[MathQnA]
         start_datetime: datetime

@@ -21,9 +21,9 @@ with st.container():
                 "Permainan pemecahan masalah interaktif yang membangun konsep dasar matematika melalui cerita yang seru."
             )
     with col2:
-        with st.expander("🔤 Spelling Games"):
+        with st.expander("🔊 Guess The Sound"):
             st.write(
-                "Latihan mengeja yang dipandu suara untuk memperkuat kosakata dan pengenalan huruf."
+                "Permainan edukatif yang dirancang untuk membantu anak-anak melatih kemampuan mendengar dan mengenali suara."
             )
         with st.expander("❓ Would you Rather"):
             st.write(
