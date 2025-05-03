@@ -12,7 +12,7 @@ from ....utils.typex import EmotionType
 ### Math
 class MathUserAnswerExtraction(BaseModel):
     result: Optional[int] = Field(
-        description="extract user answer for the appropriate question, if user doesn't answer or give unrelated answer within the number"
+        description="Extract the answer which is a number, it can be pure decimal or text and possible in another language, you must extract the number. if you can't find any, just set as None"
     )
 
 
