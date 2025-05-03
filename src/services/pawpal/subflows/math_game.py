@@ -125,7 +125,8 @@ class MathGame(Agentic):
     async def _generate_question(
         cls, state: MGSessionState, config: ConfigSchema
     ) -> Command[Literal["ask_question"]]:
-        _curr_config = config["configurable"]["feature_params"]["math_game"]
+        configurable = config["configurable"]
+        _curr_config = configurable["feature_params"]["math_game"]
         total_question = _curr_config["total_question"]
         LENGTH, MIN_VAL, MAX_VAL = 5, -5, 5  # generate
         list_qna: List[MathQnA] = [
@@ -165,7 +166,9 @@ class MathGame(Agentic):
                                 "\n\n"
                                 "If the sum if negative, use another type of analogy that are plausible to be have negative value, "
                                 "which making the user understand the matemathic analogy, such as Temperature, Money, Height like in a Elevator or on a Mountain, etc. "
-                                "Make sure your analogy is very easy to understand, since it's for children"
+                                "Make sure your analogy is very easy to understand, since it's for children. "
+                                "\n# DO NOT SHOW THE ANSWER IN THE QUESTION, ITS JUST A QUESTION"
+                                "\n# THE PROVIDED SEQUENCE IS JUST A WAY TO STRUCTURE YOUR QUESTION, USE THE ANALOGY INSTEAD SHOWING THE NUMBER FULLY LIKE ARITHMETIC."
                             ),
                         }
                     ]
@@ -176,7 +179,15 @@ class MathGame(Agentic):
                             "type": "text",
                             "text": (
                                 f"Generate the math analogy using the provided sequence: {_qna.fmt_sequence()}, "
-                                f'and the sum of the sequence is "{_qna.answer}".'
+                                f'and the sum of the sequence is "{_qna.answer}". '
+                                "The sum is only for showing you the answer, you are not suppose to show the answer or any explanation. "
+                                "Just provide the analogy question, don't use any literal number instead use in words, "
+                                "e.g. instead of '1' write it as 'one', '2' as 'two', '24' as 'twenty four', and so on. "
+                                "The ANALOGY OBJECT you are using must be CONSISTENT across the story."
+                            ) + PromptLoader().language_template.format(
+                                user_language=configurable["user"].get(
+                                    "language", "English"
+                                )
                             ),
                         }
                     ]
@@ -202,7 +213,7 @@ class MathGame(Agentic):
         if qna is not None:
             return Command(
                 update={"from_node": "ask_question", "next_node": "listening"},
-                goto="listening",
+                goto="talk",
             )
 
         last_session = state.verify_last_session(session_type="math_games")
@@ -261,9 +272,24 @@ class MathGame(Agentic):
     async def _listening(
         cls, state: MGSessionState, config: ConfigSchema
     ) -> Command[Literal["evaluate"]]:
+        configurable = config["configurable"]
         _ = state.verify_last_session(session_type="math_games")
         user_response: str = interrupt([InterruptSchema(action="microphone")])
-        messages = [HumanMessage(content=[{"type": "text", "text": user_response}])]
+        messages = [
+            SystemMessage(
+                content=[
+                    {
+                        "type": "text",
+                        "text": (
+                            "Extract the answer from the user response, "
+                            "the expected answer will be number. "
+                            f"This number can be defined as literal decimal or number in words that can be in English language or {configurable['user']['language']} language."
+                        )
+                    }
+                ]
+            ),
+            HumanMessage(content=[{"type": "text", "text": user_response}])
+        ]
         state.add_message_to_last_session(
             session_type="math_games",
             messages=messages,
@@ -321,7 +347,8 @@ class MathGame(Agentic):
                             {
                                 "type": "text",
                                 "text": (
-                                    "Motivate the user to answer, telling don't gives up, and lets answer correctly"
+                                    "Encourage the user to try to answer, just encourage words and tell him/her to try again. "
+                                    "JUST ENCOURAGEMENT, DON'T GIVE OUT THE ANSWER OR ANY CLUE."
                                 ),
                             }
                         ]
@@ -334,8 +361,9 @@ class MathGame(Agentic):
                             {
                                 "type": "text",
                                 "text": (
-                                    "Tell the user the answer is wrong, and let's take another chance to solve the question. "
-                                    "Encourage to think step by step, and don't give up."
+                                    "Inform the user that their answer is WRONG. Motivate them to try again since there's still available attempt. "
+                                    "Encourage the user to think step by step, and never give up. "
+                                    "JUST ENCOURAGEMENT, DON'T GIVE OUT THE ANSWER OR ANY CLUE. "
                                 ),
                             }
                         ]
@@ -381,8 +409,10 @@ class MathGame(Agentic):
                     {
                         "type": "text",
                         "text": (
-                            f"The question is {qna.question}, can you help elaborate to me the thinking? "
-                            "Try explain in very-very efficient manner. "
+                            f"The question is '{qna.question}', can you help elaborate to me the thinking? "
+                            f"Try explain in effective manner, short and concise, while in the end you will provide the answer which is '{qna.answer}'. "
+                            f"EXPLAIN IT IN SHORT WAY, DON'T OVER-EXPLAIN, meanwhile provide the ANSWER in the END which is '{qna.answer}'. "
+                            f"PLEASE PROVIDE THE ANSWER IS '{qna.answer}'"
                         ),
                     }
                 ]
