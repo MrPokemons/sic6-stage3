@@ -88,24 +88,24 @@ if st.session_state.deviceId:
     page = st.session_state.page
 
     list_conversation = None
-    # try:
-    #     resp = requests.get(
-    #         f"http://localhost:11080/api/v1/pawpal/conversation/{deviceId}"
-    #     )
-    #     if resp.status_code == 200:
-    #         list_conversation = resp.json()
-    # except Exception:
-    #     pass
+    try:
+        resp = requests.get(
+            f"http://localhost:11080/api/v1/pawpal/conversation/{deviceId}"
+        )
+        if resp.status_code == 200:
+            list_conversation = resp.json()
+    except Exception:
+        pass
 
     # backend offline, connect to read-only demo purposes mongodb
-    # if list_conversation is None:
-    #     _client = MongoClient(
-    #         "mongodb+srv://pawpal-demo-user:p78Q4EsqPfLmnvtb@sic-cluster.hcqho.mongodb.net/?retryWrites=true&w=majority&appName=SIC-Cluster"
-    #     )
-    #     _db = _client["pawpal_v2"]
-    #     _collection = _db["pawpal-conversation-2"]
-    #     list_conversation: list = _collection.find({"device_id": deviceId}).to_list()
-    #     st.warning("Backend tidak aktif, maka menggunakan alternatif database.")
+    if list_conversation is None:
+        _client = MongoClient(
+            "mongodb+srv://pawpal-demo-user:p78Q4EsqPfLmnvtb@sic-cluster.hcqho.mongodb.net/?retryWrites=true&w=majority&appName=SIC-Cluster"
+        )
+        _db = _client["pawpal_v2"]
+        _collection = _db["pawpal-conversation-2"]
+        list_conversation: list = _collection.find({"device_id": deviceId}).to_list()
+        st.warning("Backend tidak aktif, maka menggunakan alternatif database.")
 
     # last mode, use the static
     if list_conversation is None:
