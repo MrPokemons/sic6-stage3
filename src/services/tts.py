@@ -46,9 +46,9 @@ class ElevenlabsTextToSpeech(TextToSpeech):
         self.clients: List[AsyncElevenLabs] = []
         for _api_key in api_keys:
             self.clients.append(AsyncElevenLabs(api_key=_api_key))
-        self.voice_id = "RWiGLY9uXI70QL540WNd"
+        self.voice_id = "Xb7hH8MSUJpSbSDYk0k2"
         self.voice_settings = VoiceSettings(
-            speed=0.95, stability=0.7, similarity_boost=0.75
+            speed=0.95, stability=0.60, similarity_boost=0.75, style=.15,
         )
         self.model_id = "eleven_flash_v2_5"
 
