@@ -299,58 +299,55 @@ class MathGame(Agentic):
     ) -> Command[Literal["evaluate", "elaborate", "ask_question"]]:
         _ = state.verify_last_session(session_type="math_games")
         qna: MathQnA = state.get_next_question(raise_if_none=True)
-
-        messages: List[BaseMessage] = []
         if qna.is_correct():
             qna.is_answered = True
-            messages.append(
-                [
+            next_node = "ask_question"
+            messages = [
+                SystemMessage(
+                    content=[
+                        {
+                            "type": "text",
+                            "text": (
+                                "Congratulate user for answering the answer correctly and accurately. "
+                                "Praise his/hers hardworking for solving the question."
+                            )
+                        }
+                    ]
+                )
+            ]
+        else:
+            latest_user_answer = qna.latest_user_answer
+            next_node = "evaluate"
+            if latest_user_answer is None:
+                messages = [
                     SystemMessage(
                         content=[
                             {
                                 "type": "text",
                                 "text": (
-                                    "Congratulate user for answering the answer correctly and accurately. "
-                                    "Praise his/hers hardworking for solving the question."
+                                    "Motivate the user to answer, telling don't gives up, and lets answer correctly"
                                 )
                             }
                         ]
                     )
                 ]
-            )
-        else:
-            latest_user_answer = qna.latest_user_answer
-            if latest_user_answer is None:
-                messages.append(
-                    [
-                        SystemMessage(
-                            content=[
-                                {
-                                    "type": "text",
-                                    "text": (
-                                        "Motivate the user to answer, telling don't gives up, and lets answer correctly"
-                                    )
-                                }
-                            ]
-                        )
-                    ]
-                )
             else:
-                messages.append(
-                    [
-                        SystemMessage(
-                            content=[
-                                {
-                                    "type": "text",
-                                    "text": (
-                                        "Tell the user the answer is wrong, and let's take another chance to solve the question. "
-                                        "Encourage to think step by step, and don't give up."
-                                    )
-                                }
-                            ]
-                        )
-                    ]
-                )
+                messages = [
+                    SystemMessage(
+                        content=[
+                            {
+                                "type": "text",
+                                "text": (
+                                    "Tell the user the answer is wrong, and let's take another chance to solve the question. "
+                                    "Encourage to think step by step, and don't give up."
+                                )
+                            }
+                        ]
+                    )
+                ]
+
+            if len(qna.user_answers) >= 3:  # end the trial
+                next_node = "elaborate"
 
         evaluate_response = await cls.model.ainvoke([*state.messages, *messages])
         state.add_message_to_last_session(
@@ -363,7 +360,7 @@ class MathGame(Agentic):
                 "messages": [*messages, evaluate_response],
                 "sessions": state.get_sessions(deep=True),
                 "from_node": "evaluate",
-                "next_node": "evaluate",
+                "next_node": next_node,
             },
             goto="talk",
         )
