@@ -51,6 +51,7 @@ class ElevenlabsTextToSpeech(TextToSpeech):
             speed=0.95, stability=0.60, similarity_boost=0.75, style=.15,
         )
         self.model_id = "eleven_flash_v2_5"
+        # self.model_id = None
 
     async def get_client(self) -> AsyncElevenLabs:
         eligible_clients: List[AsyncElevenLabs] = []
