@@ -116,12 +116,16 @@ class TopicResults(BaseModel):
 
         type: Literal["guess_the_sound"] = "guess_the_sound"
         extraction: _Extraction
+        start_datetime: datetime
+        modified_datetime: datetime
 
     class WouldYouRatherResult(BaseModel):
         class _Extraction(BaseExtractionTopic): ...
 
         type: Literal["would_you_rather"] = "would_you_rather"
         extraction: _Extraction
+        start_datetime: datetime
+        modified_datetime: datetime
 
 
 TopicResultsType: TypeAlias = Union[
