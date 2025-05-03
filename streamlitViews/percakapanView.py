@@ -68,33 +68,33 @@ if st.session_state.deviceId:
     if lastConversation["sessions"] is None:
         st.error("Sesi belum dimulai")
         st.stop()
-    else:
-        lastSession = lastConversation["sessions"][-1]
-        for message in lastSession["messages"]:
-            # Check message type and handle accordingly
-            if isinstance(message, dict):
-                # if message["content"] == "":
-                #     continue
-                if message["type"] == "ai":
-                    sender = "ai"
-                    text = message["content"]
-                elif message["type"] == "human":
-                    sender = "user"
-                    # Assuming content is a list
-                    # if (
-                    #     isinstance(message["content"], list)
-                    #     and len(message["content"]) > 0
-                    # ):
-                    text = message["content"][0]["text"]
-                    if not text:  # This covers both None and empty string
-                        continue
-                    # else:
-                    #     text = message["content"]
-                else:
-                    continue  # Skip other types of messages
+    
+    lastSession = lastConversation["sessions"][-1]
+    for message in lastSession["messages"]:
+        # Check message type and handle accordingly
+        if isinstance(message, dict):
+            # if message["content"] == "":
+            #     continue
+            if message["type"] == "ai":
+                sender = "ai"
+                text = message["content"]
+            elif message["type"] == "human":
+                sender = "user"
+                # Assuming content is a list
+                # if (
+                #     isinstance(message["content"], list)
+                #     and len(message["content"]) > 0
+                # ):
+                text = message["content"][0]["text"]
+                if not text:  # This covers both None and empty string
+                    continue
+                # else:
+                #     text = message["content"]
+            else:
+                continue  # Skip other types of messages
 
-                # Append formatted message to the dummyMsg list
-                messageResult.append({"sender": sender, "text": text})
+            # Append formatted message to the dummyMsg list
+            messageResult.append({"sender": sender, "text": text})
 
     # -------------------
     # st.subheader("Transkrip")
