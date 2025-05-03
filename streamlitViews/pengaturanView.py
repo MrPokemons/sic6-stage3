@@ -131,7 +131,7 @@ if st.session_state.configuration:
             topic_param = TopicParams(
                 talk_to_me=TopicParams.TalkToMeParam(duration=durationInput * 60),
                 math_game=TopicParams.MathGameParam(total_question=questionInput),
-                spelling_game=TopicParams.SpellingGameParam(
+                spelling_game=TopicParams.GuessTheSoundParam(
                     total_question=questionInput
                 ),
                 would_you_rather=TopicParams.WouldYouRatherParam(
