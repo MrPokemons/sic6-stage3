@@ -250,7 +250,15 @@ class MathGame(Agentic):
                     {
                         "type": "text",
                         "text": (
-                            "End the Session, while saying thank you for participating for the session."
+                            "Tell the child that the current session is ending."
+                            "You must say thank you for participating for the session. You look forward to the next Math Adventures session with the child."
+                            "Congratulate and praise the child if they did good during the session."
+                            "Otherwise, cheer and motivate the child to play with you again."
+                            "**DO NOT END YOUR RESPONSE WITH A QUESTION.**"
+                            "Your whole response must not exceed 20 words."
+                            "Example:"
+                            "'Wah, sudah selesai sesi Math Adventures kita hari ini! Terima kasih karena sudah mau main denganku, dan congrats karena kamu sudah menjawab banyak pertanyaan dengan benar. Kamu hebat! Sampai ketemu di sesi selanjutnya yaa!'"
+                            + "\n"
                             + "\n"
                             + PromptLoader().language_template.format(
                                 user_language=configurable["user"].get(
@@ -361,9 +369,13 @@ class MathGame(Agentic):
                         {
                             "type": "text",
                             "text": (
-                                "Congratulate user for answering the answer correctly and accurately. "
-                                "Praise his/hers hardworking for solving the question. "
-                                "DON'T ASK ANOTHER QUESTION, YOUR JOB ONLY CONGRATULATE. "
+                                "Congratulate the child for answering the answer correctly. "
+                                "Praise them because they are hardworking for solving the question."
+                                "Your response should not exceed 15 words."
+                                "DON'T ASK ANOTHER QUESTION OR MOTIVATE THE USER, YOUR JOB ONLY CONGRATULATE."
+                                "Example:"
+                                "Benar sekali Adik! Selamat! Kamu sangat hebat, pasti belajarnya rajin yaa."
+                                "You are free to come up with more sentences that are similar in nature and tone to the above."
                             ),
                         }
                     ]
@@ -379,9 +391,15 @@ class MathGame(Agentic):
                             {
                                 "type": "text",
                                 "text": (
-                                    "Encourage the user to try to answer, just encourage words and tell him/her to try again. "
+                                    "Encourage the child to come out of their shell and answer."
+                                    "Reassure them that it's ok if their answer is right or wrong."
+                                    "Emphasize that PawPal is the child's companion who learns alongside themselves, not someone who punishes wrong answers."
+                                    "Your response should not exceed 15 words."
                                     "JUST ENCOURAGEMENT, DON'T GIVE OUT THE ANSWER OR ANY CLUE."
-                                    "DON'T ASK ANOTHER QUESTION, YOUR JOB ONLY CONGRATULATE. "
+                                    "DON'T ASK ANOTHER QUESTION, YOUR JOB ONLY TO ENCOURAGE THE CHILD TO ANSWER. "
+                                    "Example:"
+                                    "Kalo menurut kamu jawabannya berapa? Gak apa-apa kalau salah, kita belajar bareng di sini!"
+                                    "You are free to come up with more sentences that are similar in nature and tone to the above."
                                 ),
                             }
                         ]
@@ -394,10 +412,15 @@ class MathGame(Agentic):
                             {
                                 "type": "text",
                                 "text": (
-                                    "Inform the user that their answer is WRONG. Motivate them to try again since there's still available attempt. "
-                                    "Encourage the user to think step by step, and never give up. "
+                                    "Gently tell the child that their answer was INCORRECT."
+                                    "Reassure the child that it's ok that they answered incorrectly."
+                                    "Emphasize that PawPal is the child's companion who learns alongside themselves, not someone who punishes wrong answers."
+                                    "Encourage the user to think step by step, and never give up."
                                     "JUST ENCOURAGEMENT, DON'T GIVE OUT THE ANSWER OR ANY CLUE. "
-                                    "DON'T ASK ANOTHER QUESTION, YOUR JOB ONLY CONGRATULATE. "
+                                    "DON'T ASK ANOTHER QUESTION, YOUR JOB ONLY TO MOTIVATE THE CHILD TO ANSWER AGAIN. "
+                                    "Example:"
+                                    "Kayaknya jawaban kamu masih belum tepat. Tidak apa-apa, yuk kita coba lagi!"
+                                    "You are free to come up with more sentences that are similar in nature and tone to the above."
                                 ),
                             }
                         ]
