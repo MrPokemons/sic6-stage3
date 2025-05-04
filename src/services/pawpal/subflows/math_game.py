@@ -4,7 +4,7 @@ from typing import List, Literal, Optional
 from datetime import datetime, timezone
 from pydantic import Field
 
-from langchain_core.messages import SystemMessage, HumanMessage
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langgraph.types import Command, interrupt
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.state import CompiledStateGraph
@@ -118,6 +118,7 @@ class MathGame(Agentic):
                     [InterruptSchema(action="speaker", message=last_ai_msg.text())]
                 )
             else:
+                # actually this is redundant, but its oke la, make it more clearer if something change might happen in the future
                 qna: MathQnA = state.get_next_question(raise_if_none=True)
                 interrupt([InterruptSchema(action="speaker", message=qna.question)])
         return Command(goto=state.next_node)
@@ -140,7 +141,7 @@ class MathGame(Agentic):
             )
             for _ in range(total_question)
         ]
-        print("Generated QnA:", json.dumps([i.model_dump(mode='json') for i in list_qna], indent=2))
+        print("Generated MathQnA:", json.dumps([i.model_dump(mode='json') for i in list_qna], indent=2))
 
         for _qna in list_qna:
             if _qna.question is not None:
@@ -211,15 +212,29 @@ class MathGame(Agentic):
     @classmethod
     async def _ask_question(cls, state: MGSessionState, config: ConfigSchema) -> Command[Literal["listening", END]]:  # type: ignore
         configurable = config["configurable"]
+        last_session = state.verify_last_session(session_type="math_games")
+
         qna = state.get_next_question()
         if qna is not None:
-            print("DEBUG QNA ASK:", json.dumps(qna.model_dump(mode='json'), indent=2))
+            state.add_message_to_last_session(
+                session_type="math_games",
+                messages=[
+                    AIMessage(
+                        content=[
+                            {
+                                "type": "text",
+                                "text": qna.question
+                            }
+                        ]
+                    )
+                ],
+            )
+            print("DEBUG MATHQNA ASK:", json.dumps(qna.model_dump(mode='json'), indent=2))
             return Command(
                 update={"from_node": "ask_question", "next_node": "listening"},
                 goto="talk",
             )
 
-        last_session = state.verify_last_session(session_type="math_games")
         messages = [
             SystemMessage(
                 content=[
@@ -324,7 +339,7 @@ class MathGame(Agentic):
     ) -> Command[Literal["listening", "elaborate", "ask_question"]]:
         _ = state.verify_last_session(session_type="math_games")
         qna: MathQnA = state.get_next_question(raise_if_none=True)
-        print("DEBUG QNA EVAL:", json.dumps(qna.model_dump(mode='json'), indent=2))
+        print("DEBUG MATHQNA EVAL:", json.dumps(qna.model_dump(mode='json'), indent=2))
         if qna.is_correct():
             qna.is_answered = True
             next_node = "ask_question"
