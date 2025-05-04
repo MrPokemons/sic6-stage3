@@ -45,9 +45,9 @@ class MathQnA(BaseModel):
 
     def is_correct(self, *, index: int = -1):
         index = min(len(self.user_answers) - 1, max(-1, index))
-        return not self.user_answers or (
-            self.user_answers[index].extraction.result == self.answer
-        )
+        if not self.user_answers or self.user_answers[index].extraction.result is None:
+            return False
+        return self.user_answers[index].extraction.result == self.answer
 
     @staticmethod
     def generate_sequence(length: int, min_val: int, max_val: int):
@@ -93,9 +93,9 @@ class GuessTheSoundQnA(BaseModel):
 
     def is_correct(self, *, index: int = -1):
         index = min(len(self.user_answers) - 1, max(-1, index))
-        return not self.user_answers or (
-            self.user_answers[index].extraction.result == self.answer
-        )
+        if not self.user_answers or self.user_answers[index].extraction.result is None:
+            return False
+        return self.user_answers[index].extraction.result.lower() == self.answer.lower()
 
     @staticmethod
     def generate_sequence(length: int, min_val: int, max_val: int):
