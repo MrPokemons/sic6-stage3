@@ -103,7 +103,7 @@ if st.session_state.deviceId:
             key=lambda x: x["created_datetime"],
             reverse=True,
         )
-        st.warning("Backend tidak aktif, maka menggunakan alternatif database.")
+        # st.warning("Backend tidak aktif, maka menggunakan alternatif database.")
 
     # last mode, use the static
     if list_conversation is None:
