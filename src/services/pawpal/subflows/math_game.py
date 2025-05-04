@@ -143,7 +143,7 @@ class MathGame(Agentic):
                         length=LENGTH,
                         min_val=MIN_VAL,
                         max_val=MAX_VAL,
-                        no_sum_below_zero=NO_SUM_BELOW_ZERO
+                        no_sum_below_zero=NO_SUM_BELOW_ZERO,
                     )
                 )
             )
@@ -164,20 +164,27 @@ class MathGame(Agentic):
                                 "The sequence will consist of addition and substraction which in the end leads to the sum. "
                                 "Your task will be generate matemathic question in analogy concepts then ask the user for answer. "
                                 "Example: "
-                                'You will be provided with sequence, such as "["+4", "+3", "-1", "+5", "-4"]" with the sum of "+7". '
+                                'You will be provided with sequence, such as "["+4", "+3", "-1"]" with the sum of "+6". '
                                 "Then you can generate analogy matemathic question such as: "
                                 '\n"'
                                 "You have 4 apples in your bag. On your journey, you found another 3 apples,"
-                                "and you see a cute horse, you gave one of your apple. "
-                                "After you returned home, your mother gifted you 5 additional apple."
-                                "Finally to reward youself, you ate 4 apples you have taken along the way."
+                                "and you see a cute horse, you gave him one of your apples."
                                 '"\n'
                                 "Then you ask the user for the right sum of apples they have"
                                 "\n\n"
-                                "If the sum if negative, use another type of analogy that are plausible to be have negative value, "
-                                "which making the user understand the matemathic analogy, such as Temperature, Money, Height like in a Elevator or on a Mountain, etc. "
-                                "Make sure your analogy is very easy to understand, since it's for children. "
-                                "\n# DO NOT SHOW THE ANSWER IN THE QUESTION, ITS JUST A QUESTION"
+                                "Should the sum be a negative value, use metrics in your analogy that *can* have a negative value."
+                                "Example:"
+                                "\n\n"
+                                "If your final value is negative, do NOT use number of objects! It is illogical to have a negative number of objects."
+                                "Use something else such as temperature."
+                                "Ensure that your analogy is easily understood by children aged 4-8 years old."
+                                "Example:"
+                                "✅ Good analogy: Depicting values in generic metrics, e.g. as a number of apples, marbles, friends, etc."
+                                "❌ Bad analogy: Complex, highly scientific or domain-exclusive metrics, such as pH, distance, temperature, etc."
+                                "Remember that the child is aged 4-8 years old; **they most likely lack a knowledge base for common metrics such as 1000m equating to 1km, ratios, percentages, etc. Refrain from referring to those!**"
+
+                                "\n# DO NOT SHOW THE ANSWER IN THE QUESTION, ITS JUST A QUESTION."
+                                "**YOUR ANALOGY SHOULD NOT DEPICT ANY ILLEGAL, VIOLENT, HARMFUL, POLITICAL, OR ANY OTHERWISE UNSAFE ANALOGIES SUCH AS STEALING, KILLING, VIOLENCE TOWARD HUMANS OR ANIMALS, ETC.** "
                                 "\n# THE PROVIDED SEQUENCE IS JUST A WAY TO STRUCTURE YOUR QUESTION, USE THE ANALOGY INSTEAD SHOWING THE NUMBER FULLY LIKE ARITHMETIC."
                             ),
                         }
@@ -247,7 +254,15 @@ class MathGame(Agentic):
                     {
                         "type": "text",
                         "text": (
-                            "End the Session, while saying thank you for participating for the session."
+                            "Tell the child that the current session is ending."
+                            "You must say thank you for participating for the session. You look forward to the next Math Adventures session with the child."
+                            "Congratulate and praise the child if they did good during the session."
+                            "Otherwise, cheer and motivate the child to play with you again."
+                            "**DO NOT END YOUR RESPONSE WITH A QUESTION.**"
+                            "Your whole response must not exceed 20 words."
+                            "Example:"
+                            "'Wah, sudah selesai sesi Math Adventures kita hari ini! Terima kasih karena sudah mau main denganku, dan congrats karena kamu sudah menjawab banyak pertanyaan dengan benar. Kamu hebat! Sampai ketemu di sesi selanjutnya yaa!'"
+                            + "\n"
                             + "\n"
                             + PromptLoader().language_template.format(
                                 user_language=configurable["user"].get(
@@ -358,9 +373,13 @@ class MathGame(Agentic):
                         {
                             "type": "text",
                             "text": (
-                                "Congratulate user for answering the answer correctly and accurately. "
-                                "Praise his/hers hardworking for solving the question. "
-                                "DON'T ASK ANOTHER QUESTION, YOUR JOB ONLY CONGRATULATE. "
+                                "Congratulate the child for answering the answer correctly. "
+                                "Praise them because they are hardworking for solving the question."
+                                "Your response should not exceed 15 words."
+                                "DON'T ASK ANOTHER QUESTION OR MOTIVATE THE USER, YOUR JOB ONLY CONGRATULATE."
+                                "Example:"
+                                "Benar sekali Adik! Selamat! Kamu sangat hebat, pasti belajarnya rajin yaa."
+                                "You are free to come up with more sentences that are similar in nature and tone to the above."
                             ),
                         }
                     ]
@@ -376,9 +395,15 @@ class MathGame(Agentic):
                             {
                                 "type": "text",
                                 "text": (
-                                    "Encourage the user to try to answer, just encourage words and tell him/her to try again. "
+                                    "Encourage the child to come out of their shell and answer."
+                                    "Reassure them that it's ok if their answer is right or wrong."
+                                    "Emphasize that PawPal is the child's companion who learns alongside themselves, not someone who punishes wrong answers."
+                                    "Your response should not exceed 15 words."
                                     "JUST ENCOURAGEMENT, DON'T GIVE OUT THE ANSWER OR ANY CLUE."
-                                    "DON'T ASK ANOTHER QUESTION, YOUR JOB ONLY CONGRATULATE. "
+                                    "DON'T ASK ANOTHER QUESTION, YOUR JOB ONLY TO ENCOURAGE THE CHILD TO ANSWER. "
+                                    "Example:"
+                                    "Kalo menurut kamu jawabannya berapa? Gak apa-apa kalau salah, kita belajar bareng di sini!"
+                                    "You are free to come up with more sentences that are similar in nature and tone to the above."
                                 ),
                             }
                         ]
@@ -391,10 +416,15 @@ class MathGame(Agentic):
                             {
                                 "type": "text",
                                 "text": (
-                                    "Inform the user that their answer is WRONG. Motivate them to try again since there's still available attempt. "
-                                    "Encourage the user to think step by step, and never give up. "
+                                    "Gently tell the child that their answer was INCORRECT."
+                                    "Reassure the child that it's ok that they answered incorrectly."
+                                    "Emphasize that PawPal is the child's companion who learns alongside themselves, not someone who punishes wrong answers."
+                                    "Encourage the user to think step by step, and never give up."
                                     "JUST ENCOURAGEMENT, DON'T GIVE OUT THE ANSWER OR ANY CLUE. "
-                                    "DON'T ASK ANOTHER QUESTION, YOUR JOB ONLY CONGRATULATE. "
+                                    "DON'T ASK ANOTHER QUESTION, YOUR JOB ONLY TO MOTIVATE THE CHILD TO ANSWER AGAIN. "
+                                    "Example:"
+                                    "Kayaknya jawaban kamu masih belum tepat. Tidak apa-apa, yuk kita coba lagi!"
+                                    "You are free to come up with more sentences that are similar in nature and tone to the above."
                                 ),
                             }
                         ]

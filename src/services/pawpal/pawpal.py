@@ -92,7 +92,9 @@ class PawPal(Agentic):
     async def _randomize_features(
         cls, state: AgentState, config: ConfigSchema
     ) -> Command[TopicFlowNodeType]:
-        next_feature = state.selected_features[len(state.sessions) % len(state.selected_features)]
+        next_feature = state.selected_features[
+            len(state.sessions) % len(state.selected_features)
+        ]
         next_node = TopicFlowNodeMapping[next_feature]
 
         user_data = config["configurable"]["user"]

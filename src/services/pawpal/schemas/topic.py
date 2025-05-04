@@ -50,12 +50,12 @@ class MathQnA(BaseModel):
         return self.user_answers[index].extraction.result == self.answer
 
     @staticmethod
-    def generate_sequence(length: int, min_val: int, max_val: int, *, no_sum_below_zero: bool = False) -> List[int]:
+    def generate_sequence(
+        length: int, min_val: int, max_val: int, *, no_sum_below_zero: bool = False
+    ) -> List[int]:
         if no_sum_below_zero:
             prelength = secrets.randbelow(length) + 1
-            seq = [
-                secrets.randbelow(max_val) + 1 for _ in range(prelength)
-            ]
+            seq = [secrets.randbelow(max_val) + 1 for _ in range(prelength)]
             postlength = length - prelength
             for _ in range(postlength):
                 _v = secrets.randbelow(max_val - min_val + 1) + min_val
