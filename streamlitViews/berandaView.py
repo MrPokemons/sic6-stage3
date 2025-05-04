@@ -370,7 +370,7 @@ if st.session_state.deviceId:
                 listSound = []  # i guess assuming the sound is fixed?
                 listAttemp = []
                 listEquation = []
-                st.subheader("Hasil Menghitung")
+                st.subheader("Hasil Menebak")
 
                 for i, qna in enumerate(session_result.list_qna):
                     listAnswer = []
@@ -391,7 +391,7 @@ if st.session_state.deviceId:
                     listCorrection_fmt = ", ".join(map(str, listCorrection)).strip()
                     listEquation.append(
                         {
-                            "Pertanyaan": qna.sound_path,
+                            "Sound": qna.sound_path,
                             "Jawaban Anak": listAnswer_fmt,
                             "Koreksi": listCorrection_fmt,
                         }
@@ -413,11 +413,21 @@ if st.session_state.deviceId:
                         }
                     )
 
-                # Show Pie Chart
-                equationResultTable = pd.DataFrame(listEquation)
-                equationResultTable.index += 1
-                st.table(equationResultTable)
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.markdown("#### Suara")
+                    for guessSound in listEquation:
+                        st.audio(guessSound["Sound"])
+                with col2:
+                    st.markdown("#### Jawaban Anak")
+                    for guessSound in listEquation:
+                        st.write(guessSound["Jawaban Anak"])
+                with col3:
+                    st.markdown("#### Koreksi")
+                    for guessSound in listEquation:
+                        st.write(guessSound["Koreksi"])
 
+                # show pie chart
                 data = {
                     "Kategori": ["Benar", "Salah", "Tidak Menjawab"],
                     "Jumlah": [totalCorrect, totalWrong, totalBlank],
