@@ -16,6 +16,11 @@ class PromptLoader(BaseModel):
             default_factory=lambda: load_prompt_md("talk_to_me/opening.md")
         )
 
+    class WouldYouRather(BaseModel):
+        opening: str = Field(
+            default_factory=lambda: load_prompt_md("would_you_rather/opening.md")
+        )
+
     # Core Flow
     baseline: str = Field(default_factory=lambda: load_prompt_md("baseline.md"))
     welcome_template: str = Field(default_factory=lambda: load_prompt_md("welcome.md"))
@@ -24,6 +29,7 @@ class PromptLoader(BaseModel):
     )
 
     talk_to_me: TalkToMe = Field(default_factory=TalkToMe)
+    would_you_rather: WouldYouRather = Field(default_factory=WouldYouRather)
 
 
 def convert_base_to_specific(message: BaseMessage):
