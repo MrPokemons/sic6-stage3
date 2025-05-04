@@ -47,7 +47,9 @@ class WouldYouRather(Agentic):
                 ]
             ),
             SystemMessage(
-                content=[{"type": "text", "text": PromptLoader().would_you_rather.opening}]
+                content=[
+                    {"type": "text", "text": PromptLoader().would_you_rather.opening}
+                ]
             ),
         ]
         opening_message = await cls.model.ainvoke([*state.messages, *messages])
@@ -140,7 +142,10 @@ class WouldYouRather(Agentic):
     async def _check_session(cls, state: WYRSessionState, config: ConfigSchema) -> Command[Literal["listening", END]]:  # type: ignore
         configurable = config["configurable"]
         ongoing_duration = (datetime.now(timezone.utc) - state.start_datetime).seconds
-        if ongoing_duration < configurable["feature_params"]["would_you_rather"]["duration"]:
+        if (
+            ongoing_duration
+            < configurable["feature_params"]["would_you_rather"]["duration"]
+        ):
             return Command(
                 update={"from_node": "check_session", "next_node": "listening"},
                 goto="talk",

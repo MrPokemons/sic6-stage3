@@ -63,7 +63,7 @@ class SessionState(BaseModel):
                 raise Exception(f"How no last ai message? {detail_for_error}")
 
 
-InterruptAction: TypeAlias = Literal["speaker", "microphone"]
+InterruptAction: TypeAlias = Literal["speaker", "speaker+audio", "microphone"]
 
 
 class InterruptSchema(TypedDict):

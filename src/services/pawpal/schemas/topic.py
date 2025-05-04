@@ -1,7 +1,8 @@
 import secrets
 import json
-from typing import Annotated, List, TypeAlias, Union, Optional, Literal
+from typing import Annotated, List, Dict, Tuple, TypeAlias, Union, Optional, Literal
 from typing_extensions import TypedDict
+from pathlib import PosixPath
 from pydantic import BaseModel, Field
 
 from datetime import datetime
@@ -44,9 +45,9 @@ class MathQnA(BaseModel):
 
     def is_correct(self, *, index: int = -1):
         index = min(len(self.user_answers) - 1, max(-1, index))
-        return not self.user_answers or (
-            self.user_answers[index].extraction.result == self.answer
-        )
+        if not self.user_answers or self.user_answers[index].extraction.result is None:
+            return False
+        return self.user_answers[index].extraction.result == self.answer
 
     @staticmethod
     def generate_sequence(length: int, min_val: int, max_val: int):
@@ -59,6 +60,50 @@ class MathQnA(BaseModel):
             f"\"{'' if i == 0 else ('+' if i > 0 else '-')}{i}\"" for i in self.sequence
         )
         return f"[{seq_str}]"
+
+
+### Guess The Sound
+class GuessTheSoundUserAnswerExtraction(BaseModel):
+    result: Optional[str] = Field(
+        description="Extract the relevant words that you see, *BASED ON* the *LIST OF WORDS I PROVIDED* before. If you can't find any words you see, just set as None"
+    )
+
+
+class GuessTheSoundUserAnswer(BaseModel):
+    raw_answer: Annotated[
+        str, "user pure answer, then parse to extraction for real result"
+    ]
+    extraction: GuessTheSoundUserAnswerExtraction
+    feedback: Optional[str] = None
+
+
+class GuessTheSoundQnA(BaseModel):
+    sound_path: Union[PosixPath, str]
+    answer: Annotated[str, "the object that makes the sound, e.g. animals, etc"]
+    is_answered: bool = False
+    user_answers: List[GuessTheSoundUserAnswer] = []
+
+    @property
+    def latest_user_answer(self):
+        if not self.user_answers:
+            raise Exception(
+                f"How does this suppose to happen? GuessTheSoundQnA hasn't been answered.\n{json.dumps(self, indent=2)}"
+            )
+        return self.user_answers[-1].extraction.result
+
+    def is_correct(self, *, index: int = -1):
+        index = min(len(self.user_answers) - 1, max(-1, index))
+        if not self.user_answers or self.user_answers[index].extraction.result is None:
+            return False
+        return self.user_answers[index].extraction.result.lower() == self.answer.lower()
+
+    @staticmethod
+    def randomize_gts_mapping(
+        gts_mapping: Dict[str, List[PosixPath]],
+    ) -> Tuple[Annotated[str, "the object"], Annotated[str, "the sound path"]]:
+        obj_ = secrets.choice(list(gts_mapping))
+        obj_sound_path = secrets.choice(gts_mapping[obj_])
+        return obj_, obj_sound_path
 
 
 ### Topic
@@ -116,6 +161,7 @@ class TopicResults(BaseModel):
 
         type: Literal["guess_the_sound"] = "guess_the_sound"
         extraction: _Extraction
+        list_qna: List[GuessTheSoundQnA]
         start_datetime: datetime
         modified_datetime: datetime
 

@@ -1,5 +1,4 @@
 import json
-import random
 import pandas as pd
 import plotly.express as px
 from typing import List
@@ -66,20 +65,16 @@ emotion_map = {
     "Doubtful": "🫤 Ragu",
 }
 
-color_map = {
-    'Benar': 'green',
-    'Salah': 'red',
-    'Tidak Menjawab': 'gray'
-}
-
-
+color_map = {"Benar": "green", "Salah": "red", "Tidak Menjawab": "gray"}
 
 
 # st.title("PawPal 🐾")
 st.image(ROOT_PATH / "streamlitViews" / "image" / "logo.png")
 
 with st.form("device_id_form"):
-    deviceIdInput = st.text_input("No. ID Perangkat", value=st.session_state.deviceId or "")
+    deviceIdInput = st.text_input(
+        "No. ID Perangkat", value=st.session_state.deviceId or ""
+    )
     st.session_state.deviceId = deviceIdInput
     saveDeviceId = st.form_submit_button("Cari percakapan terakhir")
 
@@ -308,7 +303,6 @@ if st.session_state.deviceId:
                         correction = "✅" if correction else "❌"
                         listCorrection.append(correction)
 
-
                     equation_fmt = " ".join(equation).strip(
                         " +"
                     )  # clear the front if its either space or +
@@ -316,7 +310,11 @@ if st.session_state.deviceId:
                     listAnswer_fmt = ", ".join(map(str, listAnswer)).strip()
                     listCorrection_fmt = ", ".join(map(str, listCorrection)).strip()
                     listEquation.append(
-                        {"Pertanyaan": equation_fmt, "Jawaban Anak":  listAnswer_fmt, "Koreksi": listCorrection_fmt}
+                        {
+                            "Pertanyaan": equation_fmt,
+                            "Jawaban Anak": listAnswer_fmt,
+                            "Koreksi": listCorrection_fmt,
+                        }
                     )
 
                     if listCorrection[-1] == "✅":
@@ -327,7 +325,12 @@ if st.session_state.deviceId:
                         totalBlank += 1
 
                     listAttemp.append(
-                        {"Percobaan": "Pertanyaan " + str(i+1), "Benar": listCorrection.count("✅"), "Salah": listCorrection.count("❌"), "Tidak Menjawab": listCorrection.count("⚪")}
+                        {
+                            "Percobaan": "Pertanyaan " + str(i + 1),
+                            "Benar": listCorrection.count("✅"),
+                            "Salah": listCorrection.count("❌"),
+                            "Tidak Menjawab": listCorrection.count("⚪"),
+                        }
                     )
 
                 # Show Pie Chart
@@ -335,13 +338,28 @@ if st.session_state.deviceId:
                 equationResultTable.index += 1
                 st.table(equationResultTable)
 
-                data = {'Kategori': ['Benar', 'Salah', 'Tidak Menjawab'], 'Jumlah': [totalCorrect, totalWrong, totalBlank]}
-                fig = px.pie(data, names='Kategori', values='Jumlah', title='Persentase Akurasi', color='Kategori', color_discrete_map=color_map)
+                data = {
+                    "Kategori": ["Benar", "Salah", "Tidak Menjawab"],
+                    "Jumlah": [totalCorrect, totalWrong, totalBlank],
+                }
+                fig = px.pie(
+                    data,
+                    names="Kategori",
+                    values="Jumlah",
+                    title="Persentase Akurasi",
+                    color="Kategori",
+                    color_discrete_map=color_map,
+                )
                 st.plotly_chart(fig)
 
                 # Show Bar Chart
                 df = pd.DataFrame(listAttemp)
-                fig = px.bar(df, x='Percobaan', y=['Benar', 'Salah', 'Tidak Menjawab'], title='Akurasi Jawaban pada Setiap Percobaan Matematika')
+                fig = px.bar(
+                    df,
+                    x="Percobaan",
+                    y=["Benar", "Salah", "Tidak Menjawab"],
+                    title="Akurasi Jawaban pada Setiap Percobaan Matematika",
+                )
                 st.plotly_chart(fig)
 
             elif session.type == "guess_the_sound":
@@ -349,8 +367,9 @@ if st.session_state.deviceId:
                 totalWrong = 0
                 totalBlank = 0
 
-                listSound = [] # i guess assuming the sound is fixed?
+                listSound = []  # i guess assuming the sound is fixed?
                 listAttemp = []
+                listEquation = []
                 st.subheader("Hasil Menghitung")
 
                 for i, qna in enumerate(session_result.list_qna):
@@ -358,7 +377,6 @@ if st.session_state.deviceId:
                     listCorrection = []
                     for n, userAnswer in enumerate(qna.user_answers):
                         answer = userAnswer.extraction.result
-                        answer = random.choice("cat", "dog", "goat", None)
                         if answer is None:
                             answer = "Tidak Menjawab"
                         listAnswer.append(answer)
@@ -367,13 +385,16 @@ if st.session_state.deviceId:
                         correction = "✅" if correction else "❌"
                         listCorrection.append(correction)
 
-                    sound = random.choice(["cat.mp3", "dog.mp3", "goat.mp3"])
-                    listSound.append(sound)
+                    listSound.append(qna.sound_path)
 
                     listAnswer_fmt = ", ".join(map(str, listAnswer)).strip()
                     listCorrection_fmt = ", ".join(map(str, listCorrection)).strip()
                     listEquation.append(
-                        {"Pertanyaan": equation_fmt, "Jawaban Anak":  listAnswer_fmt, "Koreksi": listCorrection_fmt}
+                        {
+                            "Pertanyaan": qna.sound_path,
+                            "Jawaban Anak": listAnswer_fmt,
+                            "Koreksi": listCorrection_fmt,
+                        }
                     )
 
                     if listCorrection[-1] == "✅":
@@ -384,7 +405,12 @@ if st.session_state.deviceId:
                         totalBlank += 1
 
                     listAttemp.append(
-                        {"Percobaan": "Pertanyaan " + str(i+1), "Benar": listCorrection.count("✅"), "Salah": listCorrection.count("❌"), "Tidak Menjawab": listCorrection.count("⚪")}
+                        {
+                            "Percobaan": "Pertanyaan " + str(i + 1),
+                            "Benar": listCorrection.count("✅"),
+                            "Salah": listCorrection.count("❌"),
+                            "Tidak Menjawab": listCorrection.count("⚪"),
+                        }
                     )
 
                 # Show Pie Chart
@@ -392,15 +418,29 @@ if st.session_state.deviceId:
                 equationResultTable.index += 1
                 st.table(equationResultTable)
 
-                data = {'Kategori': ['Benar', 'Salah', 'Tidak Menjawab'], 'Jumlah': [totalCorrect, totalWrong, totalBlank]}
-                fig = px.pie(data, names='Kategori', values='Jumlah', title='Persentase Akurasi', color='Kategori', color_discrete_map=color_map)
+                data = {
+                    "Kategori": ["Benar", "Salah", "Tidak Menjawab"],
+                    "Jumlah": [totalCorrect, totalWrong, totalBlank],
+                }
+                fig = px.pie(
+                    data,
+                    names="Kategori",
+                    values="Jumlah",
+                    title="Persentase Akurasi",
+                    color="Kategori",
+                    color_discrete_map=color_map,
+                )
                 st.plotly_chart(fig)
 
                 # Show Bar Chart
                 df = pd.DataFrame(listAttemp)
-                fig = px.bar(df, x='Percobaan', y=['Benar', 'Salah', 'Tidak Menjawab'], title='Akurasi Jawaban pada Setiap Percobaan Menebak Suara')
+                fig = px.bar(
+                    df,
+                    x="Percobaan",
+                    y=["Benar", "Salah", "Tidak Menjawab"],
+                    title="Akurasi Jawaban pada Setiap Percobaan Menebak Suara",
+                )
                 st.plotly_chart(fig)
-
 
     # --------------------
     # custom styling
