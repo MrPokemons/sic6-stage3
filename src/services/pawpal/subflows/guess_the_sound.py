@@ -1,6 +1,6 @@
 import json
 from typing import List, Literal, Optional, Dict
-from pathlib import Path, PosixPath
+from pathlib import Path
 from datetime import datetime, timezone
 from pydantic import Field
 
@@ -25,7 +25,7 @@ from ..utils import PromptLoader
 ROOT_PATH = Path(__file__).parents[4]
 GUESS_THE_SOUND_AUDIO_PATH = ROOT_PATH / "data" / "guess_the_sound"
 
-GUESS_THE_SOUND_MAPPING: Dict[str, List[PosixPath]] = {}  # name -> list path
+GUESS_THE_SOUND_MAPPING: Dict[str, List[Path]] = {}  # name -> list path
 for fn in GUESS_THE_SOUND_AUDIO_PATH.iterdir():
     target_obj, _index_dot_ext = fn.name.split("_", 1)
     if target_obj not in GUESS_THE_SOUND_MAPPING:

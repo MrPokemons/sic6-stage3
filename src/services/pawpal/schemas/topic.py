@@ -2,7 +2,7 @@ import secrets
 import json
 from typing import Annotated, List, Dict, Tuple, TypeAlias, Union, Optional, Literal
 from typing_extensions import TypedDict
-from pathlib import PosixPath
+from pathlib import Path
 from pydantic import BaseModel, Field
 
 from datetime import datetime
@@ -78,7 +78,7 @@ class GuessTheSoundUserAnswer(BaseModel):
 
 
 class GuessTheSoundQnA(BaseModel):
-    sound_path: Union[PosixPath, str]
+    sound_path: Union[Path, str]
     answer: Annotated[str, "the object that makes the sound, e.g. animals, etc"]
     is_answered: bool = False
     user_answers: List[GuessTheSoundUserAnswer] = []
@@ -99,7 +99,7 @@ class GuessTheSoundQnA(BaseModel):
 
     @staticmethod
     def randomize_gts_mapping(
-        gts_mapping: Dict[str, List[PosixPath]],
+        gts_mapping: Dict[str, List[Path]],
     ) -> Tuple[Annotated[str, "the object"], Annotated[str, "the sound path"]]:
         obj_ = secrets.choice(list(gts_mapping))
         obj_sound_path = secrets.choice(gts_mapping[obj_])
