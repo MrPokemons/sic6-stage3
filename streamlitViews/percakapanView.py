@@ -23,7 +23,7 @@ with st.form("device_id_form"):
         "No. ID Perangkat", value=st.session_state.deviceId or ""
     )
     st.session_state.deviceId = deviceIdInput
-    saveDeviceId = st.form_submit_button("Cari percakapan terakhir")
+    saveDeviceId = st.form_submit_button("Cari percakapan saat ini")
 
 
 if st.session_state.deviceId:

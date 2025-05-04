@@ -328,7 +328,7 @@ if st.session_state.deviceId:
                             "Percobaan": "Pertanyaan " + str(i + 1),
                             "Benar": listCorrection.count("✅"),
                             "Salah": listCorrection.count("❌"),
-                            "Tidak Menjawab": listCorrection.count("⚪"),
+                            "Tidak Menjawab": listCorrection.count("⚪️"),
                         }
                     )
 
@@ -353,13 +353,22 @@ if st.session_state.deviceId:
 
                 # Show Bar Chart
                 df = pd.DataFrame(listAttemp)
+                df_long = df.melt(
+                    id_vars="Percobaan",
+                    value_vars=["Benar", "Salah", "Tidak Menjawab"],
+                    var_name="Kategori",
+                    value_name="Jumlah Pertanyaan"
+                )
                 fig = px.bar(
-                    df,
+                    df_long,
                     x="Percobaan",
-                    y=["Benar", "Salah", "Tidak Menjawab"],
+                    y="Jumlah Pertanyaan",
+                    color="Kategori",
+                    color_discrete_map=color_map,
                     title="Akurasi Jawaban pada Setiap Percobaan Matematika"
                 )
                 st.plotly_chart(fig, key="math_games-bar_chart")
+
 
             elif session.type == "guess_the_sound":
                 totalCorrect = 0
@@ -368,7 +377,7 @@ if st.session_state.deviceId:
 
                 listSound = []  # i guess assuming the sound is fixed?
                 listAttemp = []
-                listEquation = []
+                listGuessSound = []
                 st.subheader("Hasil Menebak")
 
                 for i, qna in enumerate(session_result.list_qna):
@@ -387,7 +396,7 @@ if st.session_state.deviceId:
 
                     listAnswer_fmt = ", ".join(map(str, listAnswer)).strip()
                     listCorrection_fmt = ", ".join(map(str, listCorrection)).strip()
-                    listEquation.append(
+                    listGuessSound.append(
                         {
                             "Sound": qna.sound_path,
                             "Jawaban Anak": listAnswer_fmt,
@@ -407,23 +416,35 @@ if st.session_state.deviceId:
                             "Percobaan": "Suara " + str(i + 1),
                             "Benar": listCorrection.count("✅"),
                             "Salah": listCorrection.count("❌"),
-                            "Tidak Menjawab": listCorrection.count("⚪"),
+                            "Tidak Menjawab": listCorrection.count("⚪️"),
                         }
                     )
 
                 col1, col2, col3 = st.columns(3)
                 with col1:
-                    st.markdown("#### Suara")
-                    for guessSound in listEquation:
+                    st.write("###### Suara")
+                    for guessSound in listGuessSound:
                         st.audio(guessSound["Sound"])
                 with col2:
-                    st.markdown("#### Jawaban Anak")
-                    for guessSound in listEquation:
-                        st.write(guessSound["Jawaban Anak"])
+                    st.write("###### Jawaban Anak")
+                    for guessSound in listGuessSound:
+                        st.markdown(
+                            f"""
+                            <div style="border:1px solid #ccc; padding:10px; border-radius:5px; ">
+                                {guessSound["Jawaban Anak"]}
+                            </div>
+                            """, unsafe_allow_html=True
+                        )
                 with col3:
-                    st.markdown("#### Koreksi")
-                    for guessSound in listEquation:
-                        st.write(guessSound["Koreksi"])
+                    st.write("###### Koreksi")
+                    for guessSound in listGuessSound:
+                        st.markdown(
+                            f"""
+                            <div style="border:1px solid #ccc; padding:10px; border-radius:5px; ">
+                                {guessSound["Koreksi"]}
+                            </div>
+                            """, unsafe_allow_html=True
+                        )
 
                 # show pie chart
                 data = {
@@ -442,11 +463,19 @@ if st.session_state.deviceId:
 
                 # Show Bar Chart
                 df = pd.DataFrame(listAttemp)
+                df_long = df.melt(
+                    id_vars="Percobaan",
+                    value_vars=["Benar", "Salah", "Tidak Menjawab"],
+                    var_name="Kategori",
+                    value_name="Jumlah Pertanyaan"
+                )
                 fig = px.bar(
-                    df,
+                    df_long,
                     x="Percobaan",
-                    y=["Benar", "Salah", "Tidak Menjawab"],
-                    title="Akurasi Jawaban pada Setiap Percobaan Menebak Suara",
+                    y="Jumlah Pertanyaan",
+                    color="Kategori",
+                    color_discrete_map=color_map,
+                    title="Akurasi Jawaban pada Setiap Percobaan Menebak Suara"
                 )
                 st.plotly_chart(fig, key="guess_the_sound-bar_chart")
 
@@ -542,10 +571,9 @@ st.markdown(
         }
     }
 
-    div[data-testid="stChatMessage"]:has(div[data-testid="stChatMessageAvatarAssistant"]) p {
+    
 
-    }
-
+    
 
 </style>
 """,
