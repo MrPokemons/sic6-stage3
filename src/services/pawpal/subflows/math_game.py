@@ -145,10 +145,6 @@ class MathGame(Agentic):
             )
             for _ in range(total_question)
         ]
-        print(
-            "Generated MathQnA:",
-            json.dumps([i.model_dump(mode="json") for i in list_qna], indent=2),
-        )
 
         for _qna in list_qna:
             if _qna.question is not None:
@@ -206,6 +202,11 @@ class MathGame(Agentic):
             ]
             _llm_question = await cls.model.ainvoke(_temp_messages)
             _qna.question = _llm_question.text()
+
+        print(
+            "Generated MathQnA:",
+            json.dumps([i.model_dump(mode="json") for i in list_qna], indent=2),
+        )
 
         return Command(
             update={
@@ -340,6 +341,9 @@ class MathGame(Agentic):
     ) -> Command[Literal["listening", "elaborate", "ask_question"]]:
         _ = state.verify_last_session(session_type="math_games")
         qna: MathQnA = state.get_next_question(raise_if_none=True)
+        if not qna.user_answers:
+            raise Exception(f"mathgame: how no user answer {qna}\nstate: {state}")
+
         print("DEBUG MATHQNA EVAL:", json.dumps(qna.model_dump(mode="json"), indent=2))
         if qna.is_correct():
             qna.is_answered = True
@@ -397,12 +401,14 @@ class MathGame(Agentic):
                 next_node = "elaborate"
 
         evaluate_response = await cls.model.ainvoke([*state.messages, *messages])
+        qna.user_answers[-1].feedback = evaluate_response.text()
         state.add_message_to_last_session(
             session_type="math_games",
             messages=[*messages, evaluate_response],
         )
         return Command(
             update={
+                "list_qna": state.list_qna,
                 "modified_datetime": datetime.now(timezone.utc),
                 "messages": [*messages, evaluate_response],
                 "sessions": state.get_sessions(deep=True),

@@ -22,15 +22,17 @@ from ..schemas.topic import (
 from ..utils import PromptLoader
 
 
-ROOT_PATH = Path(__file__).parents[4]
-GUESS_THE_SOUND_AUDIO_PATH = ROOT_PATH / "data" / "guess_the_sound"
+ROOT_PATH = Path(__file__).resolve()
+PROJECT_ROOT = ROOT_PATH.parents[4]
+GUESS_THE_SOUND_AUDIO_PATH = PROJECT_ROOT / "data" / "guess_the_sound"
 
 GUESS_THE_SOUND_MAPPING: Dict[str, List[Path]] = {}  # name -> list path
 for fn in GUESS_THE_SOUND_AUDIO_PATH.iterdir():
     target_obj, _index_dot_ext = fn.name.split("_", 1)
     if target_obj not in GUESS_THE_SOUND_MAPPING:
         GUESS_THE_SOUND_MAPPING[target_obj] = []
-    GUESS_THE_SOUND_MAPPING[target_obj].append(fn.absolute())
+    relative_fn_path = fn.relative_to(PROJECT_ROOT)
+    GUESS_THE_SOUND_MAPPING[target_obj].append(relative_fn_path)
 
 
 class GTSSessionState(SessionState):
@@ -314,6 +316,9 @@ class GuessTheSound(Agentic):
     ) -> Command[Literal["listening", "elaborate", "ask_question"]]:
         _ = state.verify_last_session(session_type="guess_the_sound")
         qna: GuessTheSoundQnA = state.get_next_question(raise_if_none=True)
+        if not qna.user_answers:
+            raise Exception(f"guessTheSound: how no user answer {qna}\nstate: {state}")
+
         print("DEBUG GTSQNA EVAL:", json.dumps(qna.model_dump(mode="json"), indent=2))
         if qna.is_correct():
             qna.is_answered = True
@@ -371,12 +376,14 @@ class GuessTheSound(Agentic):
                 next_node = "elaborate"
 
         evaluate_response = await cls.model.ainvoke([*state.messages, *messages])
+        qna.user_answers[-1].feedback = evaluate_response.text()
         state.add_message_to_last_session(
             session_type="guess_the_sound",
             messages=[*messages, evaluate_response],
         )
         return Command(
             update={
+                "list_qna": state.list_qna,
                 "modified_datetime": datetime.now(timezone.utc),
                 "messages": [*messages, evaluate_response],
                 "sessions": state.get_sessions(deep=True),
