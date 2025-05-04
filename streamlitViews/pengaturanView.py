@@ -15,7 +15,6 @@ class StartConversationInput(BaseModel):
     total_sessions: PositiveInt
 
 
-
 if "configuration" not in st.session_state:
     st.session_state.configuration = False
 if "deviceId" not in st.session_state:

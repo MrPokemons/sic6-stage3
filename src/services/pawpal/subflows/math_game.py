@@ -130,7 +130,11 @@ class MathGame(Agentic):
         configurable = config["configurable"]
         _curr_config = configurable["feature_params"]["math_game"]
         total_question = _curr_config["total_question"]
-        LENGTH, MIN_VAL, MAX_VAL = secrets.randbelow(2) + 2, -2, 10  # generate param for difficulty
+        LENGTH, MIN_VAL, MAX_VAL = (
+            secrets.randbelow(2) + 2,
+            -2,
+            10,
+        )  # generate param for difficulty
         list_qna: List[MathQnA] = [
             MathQnA(
                 sequence=(
@@ -141,7 +145,10 @@ class MathGame(Agentic):
             )
             for _ in range(total_question)
         ]
-        print("Generated MathQnA:", json.dumps([i.model_dump(mode='json') for i in list_qna], indent=2))
+        print(
+            "Generated MathQnA:",
+            json.dumps([i.model_dump(mode="json") for i in list_qna], indent=2),
+        )
 
         for _qna in list_qna:
             if _qna.question is not None:
@@ -187,7 +194,8 @@ class MathGame(Agentic):
                                 "Just provide the analogy question, don't use any literal number instead use in words, "
                                 "e.g. instead of '1' write it as 'one', '2' as 'two', '24' as 'twenty four', and so on. "
                                 "The ANALOGY OBJECT you are using must be CONSISTENT across the story."
-                            ) + PromptLoader().language_template.format(
+                            )
+                            + PromptLoader().language_template.format(
                                 user_language=configurable["user"].get(
                                     "language", "English"
                                 )
@@ -218,18 +226,11 @@ class MathGame(Agentic):
         if qna is not None:
             state.add_message_to_last_session(
                 session_type="math_games",
-                messages=[
-                    AIMessage(
-                        content=[
-                            {
-                                "type": "text",
-                                "text": qna.question
-                            }
-                        ]
-                    )
-                ],
+                messages=[AIMessage(content=[{"type": "text", "text": qna.question}])],
             )
-            print("DEBUG MATHQNA ASK:", json.dumps(qna.model_dump(mode='json'), indent=2))
+            print(
+                "DEBUG MATHQNA ASK:", json.dumps(qna.model_dump(mode="json"), indent=2)
+            )
             return Command(
                 update={"from_node": "ask_question", "next_node": "listening"},
                 goto="talk",
@@ -302,11 +303,11 @@ class MathGame(Agentic):
                             "Extract the answer from the user response, "
                             "the expected answer will be number. "
                             f"This number can be defined as literal decimal or number in words that can be in English language or {configurable['user']['language']} language."
-                        )
+                        ),
                     }
                 ]
             ),
-            HumanMessage(content=[{"type": "text", "text": user_response}])
+            HumanMessage(content=[{"type": "text", "text": user_response}]),
         ]
         state.add_message_to_last_session(
             session_type="math_games",
@@ -339,7 +340,7 @@ class MathGame(Agentic):
     ) -> Command[Literal["listening", "elaborate", "ask_question"]]:
         _ = state.verify_last_session(session_type="math_games")
         qna: MathQnA = state.get_next_question(raise_if_none=True)
-        print("DEBUG MATHQNA EVAL:", json.dumps(qna.model_dump(mode='json'), indent=2))
+        print("DEBUG MATHQNA EVAL:", json.dumps(qna.model_dump(mode="json"), indent=2))
         if qna.is_correct():
             qna.is_answered = True
             next_node = "ask_question"

@@ -255,12 +255,22 @@ def pawpal_router(
                                         continue
 
                                     logger.info(f"Agentic sent Action: {_action}")
-                                    _action, _addons = f"{_action.strip('+')}+".split("+", 1)
+                                    _action, _addons = f"{_action.strip('+')}+".split(
+                                        "+", 1
+                                    )
                                     if _action == "speaker":
                                         if _addons == "audio":
-                                            _audio_array, _sample_rate = sf.read(interrupt_schema["message"], dtype="float32")
+                                            _audio_array, _sample_rate = sf.read(
+                                                interrupt_schema["message"],
+                                                dtype="float32",
+                                            )
                                             _audio_buffer = BytesIO()
-                                            sf.write(_audio_buffer, data=_audio_array, samplerate=_sample_rate, format="WAV")
+                                            sf.write(
+                                                _audio_buffer,
+                                                data=_audio_array,
+                                                samplerate=_sample_rate,
+                                                format="WAV",
+                                            )
                                             tts_audio_data = _audio_buffer.getvalue()
                                         else:
                                             tts_audio_data = (

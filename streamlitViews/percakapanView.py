@@ -19,7 +19,9 @@ dummyMsg = [
 st.title("🤖 Percakapan Saat Ini 🧒")
 
 with st.form("device_id_form"):
-    deviceIdInput = st.text_input("No. ID Perangkat", value=st.session_state.deviceId or "")
+    deviceIdInput = st.text_input(
+        "No. ID Perangkat", value=st.session_state.deviceId or ""
+    )
     st.session_state.deviceId = deviceIdInput
     saveDeviceId = st.form_submit_button("Cari percakapan terakhir")
 

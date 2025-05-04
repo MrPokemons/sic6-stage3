@@ -98,7 +98,9 @@ class GuessTheSoundQnA(BaseModel):
         return self.user_answers[index].extraction.result.lower() == self.answer.lower()
 
     @staticmethod
-    def randomize_gts_mapping(gts_mapping: Dict[str, List[PosixPath]]) -> Tuple[Annotated[str, "the object"], Annotated[str, "the sound path"]]:
+    def randomize_gts_mapping(
+        gts_mapping: Dict[str, List[PosixPath]],
+    ) -> Tuple[Annotated[str, "the object"], Annotated[str, "the sound path"]]:
         obj_ = secrets.choice(list(gts_mapping))
         obj_sound_path = secrets.choice(gts_mapping[obj_])
         return obj_, obj_sound_path

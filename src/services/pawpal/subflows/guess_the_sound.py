@@ -40,7 +40,9 @@ class GTSSessionState(SessionState):
         default_factory=lambda: datetime.now(timezone.utc)
     )
 
-    def get_next_question(self, raise_if_none: bool = False) -> Optional[GuessTheSoundQnA]:
+    def get_next_question(
+        self, raise_if_none: bool = False
+    ) -> Optional[GuessTheSoundQnA]:
         try:
             return next(_qna for _qna in self.list_qna if not _qna.is_answered)
         except StopIteration:
@@ -69,13 +71,13 @@ class GuessTheSound(Agentic):
                             "Now introduce the session to the user. Make sure you explain it super simplify. "
                             "EXPLAIN IN ONE OR TWO SENTENCES."
                             "**YOU DON'T MAKE THE QUESTION**"
-                        ) + "\n"
+                        )
+                        + "\n"
                         + PromptLoader().language_template.format(
                             user_language=configurable["user"].get(
                                 "language", "English"
                             )
-                        )
-                        ,
+                        ),
                     },
                 ]
             )
@@ -117,12 +119,16 @@ class GuessTheSound(Agentic):
             last_ai_msg = state.last_ai_message(
                 raise_if_none=True, detail_for_error=state.model_dump(mode="json")
             )
-            interrupt(
-                [InterruptSchema(action="speaker", message=last_ai_msg.text())]
-            )
+            interrupt([InterruptSchema(action="speaker", message=last_ai_msg.text())])
             if state.next_node != END:  # sending the animal sound
                 qna: GuessTheSoundQnA = state.get_next_question(raise_if_none=True)
-                interrupt([InterruptSchema(action="speaker+audio", message=str(qna.sound_path))])
+                interrupt(
+                    [
+                        InterruptSchema(
+                            action="speaker+audio", message=str(qna.sound_path)
+                        )
+                    ]
+                )
 
         return Command(goto=state.next_node)
 
@@ -139,13 +145,13 @@ class GuessTheSound(Agentic):
             obj_, obj_sound_path = GuessTheSoundQnA.randomize_gts_mapping(
                 gts_mapping=GUESS_THE_SOUND_MAPPING,
             )
-            _qna = GuessTheSoundQnA(
-                sound_path=obj_sound_path,
-                answer=obj_
-            )
+            _qna = GuessTheSoundQnA(sound_path=obj_sound_path, answer=obj_)
             list_qna.append(_qna)
 
-        print("Generated GTSQnA:", json.dumps([i.model_dump(mode='json') for i in list_qna], indent=2))
+        print(
+            "Generated GTSQnA:",
+            json.dumps([i.model_dump(mode="json") for i in list_qna], indent=2),
+        )
 
         return Command(
             update={
@@ -172,22 +178,24 @@ class GuessTheSound(Agentic):
                             "text": (
                                 "Tell the user to guess the sound play after this, "
                                 "make it very-very short"
-                            ) + "\n"
+                            )
+                            + "\n"
                             + PromptLoader().language_template.format(
                                 user_language=configurable["user"].get(
                                     "language", "English"
                                 )
-                            )
+                            ),
                         }
                     ]
                 )
             ]
             bridging_question = await cls.model.ainvoke([*state.messages, *messages])
             state.add_message_to_last_session(
-                session_type="guess_the_sound",
-                messages=[*messages, bridging_question]
+                session_type="guess_the_sound", messages=[*messages, bridging_question]
             )
-            print("DEBUG GTSQNA ASK:", json.dumps(qna.model_dump(mode='json'), indent=2))
+            print(
+                "DEBUG GTSQNA ASK:", json.dumps(qna.model_dump(mode="json"), indent=2)
+            )
             return Command(
                 update={
                     "modified_datetime": modified_datetime,
@@ -267,11 +275,11 @@ class GuessTheSound(Agentic):
                             "CLASSIFY EITHER OF THE USER EXTRACTED ANSWER FROM THE ABOVE PROVIDED LIST OF ANSWERS. "
                             "IF THE USER'S ANSWER IS VERY UNRELATED FROM THE PROVIDED LIST OF ANSWERS, CONSIDER AS NONE FOR MARKING WRONG. "
                             f"The answer can be either English language or {configurable['user']['language']} language."
-                        )
+                        ),
                     }
                 ]
             ),
-            HumanMessage(content=[{"type": "text", "text": user_response}])
+            HumanMessage(content=[{"type": "text", "text": user_response}]),
         ]
         state.add_message_to_last_session(
             session_type="guess_the_sound",
@@ -285,7 +293,9 @@ class GuessTheSound(Agentic):
         )
         qna: GuessTheSoundQnA = state.get_next_question(raise_if_none=True)
         qna.user_answers.append(
-            GuessTheSoundUserAnswer(raw_answer=user_response, extraction=_gts_extracted_result)
+            GuessTheSoundUserAnswer(
+                raw_answer=user_response, extraction=_gts_extracted_result
+            )
         )
         return Command(
             update={
@@ -304,7 +314,7 @@ class GuessTheSound(Agentic):
     ) -> Command[Literal["listening", "elaborate", "ask_question"]]:
         _ = state.verify_last_session(session_type="guess_the_sound")
         qna: GuessTheSoundQnA = state.get_next_question(raise_if_none=True)
-        print("DEBUG GTSQNA EVAL:", json.dumps(qna.model_dump(mode='json'), indent=2))
+        print("DEBUG GTSQNA EVAL:", json.dumps(qna.model_dump(mode="json"), indent=2))
         if qna.is_correct():
             qna.is_answered = True
             next_node = "ask_question"
