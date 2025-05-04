@@ -336,7 +336,7 @@ if st.session_state.deviceId:
                             "Percobaan": "Pertanyaan " + str(i + 1),
                             "Benar": listCorrection.count("✅"),
                             "Salah": listCorrection.count("❌"),
-                            "Tidak Menjawab": listCorrection.count("⚪️"),
+                            "Tidak Menjawab": listCorrection.count("⚪"),
                         }
                     )
                     # st.write(listCorrection)
@@ -427,7 +427,7 @@ if st.session_state.deviceId:
                             "Percobaan": "Suara " + str(i + 1),
                             "Benar": listCorrection.count("✅"),
                             "Salah": listCorrection.count("❌"),
-                            "Tidak Menjawab": listCorrection.count("⚪️"),
+                            "Tidak Menjawab": listCorrection.count("⚪"),
                         }
                     )
 
