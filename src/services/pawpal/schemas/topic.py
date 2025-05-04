@@ -46,7 +46,7 @@ class MathQnA(BaseModel):
     def is_correct(self, *, index: int = -1):
         index = min(len(self.user_answers) - 1, max(-1, index))
         if not self.user_answers or self.user_answers[index].extraction.result is None:
-            return None
+            return False
         return self.user_answers[index].extraction.result == self.answer
 
     @staticmethod
@@ -94,7 +94,7 @@ class GuessTheSoundQnA(BaseModel):
     def is_correct(self, *, index: int = -1):
         index = min(len(self.user_answers) - 1, max(-1, index))
         if not self.user_answers or self.user_answers[index].extraction.result is None:
-            return "no"
+            return False
         return self.user_answers[index].extraction.result.lower() == self.answer.lower()
 
     @staticmethod
