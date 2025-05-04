@@ -204,15 +204,15 @@ class TalkToMe(Agentic):
         )
 
     @classmethod
-    def build_workflow(self) -> CompiledStateGraph:
+    def build_workflow(cls) -> CompiledStateGraph:
         builder = StateGraph(TTMSessionState, config_schema=ConfigurableSchema)
 
         # Node
-        builder.add_node("start", self._start)
-        builder.add_node("talk", self._talk)
-        builder.add_node("responding", self._responding)
-        builder.add_node("check_session", self._check_session)
-        builder.add_node("listening", self._listening)
+        builder.add_node("start", cls._start)
+        builder.add_node("talk", cls._talk)
+        builder.add_node("responding", cls._responding)
+        builder.add_node("check_session", cls._check_session)
+        builder.add_node("listening", cls._listening)
 
         # Edge
         builder.add_edge(START, "start")
