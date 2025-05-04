@@ -265,7 +265,7 @@ class GuessTheSound(Agentic):
                             "Extract the answer from the user response, "
                             f"the expected answers will be either from following: {json.dumps(list(GUESS_THE_SOUND_MAPPING))}. "
                             "CLASSIFY EITHER OF THE USER EXTRACTED ANSWER FROM THE ABOVE PROVIDED LIST OF ANSWERS. "
-                            "IF THE USER'S ANSWER IS VERY UNRELATED FROM THE PROVIDED LIST OF ANSWERS, CONSIDER AS NONE FOR MARKING WRONG"
+                            "IF THE USER'S ANSWER IS VERY UNRELATED FROM THE PROVIDED LIST OF ANSWERS, CONSIDER AS NONE FOR MARKING WRONG. "
                             f"The answer can be either English language or {configurable['user']['language']} language."
                         )
                     }
