@@ -1,4 +1,3 @@
-import secrets
 import json
 from typing import List, Literal, Optional, Dict
 from pathlib import Path, PosixPath
@@ -122,16 +121,16 @@ class GuessTheSound(Agentic):
             )
             interrupt([InterruptSchema(action="speaker", message=last_ai_msg.text())])
         elif state.from_node == "ask_question":
-            if state.next_node == END:
-                last_ai_msg = state.last_ai_message(
-                    raise_if_none=True, detail_for_error=state.model_dump(mode="json")
-                )
-                interrupt(
-                    [InterruptSchema(action="speaker", message=last_ai_msg.text())]
-                )
-            else:
+            last_ai_msg = state.last_ai_message(
+                raise_if_none=True, detail_for_error=state.model_dump(mode="json")
+            )
+            interrupt(
+                [InterruptSchema(action="speaker", message=last_ai_msg.text())]
+            )
+            if state.next_node != END:  # sending the animal sound
                 qna: GuessTheSoundQnA = state.get_next_question(raise_if_none=True)
-                interrupt([InterruptSchema(action="speaker", message=qna.question)])
+                interrupt([InterruptSchema(action="speaker+audio", message=str(qna.sound_path))])
+
         return Command(goto=state.next_node)
 
     @classmethod
@@ -139,76 +138,21 @@ class GuessTheSound(Agentic):
         cls, state: GTSSessionState, config: ConfigSchema
     ) -> Command[Literal["ask_question"]]:
         configurable = config["configurable"]
-        _curr_config = configurable["feature_params"]["math_game"]
+        _curr_config = configurable["feature_params"]["guess_the_sound"]
         total_question = _curr_config["total_question"]
-        LENGTH, MIN_VAL, MAX_VAL = secrets.randbelow(2) + 2, -2, 10  # generate param for difficulty
-        list_qna: List[GuessTheSoundQnA] = [
-            GuessTheSoundQnA(
-                sequence=(
-                    GuessTheSoundQnA.generate_sequence(
-                        length=LENGTH, min_val=MIN_VAL, max_val=MAX_VAL
-                    )
-                )
+        list_qna: List[GuessTheSoundQnA] = []
+
+        for _ in range(total_question):
+            obj_, obj_sound_path = GuessTheSoundQnA.randomize_gts_mapping(
+                gts_mapping=GUESS_THE_SOUND_MAPPING,
             )
-            for _ in range(total_question)
-        ]
-        print("Generated QnA:", json.dumps([i.model_dump(mode='json') for i in list_qna], indent=2))
+            _qna = GuessTheSoundQnA(
+                sound_path=obj_sound_path,
+                answer=obj_
+            )
+            list_qna.append(_qna)
 
-        for _qna in list_qna:
-            if _qna.question is not None:
-                continue
-
-            _temp_messages = [
-                SystemMessage(
-                    content=[
-                        {
-                            "type": "text",
-                            "text": (
-                                f"You will be provided number of sequence with length of {len(_qna.sequence)} and the sum of the sequence. "
-                                "The sequence will consist of addition and substraction which in the end leads to the sum. "
-                                "Your task will be generate matemathic question in analogy concepts then ask the user for answer. "
-                                "Example: "
-                                'You will be provided with sequence, such as "["+4", "+3", "-1", "+5", "-4"]" with the sum of "+7". '
-                                "Then you can generate analogy matemathic question such as: "
-                                '\n"'
-                                "You have 4 apples in your bag. On your journey, you found another 3 apples,"
-                                "and you see a cute horse, you gave one of your apple. "
-                                "After you returned home, your mother gifted you 5 additional apple."
-                                "Finally to reward youself, you ate 4 apples you have taken along the way."
-                                '"\n'
-                                "Then you ask the user for the right sum of apples they have"
-                                "\n\n"
-                                "If the sum if negative, use another type of analogy that are plausible to be have negative value, "
-                                "which making the user understand the matemathic analogy, such as Temperature, Money, Height like in a Elevator or on a Mountain, etc. "
-                                "Make sure your analogy is very easy to understand, since it's for children. "
-                                "\n# DO NOT SHOW THE ANSWER IN THE QUESTION, ITS JUST A QUESTION"
-                                "\n# THE PROVIDED SEQUENCE IS JUST A WAY TO STRUCTURE YOUR QUESTION, USE THE ANALOGY INSTEAD SHOWING THE NUMBER FULLY LIKE ARITHMETIC."
-                            ),
-                        }
-                    ]
-                ),
-                HumanMessage(
-                    content=[
-                        {
-                            "type": "text",
-                            "text": (
-                                f"Generate the math analogy using the provided sequence: {_qna.fmt_sequence()}, "
-                                f'and the sum of the sequence is "{_qna.answer}". '
-                                "The sum is only for showing you the answer, you are not suppose to show the answer or any explanation. "
-                                "Just provide the analogy question, don't use any literal number instead use in words, "
-                                "e.g. instead of '1' write it as 'one', '2' as 'two', '24' as 'twenty four', and so on. "
-                                "The ANALOGY OBJECT you are using must be CONSISTENT across the story."
-                            ) + PromptLoader().language_template.format(
-                                user_language=configurable["user"].get(
-                                    "language", "English"
-                                )
-                            ),
-                        }
-                    ]
-                ),
-            ]
-            _llm_question = await cls.model.ainvoke(_temp_messages)
-            _qna.question = _llm_question.text()
+        print("Generated GTSQnA:", json.dumps([i.model_dump(mode='json') for i in list_qna], indent=2))
 
         return Command(
             update={
@@ -224,14 +168,44 @@ class GuessTheSound(Agentic):
     async def _ask_question(cls, state: GTSSessionState, config: ConfigSchema) -> Command[Literal["listening", END]]:  # type: ignore
         configurable = config["configurable"]
         qna = state.get_next_question()
+        modified_datetime = datetime.now(timezone.utc)
+        last_session = state.verify_last_session(session_type="guess_the_sound")
         if qna is not None:
-            print("DEBUG QNA ASK:", json.dumps(qna.model_dump(mode='json'), indent=2))
+            messages = [
+                HumanMessage(
+                    content=[
+                        {
+                            "type": "text",
+                            "text": (
+                                "Tell me to guess the sound play after this, "
+                                "make it very-very short"
+                            )+ "\n"
+                            + PromptLoader().language_template.format(
+                                user_language=configurable["user"].get(
+                                    "language", "English"
+                                )
+                            )
+                        }
+                    ]
+                )
+            ]
+            bridging_question = await cls.model.ainvoke([*state.messages, *messages])
+            state.add_message_to_last_session(
+                session_type="guess_the_sound",
+                messages=[*messages, bridging_question]
+            )
+            print("DEBUG GTSQNA ASK:", json.dumps(qna.model_dump(mode='json'), indent=2))
             return Command(
-                update={"from_node": "ask_question", "next_node": "listening"},
+                update={
+                    "modified_datetime": modified_datetime,
+                    "messages": [*messages, bridging_question],
+                    "sessions": state.get_sessions(deep=True),
+                    "from_node": "ask_question",
+                    "next_node": "listening",
+                },
                 goto="talk",
             )
 
-        last_session = state.verify_last_session(session_type="guess_the_sound")
         messages = [
             SystemMessage(
                 content=[
@@ -256,16 +230,15 @@ class GuessTheSound(Agentic):
             messages=[*messages, end_conversation_message],
         )
         model_with_session_result = cls.model.with_structured_output(
-            TopicResults.MathGameResult._Extraction
+            TopicResults.GuessTheSoundResult._Extraction
         )
-        _extracted_result: TopicResults.MathGameResult._Extraction = (
+        _extracted_result: TopicResults.GuessTheSoundResult._Extraction = (
             await model_with_session_result.ainvoke(last_session.get_messages())
         )
 
-        modified_datetime = datetime.now(timezone.utc)
         state.add_result_to_last_session(
             session_type="guess_the_sound",
-            result=TopicResults.MathGameResult(
+            result=TopicResults.GuessTheSoundResult(
                 extraction=_extracted_result,
                 list_qna=state.list_qna,
                 start_datetime=state.start_datetime,
@@ -297,8 +270,9 @@ class GuessTheSound(Agentic):
                         "type": "text",
                         "text": (
                             "Extract the answer from the user response, "
-                            "the expected answer will be number. "
-                            f"This number can be defined as literal decimal or number in words that can be in English language or {configurable['user']['language']} language."
+                            f"the expected answers will be either from following: {', '.join(list(GUESS_THE_SOUND_MAPPING))}. "
+                            "CLASSIFY EITHER OF THE USER EXTRACTED ANSWER FROM THE ABOVE PROVIDED LIST OF ANSWERS, UNLESS IT'S UNCLEAR SET AS NONE"
+                            f"The answer can be either English language or {configurable['user']['language']} language."
                         )
                     }
                 ]
@@ -336,7 +310,7 @@ class GuessTheSound(Agentic):
     ) -> Command[Literal["listening", "elaborate", "ask_question"]]:
         _ = state.verify_last_session(session_type="guess_the_sound")
         qna: GuessTheSoundQnA = state.get_next_question(raise_if_none=True)
-        print("DEBUG QNA EVAL:", json.dumps(qna.model_dump(mode='json'), indent=2))
+        print("DEBUG GTSQNA EVAL:", json.dumps(qna.model_dump(mode='json'), indent=2))
         if qna.is_correct():
             qna.is_answered = True
             next_node = "ask_question"
@@ -366,7 +340,7 @@ class GuessTheSound(Agentic):
                                 "text": (
                                     "Encourage the user to try to answer, just encourage words and tell him/her to try again. "
                                     "JUST ENCOURAGEMENT, DON'T GIVE OUT THE ANSWER OR ANY CLUE."
-                                    "DON'T ASK ANOTHER QUESTION, YOUR JOB ONLY CONGRATULATE. "
+                                    "DON'T ASK ANOTHER QUESTION, YOUR JOB ONLY ENCOURAGE. "
                                 ),
                             }
                         ]
@@ -380,9 +354,9 @@ class GuessTheSound(Agentic):
                                 "type": "text",
                                 "text": (
                                     "Inform the user that their answer is WRONG. Motivate them to try again since there's still available attempt. "
-                                    "Encourage the user to think step by step, and never give up. "
+                                    "Encourage the user to analyze better, and never give up. "
                                     "JUST ENCOURAGEMENT, DON'T GIVE OUT THE ANSWER OR ANY CLUE. "
-                                    "DON'T ASK ANOTHER QUESTION, YOUR JOB ONLY CONGRATULATE. "
+                                    "DON'T ASK ANOTHER QUESTION, YOUR JOB ONLY MOTIVATE. "
                                 ),
                             }
                         ]
@@ -419,7 +393,8 @@ class GuessTheSound(Agentic):
                 content=[
                     {
                         "type": "text",
-                        "text": "Elaborate and explain how to solve the question step by step.",
+                        "text": "Try to explain what sound it is, and why. "
+                        "Just in a SHORT WAY DONT OVER EXPLAIN, MAX SENTENCES IS ONE OR TWO.",
                     }
                 ]
             ),
@@ -428,10 +403,7 @@ class GuessTheSound(Agentic):
                     {
                         "type": "text",
                         "text": (
-                            f"The question is '{qna.question}', can you help elaborate to me the thinking? "
-                            f"Try explain in effective manner, short and concise, while in the end you will provide the answer which is '{qna.answer}'. "
-                            f"EXPLAIN IT IN SHORT WAY, DON'T OVER-EXPLAIN, meanwhile provide the ANSWER in the END which is '{qna.answer}'. "
-                            f"PLEASE PROVIDE THE ANSWER IS '{qna.answer}'"
+                            f"The answer is '{qna.answer}' sound, how should I identify that?"
                         ),
                     }
                 ]

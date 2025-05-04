@@ -1,6 +1,6 @@
 import secrets
 import json
-from typing import Annotated, List, TypeAlias, Union, Optional, Literal
+from typing import Annotated, List, Dict, Tuple, TypeAlias, Union, Optional, Literal
 from typing_extensions import TypedDict
 from pathlib import PosixPath
 from pydantic import BaseModel, Field
@@ -79,7 +79,7 @@ class GuessTheSoundUserAnswer(BaseModel):
 
 class GuessTheSoundQnA(BaseModel):
     sound_path: Union[PosixPath, str]
-    answer: str
+    answer: Annotated[str, "the object that makes the sound, e.g. animals, etc"]
     is_answered: bool = False
     user_answers: List[GuessTheSoundUserAnswer] = []
 
@@ -87,7 +87,7 @@ class GuessTheSoundQnA(BaseModel):
     def latest_user_answer(self):
         if not self.user_answers:
             raise Exception(
-                f"How does this suppose to happen? MathQnA hasn't been answered.\n{json.dumps(self, indent=2)}"
+                f"How does this suppose to happen? GuessTheSoundQnA hasn't been answered.\n{json.dumps(self, indent=2)}"
             )
         return self.user_answers[-1].extraction.result
 
@@ -98,16 +98,10 @@ class GuessTheSoundQnA(BaseModel):
         return self.user_answers[index].extraction.result.lower() == self.answer.lower()
 
     @staticmethod
-    def generate_sequence(length: int, min_val: int, max_val: int):
-        return [
-            secrets.randbelow(max_val - min_val + 1) + min_val for _ in range(length)
-        ]
-
-    def fmt_sequence(self):
-        seq_str = ", ".join(
-            f"\"{'' if i == 0 else ('+' if i > 0 else '-')}{i}\"" for i in self.sequence
-        )
-        return f"[{seq_str}]"
+    def randomize_gts_mapping(gts_mapping: Dict[str, List[PosixPath]]) -> Tuple[Annotated[str, "the object"], Annotated[str, "the sound path"]]:
+        obj_ = secrets.choice(list(gts_mapping))
+        obj_sound_path = secrets.choice(gts_mapping[obj_])
+        return obj_, obj_sound_path
 
 
 ### Topic
