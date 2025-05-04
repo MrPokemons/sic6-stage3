@@ -98,11 +98,7 @@ if st.session_state.deviceId:
         )
         _db = _client["pawpal_v2"]
         _collection = _db["pawpal-conversation-2_1"]
-        list_conversation: list = sorted(
-            _collection.find({"device_id": deviceId}).to_list(),
-            key=lambda x: x["created_datetime"],
-            reverse=True,
-        )
+        list_conversation: list = _collection.find({"device_id": deviceId}).to_list()
         # st.warning("Backend tidak aktif, maka menggunakan alternatif database.")
 
     # last mode, use the static
@@ -110,9 +106,6 @@ if st.session_state.deviceId:
         try:
             with open("data/json/example.json", "r") as f:
                 list_conversation = json.load(f)
-                list_conversation = sorted(
-                    list_conversation, key=lambda x: x["created_datetime"], reverse=True
-                )
         except FileNotFoundError:
             pass
 
@@ -127,7 +120,11 @@ if st.session_state.deviceId:
         ConversationDoc.model_validate(convo) for convo in list_conversation
     ]
 
-    # st.json([i.model_dump(mode="json") for i in list_conversation])
+    list_conversation = sorted(
+        list_conversation,
+        key=lambda x: x.created_datetime,
+        reverse=True,
+    )
 
     with st.container():
         pageCol1, pageCol2, pageCol3 = st.columns([1, 14, 1])
@@ -501,7 +498,6 @@ st.markdown(
 
         div[data-testid="stHorizontalBlock"]:has(h3#riwayat-percakapan) div[data-testid="stColumn"]{
             min-width: 0 !important;
-            
         }
 
         div[data-testid="stHorizontalBlock"]:has(h3#riwayat-percakapan) div[data-testid="stColumn"]:has(h3#riwayat-percakapan){
@@ -546,7 +542,6 @@ st.markdown(
 
         div[data-testid="stHorizontalBlock"]:has(h3#riwayat-percakapan){
             gap: 0;
-            
         }
 
         div[data-testid="stHorizontalBlock"]:has(h3#riwayat-percakapan) div[data-testid="stColumn"] div[data-testid="stVerticalBlock"]:has(h3#riwayat-percakapan){
@@ -558,7 +553,7 @@ st.markdown(
         }
 
         h3#riwayat-percakapan {
-            
+
         }
     }
 
