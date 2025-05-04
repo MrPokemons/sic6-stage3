@@ -351,6 +351,7 @@ if st.session_state.deviceId:
 
                 listSound = [] # i guess assuming the sound is fixed?
                 listAttemp = []
+                listEquation = []
                 st.subheader("Hasil Menghitung")
 
                 for i, qna in enumerate(session_result.list_qna):
@@ -358,7 +359,6 @@ if st.session_state.deviceId:
                     listCorrection = []
                     for n, userAnswer in enumerate(qna.user_answers):
                         answer = userAnswer.extraction.result
-                        answer = random.choice("cat", "dog", "goat", None)
                         if answer is None:
                             answer = "Tidak Menjawab"
                         listAnswer.append(answer)
@@ -367,13 +367,12 @@ if st.session_state.deviceId:
                         correction = "✅" if correction else "❌"
                         listCorrection.append(correction)
 
-                    sound = random.choice(["cat.mp3", "dog.mp3", "goat.mp3"])
-                    listSound.append(sound)
+                    listSound.append(qna.sound_path)
 
                     listAnswer_fmt = ", ".join(map(str, listAnswer)).strip()
                     listCorrection_fmt = ", ".join(map(str, listCorrection)).strip()
                     listEquation.append(
-                        {"Pertanyaan": equation_fmt, "Jawaban Anak":  listAnswer_fmt, "Koreksi": listCorrection_fmt}
+                        {"Pertanyaan": qna.sound_path, "Jawaban Anak":  listAnswer_fmt, "Koreksi": listCorrection_fmt}
                     )
 
                     if listCorrection[-1] == "✅":
