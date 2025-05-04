@@ -216,7 +216,9 @@ def pawpal_router(
 
                 workflow_input = {
                     "total_sessions": curr_convo_doc.total_sessions,
-                    "selected_features": secure_shuffle(curr_convo_doc.selected_features),
+                    "selected_features": secure_shuffle(
+                        curr_convo_doc.selected_features
+                    ),
                 }
 
                 keep_running = True
@@ -233,7 +235,8 @@ def pawpal_router(
                                 continue
 
                             if (
-                                node not in TopicFlowNodeType.__args__  # to handle if exit subflow, can trigger keep_running false instead waiting for check_session
+                                node
+                                not in TopicFlowNodeType.__args__  # to handle if exit subflow, can trigger keep_running false instead waiting for check_session
                                 and isinstance(state, dict)
                                 and state.get("next_node") == END
                                 and not _subgraph

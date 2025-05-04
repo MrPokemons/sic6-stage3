@@ -82,14 +82,14 @@ if st.session_state.deviceId:
     page = st.session_state.page
 
     list_conversation = None
-    # try:
-    #     resp = requests.get(
-    #         f"http://localhost:11080/api/v1/pawpal/conversation/{deviceId}"
-    #     )
-    #     if resp.status_code == 200:
-    #         list_conversation = resp.json()
-    # except Exception:
-    #     pass
+    try:
+        resp = requests.get(
+            f"http://localhost:11080/api/v1/pawpal/conversation/{deviceId}"
+        )
+        if resp.status_code == 200:
+            list_conversation = resp.json()
+    except Exception:
+        pass
 
     # backend offline, connect to read-only demo purposes mongodb
     if list_conversation is None:
@@ -98,7 +98,11 @@ if st.session_state.deviceId:
         )
         _db = _client["pawpal_v2"]
         _collection = _db["pawpal-conversation-2_1"]
-        list_conversation: list = sorted(_collection.find({"device_id": deviceId}).to_list(), key=lambda x: x["created_datetime"], reverse=True)
+        list_conversation: list = sorted(
+            _collection.find({"device_id": deviceId}).to_list(),
+            key=lambda x: x["created_datetime"],
+            reverse=True,
+        )
         st.warning("Backend tidak aktif, maka menggunakan alternatif database.")
 
     # last mode, use the static
@@ -106,7 +110,9 @@ if st.session_state.deviceId:
         try:
             with open("data/json/example.json", "r") as f:
                 list_conversation = json.load(f)
-                list_conversation = sorted(list_conversation, key=lambda x: x["created_datetime"], reverse=True)
+                list_conversation = sorted(
+                    list_conversation, key=lambda x: x["created_datetime"], reverse=True
+                )
         except FileNotFoundError:
             pass
 
@@ -296,7 +302,9 @@ if st.session_state.deviceId:
                     for n, userAnswer in enumerate(qna.user_answers):
                         answer = userAnswer.extraction.result
                         correction = qna.is_correct(index=n)
-                        correction = "✅" if correction else ("⚪" if answer is None else "❌")
+                        correction = (
+                            "✅" if correction else ("⚪" if answer is None else "❌")
+                        )
                         if answer is None:
                             answer = "Tidak Menjawab"
                         listAnswer.append(answer)
@@ -359,7 +367,7 @@ if st.session_state.deviceId:
                     id_vars="Percobaan",
                     value_vars=["Benar", "Salah", "Tidak Menjawab"],
                     var_name="Kategori",
-                    value_name="Jumlah Pertanyaan"
+                    value_name="Jumlah Pertanyaan",
                 )
                 fig = px.bar(
                     df_long,
@@ -367,10 +375,9 @@ if st.session_state.deviceId:
                     y="Jumlah Pertanyaan",
                     color="Kategori",
                     color_discrete_map=color_map,
-                    title="Akurasi Jawaban pada Setiap Percobaan Matematika"
+                    title="Akurasi Jawaban pada Setiap Percobaan Matematika",
                 )
                 st.plotly_chart(fig, key="math_games-bar_chart")
-
 
             elif session.type == "guess_the_sound":
                 totalCorrect = 0
@@ -388,7 +395,9 @@ if st.session_state.deviceId:
                     for n, userAnswer in enumerate(qna.user_answers):
                         answer = userAnswer.extraction.result
                         correction = qna.is_correct(index=n)
-                        correction = "✅" if correction else ("⚪" if answer is None else "❌")
+                        correction = (
+                            "✅" if correction else ("⚪" if answer is None else "❌")
+                        )
                         if answer is None:
                             answer = "Tidak Menjawab"
                         listAnswer.append(answer)
@@ -435,7 +444,8 @@ if st.session_state.deviceId:
                             <div style="border:1px solid #ccc; padding:10px; border-radius:5px; ">
                                 {guessSound["Jawaban Anak"]}
                             </div>
-                            """, unsafe_allow_html=True
+                            """,
+                            unsafe_allow_html=True,
                         )
                 with col3:
                     st.write("###### Koreksi")
@@ -445,7 +455,8 @@ if st.session_state.deviceId:
                             <div style="border:1px solid #ccc; padding:10px; border-radius:5px; ">
                                 {guessSound["Koreksi"]}
                             </div>
-                            """, unsafe_allow_html=True
+                            """,
+                            unsafe_allow_html=True,
                         )
 
                 # show pie chart
@@ -469,7 +480,7 @@ if st.session_state.deviceId:
                     id_vars="Percobaan",
                     value_vars=["Benar", "Salah", "Tidak Menjawab"],
                     var_name="Kategori",
-                    value_name="Jumlah Pertanyaan"
+                    value_name="Jumlah Pertanyaan",
                 )
                 fig = px.bar(
                     df_long,
@@ -477,7 +488,7 @@ if st.session_state.deviceId:
                     y="Jumlah Pertanyaan",
                     color="Kategori",
                     color_discrete_map=color_map,
-                    title="Akurasi Jawaban pada Setiap Percobaan Menebak Suara"
+                    title="Akurasi Jawaban pada Setiap Percobaan Menebak Suara",
                 )
                 st.plotly_chart(fig, key="guess_the_sound-bar_chart")
 
@@ -572,10 +583,6 @@ st.markdown(
             color: white;
         }
     }
-
-    
-
-    
 
 </style>
 """,

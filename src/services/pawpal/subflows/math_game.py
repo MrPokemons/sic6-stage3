@@ -143,7 +143,7 @@ class MathGame(Agentic):
                         length=LENGTH,
                         min_val=MIN_VAL,
                         max_val=MAX_VAL,
-                        no_sum_below_zero=NO_SUM_BELOW_ZERO
+                        no_sum_below_zero=NO_SUM_BELOW_ZERO,
                     )
                 )
             )
