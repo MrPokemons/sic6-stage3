@@ -145,10 +145,6 @@ class MathGame(Agentic):
             )
             for _ in range(total_question)
         ]
-        print(
-            "Generated MathQnA:",
-            json.dumps([i.model_dump(mode="json") for i in list_qna], indent=2),
-        )
 
         for _qna in list_qna:
             if _qna.question is not None:
@@ -206,6 +202,11 @@ class MathGame(Agentic):
             ]
             _llm_question = await cls.model.ainvoke(_temp_messages)
             _qna.question = _llm_question.text()
+
+        print(
+            "Generated MathQnA:",
+            json.dumps([i.model_dump(mode="json") for i in list_qna], indent=2),
+        )
 
         return Command(
             update={
