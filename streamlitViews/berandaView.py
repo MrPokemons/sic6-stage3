@@ -92,20 +92,21 @@ if st.session_state.deviceId:
     #     pass
 
     # backend offline, connect to read-only demo purposes mongodb
-    # if list_conversation is None:
-    #     _client = MongoClient(
-    #         "mongodb+srv://pawpal-demo-user:p78Q4EsqPfLmnvtb@sic-cluster.hcqho.mongodb.net/?retryWrites=true&w=majority&appName=SIC-Cluster"
-    #     )
-    #     _db = _client["pawpal_v2"]
-    #     _collection = _db["pawpal-conversation-2_1"]
-    #     list_conversation: list = _collection.find({"device_id": deviceId}).to_list()
-    #     st.warning("Backend tidak aktif, maka menggunakan alternatif database.")
+    if list_conversation is None:
+        _client = MongoClient(
+            "mongodb+srv://pawpal-demo-user:p78Q4EsqPfLmnvtb@sic-cluster.hcqho.mongodb.net/?retryWrites=true&w=majority&appName=SIC-Cluster"
+        )
+        _db = _client["pawpal_v2"]
+        _collection = _db["pawpal-conversation-2_1"]
+        list_conversation: list = sorted(_collection.find({"device_id": deviceId}).to_list(), key=lambda x: x["created_datetime"], reverse=True)
+        st.warning("Backend tidak aktif, maka menggunakan alternatif database.")
 
     # last mode, use the static
     if list_conversation is None:
         try:
             with open("data/json/example.json", "r") as f:
                 list_conversation = json.load(f)
+                list_conversation = sorted(list_conversation, key=lambda x: x["created_datetime"], reverse=True)
         except FileNotFoundError:
             pass
 
@@ -299,9 +300,7 @@ if st.session_state.deviceId:
                         listAnswer.append(answer)
 
                         correction = qna.is_correct(index=n)
-                        # print("test", correction)
-                        correction = "✅" if correction == True else "❌" if correction == False else "⚪"
-                        
+                        correction = "✅" if correction else ("⚪️" if answer is None else "❌")
                         listCorrection.append(correction)
 
                     equation_fmt = " ".join(equation).strip(
@@ -351,7 +350,7 @@ if st.session_state.deviceId:
                     color="Kategori",
                     color_discrete_map=color_map,
                 )
-                st.plotly_chart(fig)
+                st.plotly_chart(fig, key="math_games-pie_chart")
 
                 # Show Bar Chart
                 df = pd.DataFrame(listAttemp)
@@ -361,7 +360,7 @@ if st.session_state.deviceId:
                     y=["Benar", "Salah", "Tidak Menjawab"],
                     title="Akurasi Jawaban pada Setiap Percobaan Matematika"
                 )
-                st.plotly_chart(fig)
+                st.plotly_chart(fig, key="math_games-bar_chart")
 
             elif session.type == "guess_the_sound":
                 totalCorrect = 0
@@ -371,7 +370,7 @@ if st.session_state.deviceId:
                 listSound = []  # i guess assuming the sound is fixed?
                 listAttemp = []
                 listEquation = []
-                st.subheader("Hasil Menghitung")
+                st.subheader("Hasil Menebak")
 
                 for i, qna in enumerate(session_result.list_qna):
                     listAnswer = []
@@ -383,7 +382,7 @@ if st.session_state.deviceId:
                         listAnswer.append(answer)
 
                         correction = qna.is_correct(index=n)
-                        correction = "✅" if correction else "❌" if not correction else "⚪"
+                        correction = "✅" if correction else ("⚪️" if answer is None else "❌")
                         listCorrection.append(correction)
 
                     listSound.append(qna.sound_path)
@@ -392,7 +391,7 @@ if st.session_state.deviceId:
                     listCorrection_fmt = ", ".join(map(str, listCorrection)).strip()
                     listEquation.append(
                         {
-                            "Suara": qna.sound_path,
+                            "Sound": qna.sound_path,
                             "Jawaban Anak": listAnswer_fmt,
                             "Koreksi": listCorrection_fmt,
                         }
@@ -414,11 +413,21 @@ if st.session_state.deviceId:
                         }
                     )
 
-                # Show Pie Chart
-                equationResultTable = pd.DataFrame(listEquation)
-                equationResultTable.index += 1
-                st.table(equationResultTable)
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.markdown("#### Suara")
+                    for guessSound in listEquation:
+                        st.audio(guessSound["Sound"])
+                with col2:
+                    st.markdown("#### Jawaban Anak")
+                    for guessSound in listEquation:
+                        st.write(guessSound["Jawaban Anak"])
+                with col3:
+                    st.markdown("#### Koreksi")
+                    for guessSound in listEquation:
+                        st.write(guessSound["Koreksi"])
 
+                # show pie chart
                 data = {
                     "Kategori": ["Benar", "Salah", "Tidak Menjawab"],
                     "Jumlah": [totalCorrect, totalWrong, totalBlank],
@@ -431,7 +440,7 @@ if st.session_state.deviceId:
                     color="Kategori",
                     color_discrete_map=color_map,
                 )
-                st.plotly_chart(fig)
+                st.plotly_chart(fig, key="guess_the_sound-pie_chart")
 
                 # Show Bar Chart
                 df = pd.DataFrame(listAttemp)
@@ -441,7 +450,7 @@ if st.session_state.deviceId:
                     y=["Benar", "Salah", "Tidak Menjawab"],
                     title="Akurasi Jawaban pada Setiap Percobaan Menebak Suara",
                 )
-                st.plotly_chart(fig)
+                st.plotly_chart(fig, key="guess_the_sound-bar_chart")
 
     # --------------------
     # custom styling

@@ -23,11 +23,12 @@ from ..services.pawpal import PawPal
 from ..services.pawpal.schemas.config import ConfigSchema, ConfigurableSchema
 from ..services.pawpal.schemas.user import UserData
 from ..services.pawpal.schemas.topic import TopicParams
-from ..services.pawpal.schemas.topic_flow import TopicFlowType
+from ..services.pawpal.schemas.topic_flow import TopicFlowType, TopicFlowNodeType
 from ..services.pawpal.schemas.state import InterruptSchema, InterruptAction
 from ..services.pawpal.schemas.document import ConversationDoc
 
 from ..utils.message_packer import MessagePacker, MessageMetadata
+from ..utils.misc import secure_shuffle
 
 
 STATIC_AUDIO_PATH = Path(__file__).parents[2] / "static" / "audio"
@@ -215,7 +216,7 @@ def pawpal_router(
 
                 workflow_input = {
                     "total_sessions": curr_convo_doc.total_sessions,
-                    "selected_features": curr_convo_doc.selected_features,
+                    "selected_features": secure_shuffle(curr_convo_doc.selected_features),
                 }
 
                 keep_running = True
@@ -232,7 +233,8 @@ def pawpal_router(
                                 continue
 
                             if (
-                                isinstance(state, dict)
+                                node not in TopicFlowNodeType.__args__  # to handle if exit subflow, can trigger keep_running false instead waiting for check_session
+                                and isinstance(state, dict)
                                 and state.get("next_node") == END
                                 and not _subgraph
                             ):
