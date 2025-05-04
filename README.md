@@ -81,27 +81,13 @@ cd pawpal-backend
 
 ### 1. 🧪 Configure Environment Variables
 
-Use the provided `.env.example` file to configure your environment variables:
+Duplicate the example environment file and fill the necessary fields:
 
 ```bash
 cp config/.env.example config/.env
 ```
 
-Edit `config/.env` as needed:
-
-```env
-ENV_TYPE="local"
-
-APP__CONTAINER_NAME="pawpal"
-
-MONGODB__CONN_URI="mongodb://localhost:27017"
-MONGODB__DB_NAME="pawpal_v2"
-
-MODEL__NAME="qwen2.5:3b"
-MODEL__URL="http://localhost:11434/"
-```
-
-### 2. 🔑 Make Sure Your App Loads the `.env` File
+### 2. 🔑 Load the Environment File
 
 Set the following environment variable **before running your app**, so it can locate the config file:
 
@@ -130,8 +116,8 @@ $env:ENV_FILE = "config/.env"
 #### Option A: Using `venv` (Recommended)
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate    # On Windows: .venv\Scripts\activate
+python -m venv venv
+source venv/bin/activate    # On Windows: venv\Scripts\activate
 ```
 
 #### Option B: Using `conda`
@@ -153,7 +139,7 @@ pip install -r requirements.txt
 Make sure MongoDB and Ollama are both running, then run the app with:
 
 ```bash
-uvicorn app:app --host 0.0.0.0 --port 11080
+python app.py
 ```
 
 > 🌍 Visit the app at: `http://localhost:11080`
@@ -184,7 +170,7 @@ If the backend is not running, you’ll be limited to **read-only access** to da
 Start the backend with:
 
 ```bash
-uvicorn app:app --host 0.0.0.0 --port 11080
+python app.py
 ```
 
 ## 📦 Environment Setup
@@ -214,7 +200,17 @@ This `device_id` is required during the registration or usage process to associa
 
 ## 🧠 Features
 
-- Live communication with PawPal via the backend
-- Device-linked chat and metadata display
-- Demo mode with read-only database view if backend is offline
-- Logs, interaction records, and response insights
+- **Device-Linked Sessions**  
+  Each device has its own conversation history, progress, and logs.
+
+- **Conversation Management**  
+  Start new chats, list past conversations by device ID, and view detailed message history.
+
+- **User Progress Tracking**  
+  Monitor session milestones, completed stages, and personalized feedback.
+
+- **Logs & Metrics**  
+  Track message logs, response metadata, and per-session measurements like engagement and tone.
+
+- **Demo Mode**  
+  Enables read-only view of a sample session if the backend is offline.
