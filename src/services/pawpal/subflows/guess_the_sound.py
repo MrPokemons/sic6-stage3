@@ -22,15 +22,17 @@ from ..schemas.topic import (
 from ..utils import PromptLoader
 
 
-ROOT_PATH = Path(__file__).parents[4]
-GUESS_THE_SOUND_AUDIO_PATH = ROOT_PATH / "data" / "guess_the_sound"
+ROOT_PATH = Path(__file__).resolve()
+PROJECT_ROOT = ROOT_PATH.parents[4]
+GUESS_THE_SOUND_AUDIO_PATH = PROJECT_ROOT / "data" / "guess_the_sound"
 
 GUESS_THE_SOUND_MAPPING: Dict[str, List[Path]] = {}  # name -> list path
 for fn in GUESS_THE_SOUND_AUDIO_PATH.iterdir():
     target_obj, _index_dot_ext = fn.name.split("_", 1)
     if target_obj not in GUESS_THE_SOUND_MAPPING:
         GUESS_THE_SOUND_MAPPING[target_obj] = []
-    GUESS_THE_SOUND_MAPPING[target_obj].append(fn.absolute())
+    relative_fn_path = fn.relative_to(PROJECT_ROOT)
+    GUESS_THE_SOUND_MAPPING[target_obj].append(relative_fn_path)
 
 
 class GTSSessionState(SessionState):
