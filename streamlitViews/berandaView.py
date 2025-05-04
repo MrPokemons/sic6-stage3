@@ -176,10 +176,10 @@ if st.session_state.deviceId:
             with col2:
                 st.markdown(
                     f"""
-                    <h3 style="text-align: center; padding-top: 0; padding-bottom: 0.2rem; font-weight:650;">
+                    <h3 class="date-header" style="text-align: center; padding-top: 0; padding-bottom: 0.2rem; font-weight:650;">
                         🗓️ {startDate}
                     </h3>
-                    <h5 style="text-align: center; padding: 0.5rem 0px 1.2rem; font-size: 1.1rem; ">
+                    <h5 class="time-header" style="text-align: center; padding: 0.5rem 0px 1.2rem; font-size: 1.1rem; ">
                         ⏰ {startTime} WIB
                     </h5>
                     """,
@@ -190,10 +190,10 @@ if st.session_state.deviceId:
             with col4:
                 st.markdown(
                     f"""
-                    <h3 style="text-align: center; padding-top: 0; padding-bottom: 0.2rem; font-weight:650;">
+                    <h3 class="date-header" style="text-align: center; padding-top: 0; padding-bottom: 0.2rem; font-weight:650;">
                         🗓️ {endDate}
                     </h3>
-                    <h5 style="text-align: center; padding: 0.5rem 0px 1.2rem; font-size: 1.1rem; ">
+                    <h5 class="time-header" style="text-align: center; padding: 0.5rem 0px 1.2rem; font-size: 1.1rem; ">
                         ⏰ {endTime} WIB
                     </h5>
                     """,
@@ -486,6 +486,71 @@ if st.session_state.deviceId:
 st.markdown(
     """
 <style>
+    @media (max-width: 768px) {
+
+        div[data-testid="stHorizontalBlock"]:has(h3#riwayat-percakapan) div[data-testid="stColumn"]{
+            min-width: 0 !important;
+            
+        }
+
+        div[data-testid="stHorizontalBlock"]:has(h3#riwayat-percakapan) div[data-testid="stColumn"]:has(h3#riwayat-percakapan){
+            width: auto !important;
+            flex: auto;
+        }
+
+        div[data-testid="stHorizontalBlock"]:has(h3#riwayat-percakapan) div[data-testid="stColumn"]:has(h3#riwayat-percakapan) span[data-testid="stHeaderActionElements"]{
+            display: none;
+        }
+
+
+        div[data-testid="stColumn"]:has(.date-header) {
+            width: 10vw;
+            min-width: 0;
+        }
+
+        div[data-testid="stColumn"]:has(.date-header) span{
+            display: none;
+        }
+
+        div[data-testid="stHorizontalBlock"]:has(.date-header) div[data-testid="stColumn"]:nth-of-type(3){
+            width: 20px;
+            min-width: 0;
+            flex: 0;
+        }
+
+        div[data-testid="stHorizontalBlock"]:has(.date-header) div[data-testid="stColumn"]:nth-of-type(3) h3{
+            width: 10px;
+            line-height: 0.1;
+        }
+
+        .date-header {
+            font-size: 1.4rem !important;
+            width: 40vw !important;
+        }
+
+        .time-header {
+            font-size: 1rem !important;
+            width: 35vw !important;
+        }
+
+        div[data-testid="stHorizontalBlock"]:has(h3#riwayat-percakapan){
+            gap: 0;
+            
+        }
+
+        div[data-testid="stHorizontalBlock"]:has(h3#riwayat-percakapan) div[data-testid="stColumn"] div[data-testid="stVerticalBlock"]:has(h3#riwayat-percakapan){
+            width: auto;
+        }
+
+        .date-header, .time-header {
+            width: 60vw;
+        }
+
+        h3#riwayat-percakapan {
+            
+        }
+    }
+
     h3#riwayat-percakapan{
         text-align: center;
         padding: 0;
