@@ -130,16 +130,20 @@ class MathGame(Agentic):
         configurable = config["configurable"]
         _curr_config = configurable["feature_params"]["math_game"]
         total_question = _curr_config["total_question"]
-        LENGTH, MIN_VAL, MAX_VAL = (
+        LENGTH, MIN_VAL, MAX_VAL, NO_SUM_BELOW_ZERO = (
             secrets.randbelow(2) + 2,
-            -2,
-            10,
+            -3,
+            8,
+            True,
         )  # generate param for difficulty
         list_qna: List[MathQnA] = [
             MathQnA(
                 sequence=(
                     MathQnA.generate_sequence(
-                        length=LENGTH, min_val=MIN_VAL, max_val=MAX_VAL
+                        length=LENGTH,
+                        min_val=MIN_VAL,
+                        max_val=MAX_VAL,
+                        no_sum_below_zero=NO_SUM_BELOW_ZERO,
                     )
                 )
             )

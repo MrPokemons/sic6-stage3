@@ -23,7 +23,7 @@ with st.form("device_id_form"):
         "No. ID Perangkat", value=st.session_state.deviceId or ""
     )
     st.session_state.deviceId = deviceIdInput
-    saveDeviceId = st.form_submit_button("Cari percakapan terakhir")
+    saveDeviceId = st.form_submit_button("Cari percakapan saat ini")
 
 
 if st.session_state.deviceId:
@@ -39,23 +39,23 @@ if st.session_state.deviceId:
     except Exception:
         pass
 
-    # backend offline, connect to read-only demo purposes mongodb
-    if list_conversation is None:
-        _client = MongoClient(
-            "mongodb+srv://pawpal-demo-user:p78Q4EsqPfLmnvtb@sic-cluster.hcqho.mongodb.net/?retryWrites=true&w=majority&appName=SIC-Cluster"
-        )
-        _db = _client["pawpal_v2"]
-        _collection = _db["pawpal-conversation-2_1"]
-        list_conversation: list = _collection.find({"device_id": deviceId}).to_list()
-        st.warning("Backend tidak aktif, maka menggunakan alternatif database.")
+    # # backend offline, connect to read-only demo purposes mongodb
+    # if list_conversation is None:
+    #     _client = MongoClient(
+    #         "mongodb+srv://pawpal-demo-user:p78Q4EsqPfLmnvtb@sic-cluster.hcqho.mongodb.net/?retryWrites=true&w=majority&appName=SIC-Cluster"
+    #     )
+    #     _db = _client["pawpal_v2"]
+    #     _collection = _db["pawpal-conversation-2_1"]
+    #     list_conversation: list = _collection.find({"device_id": deviceId}).to_list()
+    # #     st.warning("Backend tidak aktif, maka menggunakan alternatif database.")
 
-    # last mode, use the static
-    if list_conversation is None:
-        try:
-            with open("data/json/example.json", "r") as f:
-                list_conversation = json.load(f)
-        except FileNotFoundError:
-            pass
+    # # last mode, use the static
+    # if list_conversation is None:
+    #     try:
+    #         with open("data/json/example.json", "r") as f:
+    #             list_conversation = json.load(f)
+    #     except FileNotFoundError:
+    #         pass
 
     if not list_conversation:
         st.error("No Live conversation ongoing in this device id")
@@ -65,7 +65,7 @@ if st.session_state.deviceId:
         ConversationDoc.model_validate(convo) for convo in list_conversation
     ]
 
-    st.json([i.model_dump(mode="json") for i in list_conversation])
+    # st.json([i.model_dump(mode="json") for i in list_conversation])
 
     liveConversation = list_conversation[0]
 
