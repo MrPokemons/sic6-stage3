@@ -350,7 +350,7 @@ if st.session_state.deviceId:
                     color="Kategori",
                     color_discrete_map=color_map,
                 )
-                st.plotly_chart(fig)
+                st.plotly_chart(fig, key="math_games-pie_chart")
 
                 # Show Bar Chart
                 df = pd.DataFrame(listAttemp)
@@ -360,7 +360,7 @@ if st.session_state.deviceId:
                     y=["Benar", "Salah", "Tidak Menjawab"],
                     title="Akurasi Jawaban pada Setiap Percobaan Matematika",
                 )
-                st.plotly_chart(fig)
+                st.plotly_chart(fig, key="math_games-bar_chart")
 
             elif session.type == "guess_the_sound":
                 totalCorrect = 0
@@ -440,7 +440,7 @@ if st.session_state.deviceId:
                     color="Kategori",
                     color_discrete_map=color_map,
                 )
-                st.plotly_chart(fig)
+                st.plotly_chart(fig, key="guess_the_sound-pie_chart")
 
                 # Show Bar Chart
                 df = pd.DataFrame(listAttemp)
@@ -450,7 +450,7 @@ if st.session_state.deviceId:
                     y=["Benar", "Salah", "Tidak Menjawab"],
                     title="Akurasi Jawaban pada Setiap Percobaan Menebak Suara",
                 )
-                st.plotly_chart(fig)
+                st.plotly_chart(fig, key="guess_the_sound-bar_chart")
 
     # --------------------
     # custom styling
