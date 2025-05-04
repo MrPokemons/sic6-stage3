@@ -110,7 +110,7 @@ if st.session_state.deviceId:
     # last mode, use the static
     if list_conversation is None:
         try:
-            with open("static/json/example.json", "r") as f:
+            with open("data/json/example.json", "r") as f:
                 list_conversation = json.load(f)
         except FileNotFoundError:
             pass
