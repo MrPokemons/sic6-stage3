@@ -30,13 +30,15 @@ The following libraries are used in the project:
 - [Arduino RS485](https://github.com/arduino-libraries/ArduinoRS485)  
 - [Arduino_SerialUpdater](https://github.com/arduino-libraries/Arduino_SerialUpdater)  
 - [ES8388 by thaaraak](https://github.com/thaaraak/es8388)  
-- WebSockets  
+- [Arduino WebSockets by Markus Sattler](https://github.com/Links2004/arduinoWebSockets)
+- [ArduinoJSON](https://arduinojson.org)
+- [Arduino FreeRTOS](https://www.arduinolibraries.info/libraries/free-rtos)
 
 Library files can be found in the project directory:  
 📁 `IoT/libraries`
 
 Copy these folders into your local Arduino libraries directory:  
-📁 `~/Arduino/libraries` (or equivalent on your OS)
+📁 `~/Arduino/libraries` (for Linux; you may have to find the equivalent folder if you are using a different OS)
 
 ### 3. Import the Sketch into Arduino IDE  
 Open the required `.ino` sketch file using the Arduino IDE.
