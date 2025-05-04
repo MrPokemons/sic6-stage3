@@ -45,7 +45,7 @@ if st.session_state.deviceId:
             "mongodb+srv://pawpal-demo-user:p78Q4EsqPfLmnvtb@sic-cluster.hcqho.mongodb.net/?retryWrites=true&w=majority&appName=SIC-Cluster"
         )
         _db = _client["pawpal_v2"]
-        _collection = _db["pawpal-conversation-2"]
+        _collection = _db["pawpal-conversation-2_1"]
         list_conversation: list = _collection.find({"device_id": deviceId}).to_list()
         st.warning("Backend tidak aktif, maka menggunakan alternatif database.")
 
@@ -58,10 +58,7 @@ if st.session_state.deviceId:
             pass
 
     if not list_conversation:
-        st.error("No conversation ever recorded from the provided device id")
-        st.info(
-            "Jika anda ingin melihat demo tampilan dan backend harus tidak berjalan, dapat menggunakan device_id `cincayla`"
-        )
+        st.error("No Live conversation ongoing in this device id")
         st.stop()
 
     list_conversation: List[ConversationDoc] = [
