@@ -26,7 +26,7 @@ class AgentState(SessionState):
 
 
 class PawPal(Agentic):
-    COLLECTION_NAME = "pawpal-conversation-2"
+    COLLECTION_NAME = "pawpal-conversation-2_1"
 
     @classmethod
     async def _start(
