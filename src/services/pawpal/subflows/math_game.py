@@ -160,20 +160,27 @@ class MathGame(Agentic):
                                 "The sequence will consist of addition and substraction which in the end leads to the sum. "
                                 "Your task will be generate matemathic question in analogy concepts then ask the user for answer. "
                                 "Example: "
-                                'You will be provided with sequence, such as "["+4", "+3", "-1", "+5", "-4"]" with the sum of "+7". '
+                                'You will be provided with sequence, such as "["+4", "+3", "-1"]" with the sum of "+6". '
                                 "Then you can generate analogy matemathic question such as: "
                                 '\n"'
                                 "You have 4 apples in your bag. On your journey, you found another 3 apples,"
-                                "and you see a cute horse, you gave one of your apple. "
-                                "After you returned home, your mother gifted you 5 additional apple."
-                                "Finally to reward youself, you ate 4 apples you have taken along the way."
+                                "and you see a cute horse, you gave him one of your apples."
                                 '"\n'
                                 "Then you ask the user for the right sum of apples they have"
                                 "\n\n"
-                                "If the sum if negative, use another type of analogy that are plausible to be have negative value, "
-                                "which making the user understand the matemathic analogy, such as Temperature, Money, Height like in a Elevator or on a Mountain, etc. "
-                                "Make sure your analogy is very easy to understand, since it's for children. "
-                                "\n# DO NOT SHOW THE ANSWER IN THE QUESTION, ITS JUST A QUESTION"
+                                "Should the sum be a negative value, use metrics in your analogy that *can* have a negative value."
+                                "Example:"
+                                "\n\n"
+                                "If your final value is negative, do NOT use number of objects! It is illogical to have a negative number of objects."
+                                "Use something else such as temperature."
+                                "Ensure that your analogy is easily understood by children aged 4-8 years old."
+                                "Example:"
+                                "✅ Good analogy: Depicting values in generic metrics, e.g. as a number of apples, marbles, friends, etc."
+                                "❌ Bad analogy: Complex, highly scientific or domain-exclusive metrics, such as pH, distance, temperature, etc."
+                                "Remember that the child is aged 4-8 years old; **they most likely lack a knowledge base for common metrics such as 1000m equating to 1km, ratios, percentages, etc. Refrain from referring to those!**"
+
+                                "\n# DO NOT SHOW THE ANSWER IN THE QUESTION, ITS JUST A QUESTION."
+                                "**YOUR ANALOGY SHOULD NOT DEPICT ANY ILLEGAL, VIOLENT, HARMFUL, POLITICAL, OR ANY OTHERWISE UNSAFE ANALOGIES SUCH AS STEALING, KILLING, VIOLENCE TOWARD HUMANS OR ANIMALS, ETC.** "
                                 "\n# THE PROVIDED SEQUENCE IS JUST A WAY TO STRUCTURE YOUR QUESTION, USE THE ANALOGY INSTEAD SHOWING THE NUMBER FULLY LIKE ARITHMETIC."
                             ),
                         }
