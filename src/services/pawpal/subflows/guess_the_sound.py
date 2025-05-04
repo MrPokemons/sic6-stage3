@@ -21,13 +21,13 @@ class GuessTheSound(Agentic):
         return Command(goto=END)
 
     @classmethod
-    def build_workflow(self) -> CompiledStateGraph:
+    def build_workflow(cls) -> CompiledStateGraph:
         builder = StateGraph(
             GTSSessionState, input=SessionState, config_schema=ConfigurableSchema
         )
 
         # Node
-        builder.add_node("start", self._start)
+        builder.add_node("start", cls._start)
 
         # Edge
         builder.add_edge(START, "start")

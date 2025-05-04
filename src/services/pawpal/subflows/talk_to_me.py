@@ -153,7 +153,13 @@ class TalkToMe(Agentic):
                     {
                         "type": "text",
                         "text": (
-                            "End the Session, while saying thank you for participating for the session."
+                            "Tell the child that the current session is ending."
+                            "You must say thank you for participating for the session. You look forward to the next chat with the child."
+                            "*Say sorry if you had to cut a topic short.*"
+                            "**DO NOT END YOUR RESPONSE WITH A QUESTION.**"
+                            "Your whole response must not exceed 20 words."
+                            "Example:"
+                            "'Wah, sepertinya sesi hari ini udah mau berakhir nih! Terima kasih Adik karena sudah mau mengobrol denganku. Maaf ya kalau tadi ada perkataan yang membuatmu kurang nyaman atau sedih. Ayo kita ketemu di sesi selanjutnya!'"
                             + "\n"
                             + PromptLoader().language_template.format(
                                 user_language=configurable["user"].get(
@@ -198,15 +204,15 @@ class TalkToMe(Agentic):
         )
 
     @classmethod
-    def build_workflow(self) -> CompiledStateGraph:
+    def build_workflow(cls) -> CompiledStateGraph:
         builder = StateGraph(TTMSessionState, config_schema=ConfigurableSchema)
 
         # Node
-        builder.add_node("start", self._start)
-        builder.add_node("talk", self._talk)
-        builder.add_node("responding", self._responding)
-        builder.add_node("check_session", self._check_session)
-        builder.add_node("listening", self._listening)
+        builder.add_node("start", cls._start)
+        builder.add_node("talk", cls._talk)
+        builder.add_node("responding", cls._responding)
+        builder.add_node("check_session", cls._check_session)
+        builder.add_node("listening", cls._listening)
 
         # Edge
         builder.add_edge(START, "start")

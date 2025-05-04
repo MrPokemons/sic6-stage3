@@ -140,6 +140,7 @@ class MathGame(Agentic):
             )
             for _ in range(total_question)
         ]
+        print("Generated QnA:", json.dumps([i.model_dump(mode='json') for i in list_qna], indent=2))
 
         for _qna in list_qna:
             if _qna.question is not None:
@@ -212,6 +213,7 @@ class MathGame(Agentic):
         configurable = config["configurable"]
         qna = state.get_next_question()
         if qna is not None:
+            print("DEBUG QNA ASK:", json.dumps(qna.model_dump(mode='json'), indent=2))
             return Command(
                 update={"from_node": "ask_question", "next_node": "listening"},
                 goto="talk",
@@ -322,6 +324,7 @@ class MathGame(Agentic):
     ) -> Command[Literal["listening", "elaborate", "ask_question"]]:
         _ = state.verify_last_session(session_type="math_games")
         qna: MathQnA = state.get_next_question(raise_if_none=True)
+        print("DEBUG QNA EVAL:", json.dumps(qna.model_dump(mode='json'), indent=2))
         if qna.is_correct():
             qna.is_answered = True
             next_node = "ask_question"
@@ -439,21 +442,21 @@ class MathGame(Agentic):
         )
 
     @classmethod
-    def build_workflow(self) -> CompiledStateGraph:
+    def build_workflow(cls) -> CompiledStateGraph:
         builder = StateGraph(
             MGSessionState, input=SessionState, config_schema=ConfigurableSchema
         )
 
         # Node
-        builder.add_node("start", self._start)
-        builder.add_node("talk", self._talk)
-        builder.add_node("generate_question", self._generate_question)
-        builder.add_node("ask_question", self._ask_question)
-        builder.add_node("listening", self._listening)
+        builder.add_node("start", cls._start)
+        builder.add_node("talk", cls._talk)
+        builder.add_node("generate_question", cls._generate_question)
+        builder.add_node("ask_question", cls._ask_question)
+        builder.add_node("listening", cls._listening)
         builder.add_node(
-            "evaluate", self._evaluate
+            "evaluate", cls._evaluate
         )  # will contain eval, try again, congratz
-        builder.add_node("elaborate", self._elaborate)
+        builder.add_node("elaborate", cls._elaborate)
 
         # Edge
         builder.add_edge(START, "start")
