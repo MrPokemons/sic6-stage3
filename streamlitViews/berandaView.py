@@ -99,7 +99,7 @@ if st.session_state.deviceId:
         )
         _db = _client["pawpal_v2"]
         _collection = _db["pawpal-conversation-2_1"]
-        list_conversation: list = _collection.find({"device_id": deviceId}).to_list()
+        list_conversation: list = sorted(_collection.find({"device_id": deviceId}).to_list(), key=lambda x: x["created_datetime"], reverse=True)
         st.warning("Backend tidak aktif, maka menggunakan alternatif database.")
 
     # last mode, use the static
@@ -107,6 +107,7 @@ if st.session_state.deviceId:
         try:
             with open("data/json/example.json", "r") as f:
                 list_conversation = json.load(f)
+                list_conversation = sorted(list_conversation, key=lambda x: x["created_datetime"], reverse=True)
         except FileNotFoundError:
             pass
 
