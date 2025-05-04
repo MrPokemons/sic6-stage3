@@ -122,7 +122,7 @@ if st.session_state.deviceId:
         ConversationDoc.model_validate(convo) for convo in list_conversation
     ]
 
-    st.json([i.model_dump(mode="json") for i in list_conversation])
+    # st.json([i.model_dump(mode="json") for i in list_conversation])
 
     with st.container():
         pageCol1, pageCol2, pageCol3 = st.columns([1, 14, 1])
@@ -297,7 +297,7 @@ if st.session_state.deviceId:
                     for n, userAnswer in enumerate(qna.user_answers):
                         answer = userAnswer.extraction.result
                         correction = qna.is_correct(index=n)
-                        correction = "✅" if correction else ("⚪️" if answer is None else "❌")
+                        correction = "✅" if correction else ("⚪" if answer is None else "❌")
                         if answer is None:
                             answer = "Tidak Menjawab"
                         listAnswer.append(answer)
@@ -332,6 +332,8 @@ if st.session_state.deviceId:
                             "Tidak Menjawab": listCorrection.count("⚪"),
                         }
                     )
+                    # st.write(listCorrection)
+                    # st.write(listAttemp)
 
                 # Show Pie Chart
                 equationResultTable = pd.DataFrame(listEquation)
@@ -378,7 +380,7 @@ if st.session_state.deviceId:
                     for n, userAnswer in enumerate(qna.user_answers):
                         answer = userAnswer.extraction.result
                         correction = qna.is_correct(index=n)
-                        correction = "✅" if correction else ("⚪️" if answer is None else "❌")
+                        correction = "✅" if correction else ("⚪" if answer is None else "❌")
                         if answer is None:
                             answer = "Tidak Menjawab"
                         listAnswer.append(answer)
