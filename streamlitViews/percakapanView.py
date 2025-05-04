@@ -32,7 +32,7 @@ if st.session_state.deviceId:
     list_conversation = None
     try:
         resp = requests.get(
-            f"http://localhost:11080/api/v1/pawpal/conversation/{deviceId}/live"
+            f"http://localhost:11080/api/v1/pawpal/conversation/{deviceId}/live",
         )
         if resp.status_code == 200:
             list_conversation = resp.json()
