@@ -300,7 +300,7 @@ if st.session_state.deviceId:
                         listAnswer.append(answer)
 
                         correction = qna.is_correct(index=n)
-                        correction = "✅" if correction else "❌"
+                        correction = "✅" if correction else ("⚪️" if answer is None else "❌")
                         listCorrection.append(correction)
 
                     equation_fmt = " ".join(equation).strip(
@@ -382,7 +382,7 @@ if st.session_state.deviceId:
                         listAnswer.append(answer)
 
                         correction = qna.is_correct(index=n)
-                        correction = "✅" if correction else "❌"
+                        correction = "✅" if correction else ("⚪️" if answer is None else "❌")
                         listCorrection.append(correction)
 
                     listSound.append(qna.sound_path)
