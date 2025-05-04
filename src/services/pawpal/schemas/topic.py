@@ -46,7 +46,7 @@ class MathQnA(BaseModel):
     def is_correct(self, *, index: int = -1):
         index = min(len(self.user_answers) - 1, max(-1, index))
         if not self.user_answers or self.user_answers[index].extraction.result is None:
-            return False
+            return None
         return self.user_answers[index].extraction.result == self.answer
 
     @staticmethod
@@ -78,7 +78,7 @@ class GuessTheSoundUserAnswer(BaseModel):
 
 
 class GuessTheSoundQnA(BaseModel):
-    sound_path: Union[PosixPath, str]
+    sound_path: str
     answer: Annotated[str, "the object that makes the sound, e.g. animals, etc"]
     is_answered: bool = False
     user_answers: List[GuessTheSoundUserAnswer] = []
@@ -94,7 +94,7 @@ class GuessTheSoundQnA(BaseModel):
     def is_correct(self, *, index: int = -1):
         index = min(len(self.user_answers) - 1, max(-1, index))
         if not self.user_answers or self.user_answers[index].extraction.result is None:
-            return False
+            return "no"
         return self.user_answers[index].extraction.result.lower() == self.answer.lower()
 
     @staticmethod

@@ -10,7 +10,6 @@ import streamlit as st
 from pymongo import MongoClient
 from src.services.pawpal.schemas.document import ConversationDoc
 
-
 ROOT_PATH = Path(__file__).parents[1]
 
 if "deviceId" not in st.session_state:
@@ -83,24 +82,24 @@ if st.session_state.deviceId:
     page = st.session_state.page
 
     list_conversation = None
-    try:
-        resp = requests.get(
-            f"http://localhost:11080/api/v1/pawpal/conversation/{deviceId}"
-        )
-        if resp.status_code == 200:
-            list_conversation = resp.json()
-    except Exception:
-        pass
+    # try:
+    #     resp = requests.get(
+    #         f"http://localhost:11080/api/v1/pawpal/conversation/{deviceId}"
+    #     )
+    #     if resp.status_code == 200:
+    #         list_conversation = resp.json()
+    # except Exception:
+    #     pass
 
     # backend offline, connect to read-only demo purposes mongodb
-    if list_conversation is None:
-        _client = MongoClient(
-            "mongodb+srv://pawpal-demo-user:p78Q4EsqPfLmnvtb@sic-cluster.hcqho.mongodb.net/?retryWrites=true&w=majority&appName=SIC-Cluster"
-        )
-        _db = _client["pawpal_v2"]
-        _collection = _db["pawpal-conversation-2_1"]
-        list_conversation: list = _collection.find({"device_id": deviceId}).to_list()
-        st.warning("Backend tidak aktif, maka menggunakan alternatif database.")
+    # if list_conversation is None:
+    #     _client = MongoClient(
+    #         "mongodb+srv://pawpal-demo-user:p78Q4EsqPfLmnvtb@sic-cluster.hcqho.mongodb.net/?retryWrites=true&w=majority&appName=SIC-Cluster"
+    #     )
+    #     _db = _client["pawpal_v2"]
+    #     _collection = _db["pawpal-conversation-2_1"]
+    #     list_conversation: list = _collection.find({"device_id": deviceId}).to_list()
+    #     st.warning("Backend tidak aktif, maka menggunakan alternatif database.")
 
     # last mode, use the static
     if list_conversation is None:
@@ -300,7 +299,9 @@ if st.session_state.deviceId:
                         listAnswer.append(answer)
 
                         correction = qna.is_correct(index=n)
-                        correction = "✅" if correction else "❌"
+                        # print("test", correction)
+                        correction = "✅" if correction == True else "❌" if correction == False else "⚪"
+                        
                         listCorrection.append(correction)
 
                     equation_fmt = " ".join(equation).strip(
@@ -358,7 +359,7 @@ if st.session_state.deviceId:
                     df,
                     x="Percobaan",
                     y=["Benar", "Salah", "Tidak Menjawab"],
-                    title="Akurasi Jawaban pada Setiap Percobaan Matematika",
+                    title="Akurasi Jawaban pada Setiap Percobaan Matematika"
                 )
                 st.plotly_chart(fig)
 
@@ -382,7 +383,7 @@ if st.session_state.deviceId:
                         listAnswer.append(answer)
 
                         correction = qna.is_correct(index=n)
-                        correction = "✅" if correction else "❌"
+                        correction = "✅" if correction else "❌" if not correction else "⚪"
                         listCorrection.append(correction)
 
                     listSound.append(qna.sound_path)
@@ -391,7 +392,7 @@ if st.session_state.deviceId:
                     listCorrection_fmt = ", ".join(map(str, listCorrection)).strip()
                     listEquation.append(
                         {
-                            "Pertanyaan": qna.sound_path,
+                            "Suara": qna.sound_path,
                             "Jawaban Anak": listAnswer_fmt,
                             "Koreksi": listCorrection_fmt,
                         }
@@ -406,7 +407,7 @@ if st.session_state.deviceId:
 
                     listAttemp.append(
                         {
-                            "Percobaan": "Pertanyaan " + str(i + 1),
+                            "Percobaan": "Suara " + str(i + 1),
                             "Benar": listCorrection.count("✅"),
                             "Salah": listCorrection.count("❌"),
                             "Tidak Menjawab": listCorrection.count("⚪"),
