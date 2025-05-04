@@ -57,32 +57,25 @@ class GuessTheSound(Agentic):
     async def _start(
         cls, state: GTSSessionState, config: ConfigSchema
     ) -> Command[Literal["generate_question"]]:
+        configurable = config["configurable"]
         messages = [
             SystemMessage(
                 content=[
                     {
                         "type": "text",
                         "text": (
-                            'Introduce the "Math Game" session by telling the ground rule, '
-                            "which you will give a analogy of matemathic question based on the provided sequences, "
-                            "which only relates to addition and substraction only. "
-                            'For example, we will provide you the sequence of "["+4", "-3", "+7", "-2"]", '
-                            'and the sum of the sequence which is "6"'
-                            "then you will generate the question something like: "
-                            '"Andy has 4 apples in his backpack. During his trip, he ate 3 of the apples. '
-                            "Then he found the apple tree, collected around 7 apples. "
-                            "Finally he arrived at his destination, and gift his mom 2 apple. "
-                            'How many apple does Andy has?"'
-                            "User will give answer then you need to extract the value."
-                        ),
-                    },
-                    {
-                        "type": "text",
-                        "text": (
-                            "You don't need to give the exact example of math analogy, "
-                            "just explain the big picture overall game, so user can understand how to play the game. "
-                            "Now introduce the game to the user. Make sure you explain it super simplify."
-                        ),
+                            'Introduce the "Guess the Sound" session by telling the ground rule, '
+                            "Which the system will play random sound, and the user must predict what it is based on the audio."
+                            "Now introduce the session to the user. Make sure you explain it super simplify. "
+                            "EXPLAIN IN ONE OR TWO SENTENCES."
+                            "**YOU DON'T MAKE THE QUESTION**"
+                        ) + "\n"
+                        + PromptLoader().language_template.format(
+                            user_language=configurable["user"].get(
+                                "language", "English"
+                            )
+                        )
+                        ,
                     },
                 ]
             )
@@ -179,7 +172,7 @@ class GuessTheSound(Agentic):
                             "text": (
                                 "Tell me to guess the sound play after this, "
                                 "make it very-very short"
-                            )+ "\n"
+                            ) + "\n"
                             + PromptLoader().language_template.format(
                                 user_language=configurable["user"].get(
                                     "language", "English"
@@ -283,15 +276,15 @@ class GuessTheSound(Agentic):
             session_type="guess_the_sound",
             messages=messages,
         )
-        model_with_math_user_answer = cls.model.with_structured_output(
+        model_with_gts_user_answer = cls.model.with_structured_output(
             GuessTheSoundUserAnswerExtraction
         )
-        _math_extracted_result: GuessTheSoundUserAnswerExtraction = (
-            await model_with_math_user_answer.ainvoke(messages)
+        _gts_extracted_result: GuessTheSoundUserAnswerExtraction = (
+            await model_with_gts_user_answer.ainvoke(messages)
         )
         qna: GuessTheSoundQnA = state.get_next_question(raise_if_none=True)
         qna.user_answers.append(
-            GuessTheSoundUserAnswer(raw_answer=user_response, extraction=_math_extracted_result)
+            GuessTheSoundUserAnswer(raw_answer=user_response, extraction=_gts_extracted_result)
         )
         return Command(
             update={
