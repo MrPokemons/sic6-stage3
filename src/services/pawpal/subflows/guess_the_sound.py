@@ -165,12 +165,12 @@ class GuessTheSound(Agentic):
         last_session = state.verify_last_session(session_type="guess_the_sound")
         if qna is not None:
             messages = [
-                HumanMessage(
+                SystemMessage(
                     content=[
                         {
                             "type": "text",
                             "text": (
-                                "Tell me to guess the sound play after this, "
+                                "Tell the user to guess the sound play after this, "
                                 "make it very-very short"
                             ) + "\n"
                             + PromptLoader().language_template.format(
@@ -263,8 +263,9 @@ class GuessTheSound(Agentic):
                         "type": "text",
                         "text": (
                             "Extract the answer from the user response, "
-                            f"the expected answers will be either from following: {', '.join(list(GUESS_THE_SOUND_MAPPING))}. "
-                            "CLASSIFY EITHER OF THE USER EXTRACTED ANSWER FROM THE ABOVE PROVIDED LIST OF ANSWERS, UNLESS IT'S UNCLEAR SET AS NONE"
+                            f"the expected answers will be either from following: {json.dumps(list(GUESS_THE_SOUND_MAPPING))}. "
+                            "CLASSIFY EITHER OF THE USER EXTRACTED ANSWER FROM THE ABOVE PROVIDED LIST OF ANSWERS. "
+                            "IF THE USER'S ANSWER IS VERY UNRELATED FROM THE PROVIDED LIST OF ANSWERS, CONSIDER AS NONE FOR MARKING WRONG"
                             f"The answer can be either English language or {configurable['user']['language']} language."
                         )
                     }

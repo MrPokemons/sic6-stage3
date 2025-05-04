@@ -159,6 +159,7 @@ class TopicResults(BaseModel):
 
         type: Literal["guess_the_sound"] = "guess_the_sound"
         extraction: _Extraction
+        list_qna: List[GuessTheSoundQnA]
         start_datetime: datetime
         modified_datetime: datetime
 
