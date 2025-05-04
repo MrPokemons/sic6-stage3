@@ -65,7 +65,7 @@ if st.session_state.deviceId:
         ConversationDoc.model_validate(convo) for convo in list_conversation
     ]
 
-    st.json([i.model_dump(mode="json") for i in list_conversation])
+    # st.json([i.model_dump(mode="json") for i in list_conversation])
 
     liveConversation = list_conversation[0]
 
