@@ -69,7 +69,7 @@ emotion_map = {
 color_map = {
     'Benar': 'green',
     'Salah': 'red',
-    'Tidak Menjawab': 'gray' 
+    'Tidak Menjawab': 'gray'
 }
 
 
@@ -285,12 +285,12 @@ if st.session_state.deviceId:
                 totalBlank = 0
 
                 listEquation = []
-                listAnswer = []
-                listCorrection = []
                 listAttemp = []
                 st.subheader("Hasil Menghitung")
 
                 for i, qna in enumerate(session_result.list_qna):
+                    listAnswer = []
+                    listCorrection = []
                     equation = []
                     for n, number in enumerate(qna.sequence):
                         equation.append(
@@ -304,11 +304,9 @@ if st.session_state.deviceId:
                             answer = "Tidak Menjawab"
                         listAnswer.append(answer)
 
-                        # edit lagi karena belum ada di schematic nya
-                        correction = random.choice([True, False, ""])
-                        correction = "✅" if correction == True else "❌" if correction == False else "⚪"
+                        correction = qna.is_correct(index=n)
+                        correction = "✅" if correction else "❌"
                         listCorrection.append(correction)
-
 
 
                     equation_fmt = " ".join(equation).strip(
@@ -351,13 +349,13 @@ if st.session_state.deviceId:
                 totalWrong = 0
                 totalBlank = 0
 
-                listSound = [] # i guess assuming the sound is fixed? 
-                listAnswer = []
-                listCorrection = []
+                listSound = [] # i guess assuming the sound is fixed?
                 listAttemp = []
                 st.subheader("Hasil Menghitung")
 
                 for i, qna in enumerate(session_result.list_qna):
+                    listAnswer = []
+                    listCorrection = []
                     for n, userAnswer in enumerate(qna.user_answers):
                         answer = userAnswer.extraction.result
                         answer = random.choice("cat", "dog", "goat", None)
@@ -365,9 +363,8 @@ if st.session_state.deviceId:
                             answer = "Tidak Menjawab"
                         listAnswer.append(answer)
 
-                        # edit lagi karena belum ada di schematic nya
-                        correction = random.choice([True, False, ""])
-                        correction = "✅" if correction == True else "❌" if correction == False else "⚪"
+                        correction = qna.is_correct(index=n)
+                        correction = "✅" if correction else "❌"
                         listCorrection.append(correction)
 
                     sound = random.choice(["cat.mp3", "dog.mp3", "goat.mp3"])
