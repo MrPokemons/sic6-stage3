@@ -296,12 +296,11 @@ if st.session_state.deviceId:
 
                     for n, userAnswer in enumerate(qna.user_answers):
                         answer = userAnswer.extraction.result
+                        correction = qna.is_correct(index=n)
+                        correction = "✅" if correction else ("⚪️" if answer is None else "❌")
                         if answer is None:
                             answer = "Tidak Menjawab"
                         listAnswer.append(answer)
-
-                        correction = qna.is_correct(index=n)
-                        correction = "✅" if correction else ("⚪️" if answer is None else "❌")
                         listCorrection.append(correction)
 
                     equation_fmt = " ".join(equation).strip(
@@ -378,12 +377,11 @@ if st.session_state.deviceId:
                     listCorrection = []
                     for n, userAnswer in enumerate(qna.user_answers):
                         answer = userAnswer.extraction.result
+                        correction = qna.is_correct(index=n)
+                        correction = "✅" if correction else ("⚪️" if answer is None else "❌")
                         if answer is None:
                             answer = "Tidak Menjawab"
                         listAnswer.append(answer)
-
-                        correction = qna.is_correct(index=n)
-                        correction = "✅" if correction else ("⚪️" if answer is None else "❌")
                         listCorrection.append(correction)
 
                     listSound.append(qna.sound_path)
