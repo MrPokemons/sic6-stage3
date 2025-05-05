@@ -164,9 +164,9 @@ if st.session_state.configuration:
             if resp.status_code != 200:
                 resp.raise_for_status()
             st.success("Berhasil menginput konfigurasi percakapan baru!!")
-        except Exception as e:
+        except Exception:
             st.warning("Jika Backend tidak berjalan, fitur ini tidak dapat dipakai.")
-            st.error(f"Terjadi kesalahan: {e}")
+            st.error("Backend tidak aktif, fitur ini tidak dapat digunakan, mohon untuk menyalakan servernya dengan mengikuti panduan.")
 
 
 # -------------------
