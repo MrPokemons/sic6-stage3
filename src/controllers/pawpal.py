@@ -424,15 +424,19 @@ def pawpal_router(
             ws_manager.disconnect(websocket=websocket)
 
     @router.websocket("/conversation-test")
-    async def conversation_test(websocket: WebSocket):
+    async def conversation_test(websocket: WebSocket, cue_action: bool = False):
         await websocket.accept()
         logger.info("Someone has connected to conversation test websocket")
 
         logger.info("Sending Audio to client using chunking")
+        if cue_action:
+            await websocket.send_text("speaker;")
         with open("tests/test.wav", "rb") as f:
             await websocket.send_bytes(f.read())
 
         logger.info("Trying to receive chunked audio from client")
+        if cue_action:
+            await websocket.send_text("microphone;")
         audio_bytes = await websocket.receive_bytes()
 
         logger.info("Received the audio successfully, trying to play")
@@ -452,11 +456,13 @@ def pawpal_router(
         logger.info("Testing successfully been executed")
 
     @router.websocket("/conversation-chunking-test")
-    async def conversation_chunking_test(websocket: WebSocket, target_sample_rate: Optional[int] = None):
+    async def conversation_chunking_test(websocket: WebSocket, cue_action: bool = False, target_sample_rate: Optional[int] = None):
         await ws_manager.connect(websocket=websocket)
         logger.info("Someone has connected to conversation chunking test websocket")
 
         logger.info("Sending Audio to client using chunking")
+        if cue_action:
+            await websocket.send_text("speaker;")
         with open("tests/test.wav", "rb") as f:
             await ws_manager.send_audio(
                 websocket=websocket,
@@ -465,6 +471,8 @@ def pawpal_router(
             )
 
         logger.info("Trying to receive chunked audio from client")
+        if cue_action:
+            await websocket.send_text("microphone;")
         audio_array, sample_rate = await ws_manager.recv_audio(websocket=websocket)
 
         logger.info("Received the audio successfully, trying to play")
