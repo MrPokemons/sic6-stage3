@@ -7,342 +7,706 @@
 #include <freertos/task.h>
 #include <ArduinoJson.h>
 
+// ==== WiFi Configs ====
+const char* ssid = "C-C2.4";
+const char* password = "QweR1357";
 
-// ============ WIFI & WEBSOCKET CONFIGS ============
-
-// === WiFi Config ===
-const char* ssid = "DOWNEY";
-const char* password = "r4ch3lkh0";
-
-// === WebSocket Config ===
-const char* websocket_server_address = "192.168.198.120";
+const char* websocket_server_address = "192.168.0.104";
 const uint16_t websocket_server_port = 11080;
-const char* websocket_path = "/api/v1/pawpal/conversation/cincayla?stream_audio=device";
+const char* websocket_path = "/api/v1/pawpal/conversation-chunking-test?cue_action=true";
 
 WebSocketsClient webSocket;
 bool shouldReconnect = false;
 unsigned long lastReconnectAttempt = 0;
-const unsigned long reconnectInterval = 5000; // 5 seconds
+const unsigned long reconnectInterval = 5000;
 
+#define COMMON_SAMPLE_RATE 16000
+#define COMMON_BITS_PER_SAMPLE I2S_BITS_PER_SAMPLE_16BIT
 
-// ============ I2S & RECORDING CONFIGS ============
-
-// === I2S Config ====
-#define I2S_PORT I2S_NUM_0
-#define I2S_WS 25 
-#define I2S_SCK 27      // SCK = BCLK
-#define I2S_SD_IN 35    
-
-// Recording Parameters
-// use 16khz for recording
-#define I2S_REC_SAMPLE_RATE 16000 
-#define I2S_REC_BITS_PER_SAMPLE I2S_BITS_PER_SAMPLE_16BIT
-#define I2S_REC_CHANNELS 1 // mono for voice rec
+#define I2S_PORT        I2S_NUM_0
+#define I2S_WS          25
+#define I2S_SCK         27
+#define I2S_SD_OUT      26
+#define I2S_SD_IN       35
 
 es8388 codec;
 
-// buffers for reading audio samples
-#define AUDIO_CHUNK_SAMPLES 1024
-#define AUDIO_CHUNK_SIZE_BYTES (AUDIO_CHUNK_SAMPLES * (I2S_REC_BITS_PER_SAMPLE / 8) * I2S_REC_CHANNELS)
-#define RECORD_BUFFER_SIZE (AUDIO_CHUNK_SIZE_BYTES * 2)
-uint8_t recordBuffer[RECORD_BUFFER_SIZE];
-
-// === Recording Control Flags ===
-volatile bool isRecording = false;
-unsigned long recordingStartTime = 0;
-
-// --- Recording Duration Limit ---
-const unsigned long MAX_RECORDING_DURATION_MS = 10000; // Limit recording to 10 seconds
+// ==== Task Control Flags ====
+volatile bool startRecording = false;
+volatile bool isRecordingActive = false; 
 
 
+// ==== Recording Params and Buffers ====
+#define REC_DURATION_MS 5000
+// record reads 16khz, 16bit, mono --> convert to stereo
 
-// ============ WEBSOCKET DATA CHUNKING CONFIGS ============
+// --> BUFFERS FOR STEREO
+#define REC_I2S_READ_SAMPLES 1024 // read this many stereo samples from I2S RX
+#define REC_I2S_READ_BYTES (REC_I2S_READ_SAMPLES * (COMMON_BITS_PER_SAMPLE / 8) * 2)
+uint8_t recordStereoBuffer[REC_I2S_READ_BYTES]; // buffer for reading stereo 
 
-// === WS Data Chunking ====
-// based on backend logic
+// --> BUFFERS FOR EXTRACTED MONO
+#define REC_MONO_DATA_BYTES (REC_I2S_READ_SAMPLES * (COMMON_BITS_PER_SAMPLE / 8) * 1)
+uint8_t recordMonoBuffer[REC_MONO_DATA_BYTES];
+
+
+// --- WebSocket & JSON Serialization Configs ---
 const char* JSON_DELIMITER = "---ENDJSON---";
-#define JSON_DELIMITER_LEN 13 
-
-// buffers for data chunking
+#define JSON_DELIMITER_LEN 13
 #define JSON_MAX_SIZE 256
-#define SEND_BUFFER_SIZE (JSON_MAX_SIZE + JSON_DELIMITER_LEN + AUDIO_CHUNK_SIZE_BYTES)
-uint8_t sendBuffer[SEND_BUFFER_SIZE];
+#define WS_SEND_BUFFER_SIZE (JSON_MAX_SIZE + JSON_DELIMITER_LEN + REC_MONO_DATA_BYTES)
+uint8_t wsSendBuffer[WS_SEND_BUFFER_SIZE];
 
-volatile int outgoingSequence = 1;
+volatile int outgoingSequence = 0; // sequence number for total chunks being sent to server
+
+// --- Playback Reception and Streaming (Incorporating logic from the second code) ---
+const char* PLAYBACK_JSON_DELIMITER = "---ENDJSON---"; 
+const size_t PLAYBACK_JSON_DELIMITER_LEN = strlen(PLAYBACK_JSON_DELIMITER);
+
+volatile int currentExpectedSequence = 1;
+volatile int currentTotalSeq = -1;
+volatile uint32_t currentSampleRate = 0;
+volatile uint16_t currentChannels = 0;
+volatile uint16_t currentBitsPerSample = 0;
+volatile bool isPlayingSegment = false; // currently processing a playback segment or not
+
+// Buffer for audio data conversion before writing to I2S TX
+#define PLAYBACK_OUTPUT_BUFFER_CHUNK_BYTES 2048
+uint8_t playbackConversionBuffer[PLAYBACK_OUTPUT_BUFFER_CHUNK_BYTES];
 
 
-// ============ MULTITHREADING WITH FREERTOS ============
-
-// --- FreeRTOS Task Handle ---
+// --- FreeRTOS task handles & forward declarations ---
 TaskHandle_t audioRecordTaskHandle = NULL;
 
-
-
-// --- Forward declarations ---
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t length);
-void codecInitRecording();
-void I2SinitRecording();
-void audioRecordTask(void* parameter);
 void connectWiFi();
+void initCodecSingleConfig();
+void initI2SDualMode();
+void audioRecordTask(void* parameter);
+bool parseAndProcessBinaryMessage(const uint8_t* data, size_t dataLength);
+bool convertAndWriteAudioChunk(const uint8_t* audioData, size_t audioDataSize, uint16_t sourceBitsPerSample, uint16_t sourceChannels);
 
-// Function to handle WebSocket events
+
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
     switch(type) {
         case WStype_DISCONNECTED:
             Serial.println("[WSc] Disconnected");
             shouldReconnect = true;
             lastReconnectAttempt = millis();
-            // stop recording on disconnect
-            if (isRecording) {
-                Serial.println("[WSc] Disconnected during recording. Signaling recording task to stop.");
-                isRecording = false;
+            if (isRecordingActive) {
+                Serial.println("[WSc] WS Disconnected during recording. Signaling task to stop.");
+                startRecording = false;
             }
+
+            // reset playback state vars
+            currentExpectedSequence = 1;
+            currentTotalSeq = -1;
+            currentSampleRate = 0;
+            currentChannels = 0;
+            currentBitsPerSample = 0;
+            isPlayingSegment = false;
             break;
 
         case WStype_CONNECTED:
             Serial.println("[WSc] Connected to server");
             shouldReconnect = false;
+
+            // reset playback state vars
+            currentExpectedSequence = 1;
+            currentTotalSeq = -1;
+            currentSampleRate = 0;
+            currentChannels = 0;
+            currentBitsPerSample = 0;
+            isPlayingSegment = false;
             break;
 
         case WStype_TEXT: {
             String message = String((char*)payload, length);
             Serial.printf("[WSc] Received Text: %s\n", message.c_str());
 
-            if (message.equalsIgnoreCase("microphone")) {
-                if (!isRecording) {
-                    Serial.println("[WSc] Received 'microphone'. Signaling recording task to start.");
-                    isRecording = true; // signal task to start recording
-                    outgoingSequence = 1; // reset seq
-                    recordingStartTime = millis(); // start timer 
-                } else {
-                    Serial.println("[WSc] Received 'microphone', but already recording.");
+            if (message.startsWith("microphone;")) {
+                Serial.println("[WSc] Received 'microphone;'. Signaling recording task to start.");
+                if (isPlayingSegment) {
+                     Serial.println("Signaling playback segment to stop.");
+                     // stop processing next incoming chunks for this segment
+                     // signal that this is the last chunk
+                     currentExpectedSequence = 1;
+                     currentTotalSeq = -1;
+                     currentSampleRate = 0;
+                     currentChannels = 0;
+                     currentBitsPerSample = 0;
+                     isPlayingSegment = false;
                 }
-            } else if (message.equalsIgnoreCase("speaker")) {
-                 if (isRecording) {
-                    Serial.println("[WSc] Received 'speaker'. Signaling recording task to stop.");
-                    isRecording = false;
-                 } else {
-                    Serial.println("[WSc] Received 'speaker', but not currently recording.");
-                 }
-            } else {
+                // signal record task to start when already stop recording
+                if (!isRecordingActive) {
+                     outgoingSequence = 0;
+                     startRecording = true;
+                } else {
+                    Serial.println("Recording already active.");
+                }
+
+            }
+            else {
                 Serial.printf("[WSc] Received unknown text command: %s\n", message.c_str());
             }
             break;
         }
 
         case WStype_BIN:
-            Serial.printf("[WSc] Received BIN message (%zu bytes)\n", length);
+            Serial.printf("[WSc] Received BIN message (%zu bytes). Processing for playback.\n", length);
+             if (isRecordingActive) {
+                Serial.println("[WSc] Received BIN during recording. Signaling recording task to stop.");
+                startRecording = false;
+                vTaskDelay(pdMS_TO_TICKS(50));
+             }
+            parseAndProcessBinaryMessage(payload, length);
+            isPlayingSegment = (currentTotalSeq != -1 && currentExpectedSequence <= currentTotalSeq);
             break;
 
+
         case WStype_ERROR:
-            Serial.printf("[WSc] Error occurred, code: %d\n", payload ? *payload : -1);
-            shouldReconnect = true;
-            lastReconnectAttempt = millis();
-            // stop recording on error
-            if (isRecording) {
-                Serial.println("[WSc] Error during recording. Signaling recording task to stop.");
-                isRecording = false;
-            }
-            break;
+           Serial.printf("[WSc] Error occurred, code: %d\n", payload ? *payload : -1);
+           shouldReconnect = true;
+           lastReconnectAttempt = millis();
+           // signal tasks to stop
+           if (isRecordingActive) {
+               Serial.println("[WSc] WS Error during recording. Signaling task to stop.");
+               startRecording = false;
+           }
+           // reset playback state vars
+           currentExpectedSequence = 1;
+           currentTotalSeq = -1;
+           currentSampleRate = 0;
+           currentChannels = 0;
+           currentBitsPerSample = 0;
+           isPlayingSegment = false;
+          break;
         default:
-            break;
+          break;
     }
 }
 
-// init codec for recording mode
-void codecInitRecording() {
-    TwoWire wire(0);
-    wire.setPins(33, 32);
-    codec.begin(&wire);
 
-    // configure for recording: ADC enabled, DAC disabled
-    es_dac_output_t dac_output_rec = DAC_OUTPUT_MIN;
-    es_adc_input_t adc_input_rec = ADC_INPUT_LINPUT2_RINPUT2;
-    codec.config(I2S_REC_SAMPLE_RATE, dac_output_rec, adc_input_rec, 90);
-    Serial.println("Codec configured for recording (ADC enabled, DAC disabled).");
+// parse binary message, delimit JSON 
+bool parseAndProcessBinaryMessage(const uint8_t* data, size_t dataLength) {
+    Serial.println("Parsing binary message...");
+    const uint8_t* delimiterPos = (uint8_t*)memmem(data, dataLength, PLAYBACK_JSON_DELIMITER, PLAYBACK_JSON_DELIMITER_LEN);
+
+    if (!delimiterPos) {
+        Serial.println("[WSc] Error: Delimiter not found in binary chunk.");
+        isPlayingSegment = false; // stop playback processing 
+        return false;
+    }
+
+    size_t jsonLength = delimiterPos - data;
+    size_t audioDataOffset = delimiterPos - data + PLAYBACK_JSON_DELIMITER_LEN;
+    size_t audioDataLength = dataLength - audioDataOffset;
+
+
+    // ERROR HANDLING for missing data
+    if (jsonLength == 0) {
+         Serial.println("[WSc] Error: JSON metadata is missing before delimiter.");
+         isPlayingSegment = false;
+         return false;
+    }
+     if (audioDataLength == 0) {
+         Serial.println("[WSc] Warning: Binary chunk has metadata but no audio data.");
+         // continue processing metadata because segment might end with an empty chunk
+         // no stopping 
+     }
+
+
+     // extract and parse JSON
+     StaticJsonDocument<JSON_MAX_SIZE> doc;
+
+    if (jsonLength >= 256) {
+        Serial.println("[WSc] Error: JSON metadata too large for buffer.");
+        isPlayingSegment = false;
+        return false;
+    }
+    char jsonString[jsonLength + 1];
+    memcpy(jsonString, data, jsonLength);
+    jsonString[jsonLength] = '\0';
+
+    DeserializationError error = deserializeJson(doc, jsonString);
+
+    if (error) {
+        Serial.printf("[WSc] JSON parsing failed: %s\n", error.c_str());
+         isPlayingSegment = false;
+        return false;
+    }
+
+    // extract metadata
+    int seq = doc["seq"] | -1;
+    int total_seq = doc["total_seq"] | -1;
+    uint32_t sample_rate = doc["sample_rate"] | 0;
+    uint16_t channels = doc["channels"] | 0;
+    const char* dtype_str = doc["dtype"] | "";
+
+    if (seq == -1 || total_seq == -1 || sample_rate == 0 || channels == 0 || strlen(dtype_str) == 0) {
+        Serial.println("[WSc] Error: Missing metadata keys in JSON.");
+        isPlayingSegment = false;
+        return false;
+    }
+
+    uint16_t bitsPerSample = 0;
+    if (strcmp(dtype_str, "int16") == 0) {
+        bitsPerSample = 16;
+    } else if (strcmp(dtype_str, "float32") == 0) {
+         bitsPerSample = 32;
+    } 
+
+    if (bitsPerSample == 0) {
+        Serial.printf("[WSc] Error: Unsupported dtype: %s\n", dtype_str);
+        isPlayingSegment = false;
+        return false;
+    }
+
+    // STREAMING LOGIC 
+    if (seq == 1 && currentExpectedSequence == 1) {
+        Serial.printf(
+          "[WSc] Starting new playback segment. Seq %d/%d. Rate=%lu, Ch=%u, Bits=%u\n",
+          seq,
+          total_seq,
+          sample_rate,
+          channels,
+          bitsPerSample
+        );
+
+        currentTotalSeq = total_seq;
+        currentSampleRate = sample_rate;
+        currentChannels = channels;
+        currentBitsPerSample = bitsPerSample;
+
+        // set the I2S clock to match the received audio sample rate
+        esp_err_t clk_err = i2s_set_clk(I2S_PORT, currentSampleRate, COMMON_BITS_PER_SAMPLE, (i2s_channel_t)2);
+        if (clk_err != ESP_OK) {
+            Serial.printf("[WSc] Error setting I2S clock to %lu Hz: %d. Cannot play segment.\n", currentSampleRate, clk_err);
+             // reset state vars on error
+            currentExpectedSequence = 1;
+            currentTotalSeq = -1;
+            currentSampleRate = 0;
+            currentChannels = 0;
+            currentBitsPerSample = 0;
+            isPlayingSegment = false;
+            return false;
+        }
+         Serial.printf("[WSc] I2S clock set to %lu Hz (16-bit stereo).\n", currentSampleRate);
+         isPlayingSegment = true; // segment is being processed
+
+    } else if (seq != currentExpectedSequence) {
+        // out-of-order / missing chunk
+        if (currentExpectedSequence == 1) {
+             Serial.printf("[WSc] Warning: Received seq %d but expected 1 (new segment). Discarding chunk.\n", seq);
+        } else {
+             Serial.printf("[WSc] Warning: Received seq %d but expected %d. Discarding chunk.\n", seq, currentExpectedSequence);
+        }
+
+        if (currentExpectedSequence == 1) {
+             // if client expected 1 and got something else
+             // assume this is not the start of a valid segment
+             isPlayingSegment = false;
+         }
+        return false;
+    } else {
+        // received the next expected chunk in sequence (for a multi-chunk segment)
+
+        // validate metadata against the first chunk's metadata
+         if (total_seq != currentTotalSeq) {
+             Serial.println("[WSc] Warning: Subsequent chunk total_seq metadata mismatch! Segment might be corrupt.");
+         }
+          if (sample_rate != currentSampleRate || channels != currentChannels || bitsPerSample != currentBitsPerSample) {
+              Serial.println("[WSc] Warning: Subsequent chunk audio format metadata mismatch!");
+          }
+         isPlayingSegment = true; // still processing the segment
+    }
+
+    // process and write the audio data for the current chunk 
+    if (audioDataLength > 0 && isPlayingSegment) { // only process if data exists and segment is valid
+        bool write_success = convertAndWriteAudioChunk(
+          data + audioDataOffset, 
+          audioDataLength,
+          currentBitsPerSample,
+          currentChannels
+        );
+
+        if (!write_success) {
+            Serial.println("[WSc] Error writing audio chunk to I2S. Playback stopped for this segment.");
+            isPlayingSegment = false; // stop processing segment on write error
+        }
+
+    } else if (audioDataLength == 0 && seq == currentTotalSeq && currentTotalSeq != -1) {
+         Serial.println("[WSc] Received expected last (empty) chunk.");
+         isPlayingSegment = false;
+    } else if (audioDataLength > 0 && !isPlayingSegment) {
+         Serial.println("[WSc] Received data but isPlayingSegment is false. Discarding data.");
+         return false;
+    }
+
+
+    if (isPlayingSegment) {
+        currentExpectedSequence++;
+    }
+
+
+    // check if the segment is complete
+    if (currentTotalSeq != -1 && currentExpectedSequence > currentTotalSeq) {
+        Serial.printf("[WSc] Playback Segment completed (processed %d chunks).\n", currentTotalSeq);
+
+        // reset state vars for next segment
+        currentExpectedSequence = 1;
+        currentTotalSeq = -1;
+        currentSampleRate = 0;
+        currentChannels = 0;
+        currentBitsPerSample = 0;
+        isPlayingSegment = false;
+    } else if (!isPlayingSegment && currentTotalSeq != -1 && currentExpectedSequence <= currentTotalSeq) {
+        // isPlayingSegment became false due to error before segment is finished
+        Serial.printf("[WSc] Playback Segment stopped prematurely due to error (at seq %d/%d).\n", seq, currentTotalSeq);
+    }
+
+
+    return isPlayingSegment || (currentTotalSeq != -1 && currentExpectedSequence > currentTotalSeq);
 }
 
-// init I2S peripherals
-void I2SinitRecording() {
-    i2s_config_t i2s_rx_config = {
-        .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX), // I2S mode master
-        .sample_rate = I2S_REC_SAMPLE_RATE,
-        .bits_per_sample = I2S_REC_BITS_PER_SAMPLE,
-        .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT, // Or I2S_CHANNEL_FMT_RIGHT if using right channel
-        .communication_format = I2S_COMM_FORMAT_STAND_I2S, 
+
+// convert received audio to 16-bit stereo
+// write to speaker as output
+bool convertAndWriteAudioChunk(const uint8_t* audioData, size_t audioDataSize, uint16_t sourceBitsPerSample, uint16_t sourceChannels) {
+
+    if (audioDataSize == 0) return true;
+
+    size_t sourceBytesPerSample = sourceBitsPerSample / 8;
+    size_t sourceBytesPerFrame = sourceBytesPerSample * sourceChannels; // bytes per frame in source data
+    size_t playbackBytesPerOutputFrame = (COMMON_BITS_PER_SAMPLE / 8) * 2; // 16bit stereo = 4 bytes per frame for I2S output
+
+    if (sourceBytesPerFrame == 0 || playbackBytesPerOutputFrame == 0) {
+         Serial.println("Error: Invalid sample/channel size calculation during conversion.");
+         return false;
+    }
+
+    const uint8_t* currentInputPtr = audioData;
+    size_t bytesRemaining = audioDataSize;
+
+    // process incoming large audio chunk in smaller segments
+    while (bytesRemaining > 0) {
+
+        size_t availableSourceFrames = bytesRemaining / sourceBytesPerFrame;
+        if (availableSourceFrames == 0) {
+             Serial.printf("Warning: Remaining bytes (%zu) is less than a full source frame size (%zu).\n", bytesRemaining, sourceBytesPerFrame);
+             break;
+        }
+
+        size_t targetOutputFrames = PLAYBACK_OUTPUT_BUFFER_CHUNK_BYTES / playbackBytesPerOutputFrame;
+        size_t sourceFramesNeeded = (targetOutputFrames * playbackBytesPerOutputFrame) / sourceBytesPerFrame;
+
+        // ensure we don't read more source frames than are available
+        size_t framesToProcess = min(availableSourceFrames, sourceFramesNeeded);
+
+        if (framesToProcess == 0) {
+            Serial.println("Warning: Cannot process any frames in this iteration.");
+            break;
+        }
+
+        size_t inputBytesToProcess = framesToProcess * sourceBytesPerFrame;
+        size_t outputBytesToProduce = framesToProcess * playbackBytesPerOutputFrame;
+
+        if (outputBytesToProduce > PLAYBACK_OUTPUT_BUFFER_CHUNK_BYTES) {
+             Serial.printf("Error: Calculated outputBytesToProduce (%zu) exceeds buffer size (%zu).\n", outputBytesToProduce, PLAYBACK_OUTPUT_BUFFER_CHUNK_BYTES);
+             return false;
+        }
+
+        // data conversion
+
+        // target format 16-bit Stereo (COMMON_BITS_PER_SAMPLE=16, 2 channels)
+        int16_t* outputSamples = (int16_t*)playbackConversionBuffer;
+        size_t numOutputSamples = outputBytesToProduce / sizeof(int16_t);
+        memset(playbackConversionBuffer, 0, PLAYBACK_OUTPUT_BUFFER_CHUNK_BYTES);
+
+        //  convert 16-bit mono -> 16-bit stereo
+        if (sourceBitsPerSample == 16 && sourceChannels == 1 && COMMON_BITS_PER_SAMPLE == 16 && 2 == 2) {
+            const int16_t* inputSamples = (const int16_t*)currentInputPtr;
+            size_t numInputSamples = inputBytesToProcess / sizeof(int16_t); // number of 16-bit mono samples
+
+            for (size_t i = 0; i < numInputSamples; ++i) {
+                int16_t sample = inputSamples[i];
+                *outputSamples++ = sample; // left channel
+                *outputSamples++ = sample; // right channel
+            }
+        }
+
+        // convert 32-bit Float mono -> 16-bit stereo
+        else if (sourceBitsPerSample == 32 && sourceChannels == 1 && COMMON_BITS_PER_SAMPLE == 16 && 2 == 2) {
+             const float* inputSamples = (const float*)currentInputPtr;
+             size_t numInputSamples = inputBytesToProcess / sizeof(float); // number of float32 mono samples
+
+             for (size_t i = 0; i < numInputSamples; ++i) {
+                 float sample_f32 = inputSamples[i];
+
+                 // clipping and scaling from -1.0 to 1.0 range to 16-bit signed integer range
+                 long sample_i32 = (long)(sample_f32 * 32767.0f); // scale to max 16-bit value
+                 if (sample_i32 > 32767) sample_i32 = 32767;
+                 else if (sample_i32 < -32768) sample_i32 = -32768; // correct min 16-bit value
+
+                 int16_t sample = (int16_t)sample_i32;
+
+                 *outputSamples++ = sample; // left channel
+                 *outputSamples++ = sample; // right channel
+             }
+         }
+
+         // convert 16-bit Stereo Source -> 16-bit Stereo Output
+         // (no conversion, just copy
+         // // assuming source data is already L/R interleaved 16-bit samples)
+         else if (sourceBitsPerSample == 16 && sourceChannels == 2 && COMMON_BITS_PER_SAMPLE == 16 && 2 == 2) {
+             memcpy(playbackConversionBuffer, currentInputPtr, inputBytesToProcess);
+         }
+
+         else {
+            Serial.printf("Error: Conversion from Bits=%u, Ch=%u to 16-bit Stereo not implemented.\n",
+                           sourceBitsPerSample, sourceChannels);
+            isPlayingSegment = false;
+            return false;
+        }
+
+
+        size_t bytes_written = 0;
+        esp_err_t result = i2s_write(I2S_PORT, playbackConversionBuffer, outputBytesToProduce, &bytes_written, pdMS_TO_TICKS(100)); // Use a timeout
+
+        if (result != ESP_OK) {
+            Serial.printf("Error writing to I2S (converted chunk): Result %d\n", result);
+            isPlayingSegment = false;
+            return false;
+        }
+        if (bytes_written != outputBytesToProduce) {
+             Serial.printf("Warning: Partial I2S write (converted chunk): Wrote %zu/%zu bytes.\n", bytes_written, outputBytesToProduce);
+        }
+
+        currentInputPtr += inputBytesToProcess;
+        bytesRemaining -= inputBytesToProcess;
+
+        vTaskDelay(pdMS_TO_TICKS(1));
+    }
+
+    // If the loop finished, all data was processed successfully (or with warnings)
+    return isPlayingSegment; // Return current segment state
+}
+
+
+// ======= IMMEDIATELY SETUP BOARD FOR BOTH RX AND TX =======
+// CODEC FUNCTIONS WILL NOT BE CALLED ANYWHERE ELSE OTHER THAN SETUP
+// WILL CAUSE CONNECTION TO BREAK (IOT BOARD RESET)
+void initCodecSingleConfig() {
+    Serial.println("Initializing Codec with single config...");
+    TwoWire wire(0);
+    wire.setPins(33, 32);
+    wire.begin();
+    codec.begin(&wire);
+
+    es_adc_input_t adc_input_config = ADC_INPUT_LINPUT2_RINPUT2;
+    es_dac_output_t dac_output_config = (es_dac_output_t)(DAC_OUTPUT_LOUT1 | DAC_OUTPUT_ROUT1);=
+
+    Serial.printf("Codec config: Sample Rate=%lu, Output=%u, Input=%u, Volume=90\n",
+                  (uint32_t)COMMON_SAMPLE_RATE, dac_output_config, adc_input_config);
+
+    codec.config(COMMON_SAMPLE_RATE, dac_output_config, adc_input_config, 90);
+    Serial.println("Codec Initialized with dual capability.");
+}
+
+// INIT I2S PERIPHERAL FOR BOTH RX AND TX
+// NO MODE CONVERSION IN THE MIDDLE OF THE CODE
+void initI2SDualMode() {
+    Serial.println("Initializing I2S for TX|RX...");
+    i2s_config_t i2s_config = {
+        .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_RX),
+        .sample_rate = COMMON_SAMPLE_RATE,
+        .bits_per_sample = COMMON_BITS_PER_SAMPLE,
+        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT, // use stereo format for I2S bus (L/R)
+        .communication_format = I2S_COMM_FORMAT_STAND_I2S,
         .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
-        .dma_buf_count = 6, 
-        .dma_buf_len = 512,
-        .use_apll = false, 
-        .tx_desc_auto_clear = false, 
+        .dma_buf_count = 8,
+        .dma_buf_len = 512, 
+        .use_apll = false,
+        .tx_desc_auto_clear = true,
         .fixed_mclk = 0
     };
 
-    i2s_pin_config_t i2s_rx_pin_config = {
+    i2s_pin_config_t pin_config = {
         .bck_io_num = I2S_SCK,
         .ws_io_num = I2S_WS,
-        .data_out_num = -1,
-        .data_in_num = I2S_SD_IN
+        .data_out_num = I2S_SD_OUT, // TX pin
+        .data_in_num = I2S_SD_IN    // RX pin
     };
 
-    // install I2S driver
-    esp_err_t err = i2s_driver_install(I2S_PORT, &i2s_rx_config, 0, NULL);
-    if (err != ESP_OK) {
-        Serial.printf("Error installing I2S RX driver: %d\n", err);
-    } else {
-        Serial.println("I2S RX driver installed.");
+    esp_err_t err = i2s_driver_install(I2S_PORT, &i2s_config, 0, NULL);
+     if (err != ESP_OK) {
+        Serial.printf("Error installing I2S driver: %d\n", err);
+        while(1) { delay(100); }
+    }
+    err = i2s_set_pin(I2S_PORT, &pin_config);
+     if (err != ESP_OK) {
+        Serial.printf("Error setting I2S pins: %d\n", err);
+         while(1) { delay(100); }
     }
 
-    // set I2S pins
-    err = i2s_set_pin(I2S_PORT, &i2s_rx_pin_config);
-    if (err != ESP_OK) {
-        Serial.printf("Error setting I2S RX pins: %d\n", err);
-    } else {
-        Serial.println("I2S RX pins set.");
+    // set initial clock (redundant after install but good practice/debug)
+    err = i2s_set_clk(I2S_PORT, i2s_config.sample_rate, i2s_config.bits_per_sample, (i2s_channel_t)2); // 2 channels (stereo)
+     if (err != ESP_OK) {
+        Serial.printf("Error setting initial I2S clock: %d\n", err);
+         while(1) { delay(100); }
     }
-
-    // set clock for recording rate
-    err = i2s_set_clk(I2S_PORT, i2s_rx_config.sample_rate, i2s_rx_config.bits_per_sample, (i2s_channel_t)I2S_REC_CHANNELS);
-    if (err != ESP_OK) {
-        Serial.printf("Error setting I2S RX clock: %d\n", err);
-    } else {
-        Serial.printf("I2S RX clock set to %lu Hz.\n", i2s_rx_config.sample_rate);
-    }
+    Serial.println("I2S TX|RX Initialized (16-bit Stereo).");
 }
 
-// --- FreeRTOS Task for Audio Recording and Sending ---
+
+// FreeRTOS Task for Audio Recording & Sending
 void audioRecordTask(void* parameter) {
-    Serial.println("Audio recording task started. Waiting for 'microphone' command...");
+    Serial.println("Audio recording task started. Waiting for 'microphone;' command...");
 
     for (;;) {
-        if (isRecording) {
-            Serial.println("Recording task: 'isRecording' is true. Preparing for recording session.");
+        if (startRecording) {
+            isRecordingActive = true;
+            startRecording = false;
 
-            // --- Configure I2S and Codec for Recording ---
-            // These must be initialized *after* isRecording becomes true
-            // because the driver needs to be active only when recording.
-            I2SinitRecording();
-            codecInitRecording();
+            Serial.println("Recording task: 'startRecording' is true. Preparing for recording session.");
 
-            // --- Start Recording Loop ---
-            Serial.println("Recording task: Entering active recording loop.");
-            size_t bytes_read = 0;
-            // Calculate bytes to read based on samples per chunk * bytes per sample * channels
-            size_t bytes_to_read = AUDIO_CHUNK_SAMPLES * (I2S_REC_BITS_PER_SAMPLE / 8) * I2S_REC_CHANNELS;
+            unsigned long recordingStartTime = millis();
+            size_t bytesReadStereo = 0;
+            size_t bytesWrittenMono = 0;
 
-            while (isRecording && WiFi.status() == WL_CONNECTED && webSocket.isConnected()) {
+            size_t totalExpectedMonoBytes = (COMMON_SAMPLE_RATE * (COMMON_BITS_PER_SAMPLE / 8) * 1 * REC_DURATION_MS) / 1000;
 
-                bool isLastChunk = false;
-                if (millis() - recordingStartTime >= MAX_RECORDING_DURATION_MS) {
-                    isLastChunk = true;
-                    Serial.printf("Recording duration (%lu ms) reached. Preparing final chunk.\n", MAX_RECORDING_DURATION_MS);
+            int estimatedTotalSeq = (totalExpectedMonoBytes + REC_MONO_DATA_BYTES - 1) / REC_MONO_DATA_BYTES;
+            if (estimatedTotalSeq == 0 && REC_DURATION_MS > 0) estimatedTotalSeq = 1; // ensure at least 1 chunk if duration > 0
+             else if (estimatedTotalSeq == 0 && REC_DURATION_MS == 0) estimatedTotalSeq = 0;
+
+
+            Serial.printf("Recording task: Starting %lu ms recording at %lu Hz. Estimated total mono bytes: %zu, Estimated total chunks: %d\n",
+                          REC_DURATION_MS, (uint32_t)COMMON_SAMPLE_RATE, totalExpectedMonoBytes, estimatedTotalSeq);
+
+
+            while (isRecordingActive && webSocket.isConnected() && (millis() - recordingStartTime < REC_DURATION_MS)) {
+                // read stereo data from I2S RX
+                esp_err_t readErr = i2s_read(I2S_PORT, recordStereoBuffer, REC_I2S_READ_BYTES, &bytesReadStereo, pdMS_TO_TICKS(50));
+                if (readErr != ESP_OK && readErr != ESP_ERR_TIMEOUT) {
+                    Serial.printf("Recording task: Error reading from I2S RX: %d\n", readErr);
                 }
 
-                esp_err_t read_err = i2s_read(I2S_PORT, recordBuffer, bytes_to_read, &bytes_read, pdMS_TO_TICKS(50));
+                // only process and send if we read some stereo data
+                if (bytesReadStereo > 0) {
+                    size_t numStereoSamplesRead = bytesReadStereo / (COMMON_BITS_PER_SAMPLE / 8) / 2; 
+                    size_t numMonoBytesExtracted = numStereoSamplesRead * (COMMON_BITS_PER_SAMPLE / 8); 
+                    
+                     if (numMonoBytesExtracted > sizeof(recordMonoBuffer)) {
+                        Serial.printf("Recording task: Error: Extracted mono data size (%zu) exceeds buffer size (%zu).\n", numMonoBytesExtracted, sizeof(recordMonoBuffer));
+                        isRecordingActive = false; 
+                        break;
+                     }
 
-                if (read_err != ESP_OK && read_err != ESP_ERR_TIMEOUT) {
-                    Serial.printf("Error reading from I2S RX: %d\n", read_err);
-                    continue;
-                }
+                    int16_t* stereoSamples = (int16_t*)recordStereoBuffer;
+                    int16_t* monoSamples = (int16_t*)recordMonoBuffer;
+                    bytesWrittenMono = 0;
 
-                if (bytes_read > 0) {
+                    for (size_t i = 0; i < numStereoSamplesRead; ++i) {
+                        *monoSamples++ = *stereoSamples; 
+                        stereoSamples += 2; 
+                        bytesWrittenMono += (COMMON_BITS_PER_SAMPLE / 8); 
+                    }
 
-                    // --- Prepare JSON Metadata ---
+                    // prepare metadata JSON
                     StaticJsonDocument<JSON_MAX_SIZE> jsonDoc;
-                    jsonDoc["seq"] = outgoingSequence;
-                    jsonDoc["sample_rate"] = I2S_REC_SAMPLE_RATE;
-                    jsonDoc["channels"] = I2S_REC_CHANNELS;
+                    jsonDoc["seq"] = outgoingSequence + 1;
+                    jsonDoc["sample_rate"] = COMMON_SAMPLE_RATE;
+                    jsonDoc["channels"] = 1;
                     jsonDoc["dtype"] = "int16";
+                    jsonDoc["total_seq"] = estimatedTotalSeq;
 
-                    // set total_seq = current_seq only if it is the last chunk
-                    if (isLastChunk) {
-                        jsonDoc["total_seq"] = outgoingSequence;
-                        Serial.printf("Setting total_seq = %d for chunk %d (FINAL)\n", outgoingSequence, outgoingSequence);
-                    } else {
-                         jsonDoc["total_seq"] = 30000;
-                    }
-
-                    // serialize JSON
-                    size_t json_len = serializeJson(jsonDoc, sendBuffer, JSON_MAX_SIZE);
+                    // serialize JSON into send buffer
+                    size_t json_len = serializeJson(jsonDoc, wsSendBuffer, JSON_MAX_SIZE);
                     if (json_len == 0 || json_len >= JSON_MAX_SIZE) {
-                        Serial.println("Error serializing JSON or JSON too large for send buffer. Stopping recording.");
-                        isRecording = false; 
-                        continue;
+                        Serial.println("Recording task: Error serializing JSON or JSON too large. Stopping recording.");
+                        isRecordingActive = false; 
+                        continue; 
                     }
 
-                    // copy delimiter into the send buffer after the JSON
-                    memcpy(sendBuffer + json_len, JSON_DELIMITER, JSON_DELIMITER_LEN);
+                    memcpy(wsSendBuffer + json_len, JSON_DELIMITER, JSON_DELIMITER_LEN);
+                    memcpy(wsSendBuffer + json_len + JSON_DELIMITER_LEN, recordMonoBuffer, bytesWrittenMono);
+                    size_t total_msg_size = json_len + JSON_DELIMITER_LEN + bytesWrittenMono;
 
-                    // copy audio chunk into the send buffer after the delimiter
-                    memcpy(sendBuffer + json_len + JSON_DELIMITER_LEN, recordBuffer, bytes_read);
-
-                    // calculate total size of the message
-                    size_t total_msg_size = json_len + JSON_DELIMITER_LEN + bytes_read;
-
-                    // send the combined JSON, delimiter, and audio data
-                    if (webSocket.sendBIN(sendBuffer, total_msg_size)) {
-                        Serial.printf("Sent chunk %d (%zu bytes audio, %zu bytes total)%s\n",
-                                      outgoingSequence, bytes_read, total_msg_size, isLastChunk ? " (FINAL)" : "");
+                    // send the data to server
+                    if (webSocket.sendBIN(wsSendBuffer, total_msg_size)) {
                         outgoingSequence++;
-
-                        // stop recording if last chunk 
-                        if (isLastChunk) {
-                             isRecording = false;
-                             Serial.println("Recording task: Final chunk sent. Signaling stop.");
-                        }
-
                     } else {
-                        Serial.println("Failed to send WebSocket chunk. Signaling recording task to stop.");
-                        isRecording = false;
+                        Serial.println("Recording task: Failed to send WebSocket chunk. Signaling stop.");
+                        isRecordingActive = false;
                     }
 
                 } else {
-                    // bytes_read was 0 (likely due to timeout)
-                    if (isLastChunk) {
-                         Serial.println("Recording task: Duration reached, but 0 bytes read. Signaling stop.");
-                         isRecording = false;
-                    }
+                    // bytesReadStereo was 0 (likely due to timeout or nothing in DMA buffer)
+                    // if duration limit is reached in the next check, the loop will end anyway.
                 }
 
-                vTaskDelay(pdMS_TO_TICKS(1)); // Yield within the active loop
-            }
+                vTaskDelay(pdMS_TO_TICKS(1));
+            } 
 
             Serial.println("Recording task: Active recording loop ended.");
 
+            if (millis() - recordingStartTime >= REC_DURATION_MS) {
+                Serial.println("Recording task: Duration limit reached.");
+            } else if (!webSocket.isConnected()) {
+                 Serial.println("Recording task: WebSocket disconnected.");
+            } else if (!isRecordingActive) { 
+                 Serial.println("Recording task: Stop signal received.");
+            }
 
-            // ======== TODO: CODEC.CONFIG DEBUG, SYNTAX CAUSES BOARD RESET! ========
 
-            // --- Clean up I2S and Codec ---
-            // These are done when the inner while loop condition becomes false
-            // (either isRecording is false, WiFi disconnected, or WS disconnected)
+            // send a final chunk with total_seq if the server expects it to mark the end.
+            // with seq = total_seq
+            // relying on estimatedTotalSeq being correct
 
-            // Configure codec for idle state: Disable ADC and DAC
-            // es_dac_output_t dac_output_idle = DAC_OUTPUT_MIN;
-            // es_adc_input_t adc_input_idle = ADC_INPUT_MIN;
-            // codec.config(16000, dac_output_idle, adc_input_idle, 0);
-            // Serial.println("Codec configured for idle state (ADC/DAC disabled).");
+             if (webSocket.isConnected() && (outgoingSequence == estimatedTotalSeq) && estimatedTotalSeq > 0) {
+                  Serial.println("Recording task: Sending final empty chunk metadata.");
+                  StaticJsonDocument<JSON_MAX_SIZE> jsonDoc;
+                  jsonDoc["seq"] = estimatedTotalSeq;
+                  jsonDoc["sample_rate"] = COMMON_SAMPLE_RATE;
+                  jsonDoc["channels"] = 1;
+                  jsonDoc["dtype"] = "int16";
+                  jsonDoc["total_seq"] = estimatedTotalSeq;
 
-            i2s_driver_uninstall(I2S_PORT);
-            Serial.println("I2S RX driver uninstalled.");
+                  size_t json_len = serializeJson(jsonDoc, wsSendBuffer, JSON_MAX_SIZE);
+                  if (json_len > 0 && json_len < JSON_MAX_SIZE) {
+                       memcpy(wsSendBuffer + json_len, JSON_DELIMITER, JSON_DELIMITER_LEN);
+                       size_t total_msg_size = json_len + JSON_DELIMITER_LEN;
+                       if (webSocket.sendBIN(wsSendBuffer, total_msg_size)) {
+                           Serial.println("Recording task: Sent final chunk metadata successfully.");
+                       } else {
+                           Serial.println("Recording task: Failed to send final chunk metadata.");
+                       }
+                  } else {
+                      Serial.println("Recording task: Error serializing final chunk metadata.");
+                  }
+             } else if (!webSocket.isConnected()) {
+                  Serial.println("Recording task: WS disconnected, skipped sending final metadata.");
+             } else {
+                  Serial.printf("Recording task: Not sending final metadata. outgoingSeq=%d, estimatedTotalSeq=%d.\n", outgoingSequence, estimatedTotalSeq);
+             }
 
-            Serial.println("Recording task: Finished recording session cleanup.");
 
+            isRecordingActive = false;
 
         } 
-        
-        // yield task
+
         vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
 
 
-// Connect to WiFi
 void connectWiFi() {
     Serial.printf("Connecting to WiFi %s\n", ssid);
     WiFi.begin(ssid, password);
 
     unsigned long startAttemptTime = millis();
-    const unsigned long timeout = 40000; // 40 seconds
+    const unsigned long timeout = 40000;
 
     while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < timeout) {
         delay(500);
@@ -364,44 +728,40 @@ void connectWiFi() {
 void setup() {
     Serial.begin(115200);
     delay(1000);
-    Serial.println("ESP32 Audio Recorder & Sender (Streaming)");
+    Serial.println("ESP32 Audio Recorder/Player (Combined - WS Playback)");
 
     connectWiFi();
 
     if (WiFi.status() == WL_CONNECTED) {
-        Serial.println("Initializing Codec I2C...");
+        initCodecSingleConfig();
+        initI2SDualMode();
+        delay(500);
 
-        // Initialize codec I2C communication in setup
-        TwoWire wire(0);
-        wire.setPins(33, 32);
-        codec.begin(&wire);
-        Serial.println("Codec I2C communications initialized.");
-
-        // Codec config and I2S init are moved into the task, triggered by isRecording
-
-        // WebSocket server setup for main loop
+        // ==== WS setup ====
         Serial.println("Connecting to WebSocket...");
         webSocket.onEvent(webSocketEvent);
-        // webSocket.setReconnectInterval(reconnectInterval); // Optional: WebSocket library can handle some reconnects
         webSocket.begin(websocket_server_address, websocket_server_port, websocket_path);
 
+        // ==== FreeRTOS task for audio ====
         xTaskCreatePinnedToCore(
-            audioRecordTask,      // Task function
-            "AudioRecordTask",    // Name of the task
-            8192,                 // Stack size (bytes) - increase if needed for complex processing
-            NULL,                 // Parameter to pass to the task
-            5,                    // Task priority (higher number = higher priority)
-            &audioRecordTaskHandle, // Task handle (optional)
-            0                     // Core to run the task on (0 or 1) - Core 0 is often used for WiFi/BT
+            audioRecordTask,            // task function
+            "AudioRecordTask",          // name
+            8192,                       // stack size
+            NULL,                       // parameter
+            5,                          // priority
+            &audioRecordTaskHandle,     // handle
+            0                           // core (core 0 for network/ID)
         );
         if (audioRecordTaskHandle == NULL) {
             Serial.println("Error creating Audio Record Task!");
         } else {
-            Serial.println("Audio Record Task created, waiting for command.");
+            Serial.println("Audio Record Task created.");
         }
 
+        // audioPlaybackTask removed - playback is event driven in webSocketEvent
+
     } else {
-        Serial.println("WiFi connection failed. Audio recording task will not start.");
+        Serial.println("WiFi connection failed. Audio tasks will not start.");
     }
 
     Serial.println("Setup finished.");
@@ -413,12 +773,19 @@ void loop() {
     if (shouldReconnect && millis() - lastReconnectAttempt >= reconnectInterval) {
         Serial.println("Attempting WebSocket reconnection...");
         if (WiFi.status() == WL_CONNECTED) {
+            // reset playback state first
+            currentExpectedSequence = 1;
+            currentTotalSeq = -1;
+            currentSampleRate = 0;
+            currentChannels = 0;
+            currentBitsPerSample = 0;
+            isPlayingSegment = false;
+
             webSocket.begin(websocket_server_address, websocket_server_port, websocket_path);
             lastReconnectAttempt = millis(); 
         } else {
             Serial.println("WiFi not connected, cannot attempt WebSocket reconnection.");
-            Serial.printf("Attempting Wi-Fi reconnection.")
-            connectWiFi()
+            connectWifi()
         }
     }
 
