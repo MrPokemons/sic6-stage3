@@ -1,6 +1,7 @@
 import math
 import asyncio
 import logging
+import librosa
 import numpy as np
 import soundfile as sf
 from io import BytesIO
@@ -71,8 +72,12 @@ class ConnectionManager:
     ):
         await websocket.send_text(message)
 
-    async def send_audio(self, websocket: WebSocket, audio_data: bytes) -> None:
-        audio_array, sample_rate = sf.read(BytesIO(audio_data), dtype="int16")
+    async def send_audio(self, websocket: WebSocket, audio_data: bytes, *, target_sample_rate: Optional[int] = None) -> None:
+        audio_array, sample_rate = sf.read(BytesIO(audio_data), dtype="float32")
+        if target_sample_rate and sample_rate != target_sample_rate:
+            audio_array = librosa.resample(audio_array, orig_sr=sample_rate, target_sr=target_sample_rate, res_type="soxr_qq")
+            sample_rate = target_sample_rate
+
         num_channels = 1 if len(audio_array.shape) == 1 else audio_array.shape[1]
         samples_per_chunk = self.get_samples_per_chunk(sample_rate=sample_rate)
         total_seq = math.ceil(audio_array.shape[0] / samples_per_chunk)
@@ -99,10 +104,15 @@ class ConnectionManager:
             if list_chunk is None:
                 list_chunk = [None] * metadata["total_seq"]
 
-            sample_rate = metadata["sample_rate"]
             if metadata["channels"] > 1:
                 chunk = chunk.reshape(-1, metadata["channels"])
                 chunk = chunk.mean(axis=1)  # convert into mono
+
+            chunk_sample_rate = metadata["sample_rate"]
+            if sample_rate is None:  # first chunk's sample_rate will be the foundation for the rest of chunks
+                sample_rate = chunk_sample_rate
+            elif chunk_sample_rate != sample_rate:
+                chunk = librosa.resample(chunk, orig_sr=chunk_sample_rate, target_sr=sample_rate, res_type="soxr_qq")
 
             list_chunk[metadata["seq"] - 1] = chunk
             if metadata["seq"] == metadata["total_seq"]:
@@ -172,6 +182,7 @@ def pawpal_router(
         websocket: WebSocket,
         device_id: str,
         stream_audio: Literal["websocket", "http", "device"] = "websocket",
+        target_sample_rate: Optional[int] = None,
     ):
         await ws_manager.connect(websocket=websocket)
         logger.info(f"Device '{device_id}' has connected to server")
@@ -294,8 +305,12 @@ def pawpal_router(
                                                 f"Saving audio to '{STATIC_AUDIO_PATH}' as file"
                                             )
                                             audio_array, sample_rate = sf.read(
-                                                BytesIO(tts_audio_data), dtype="int16"
+                                                BytesIO(tts_audio_data), dtype="float32"
                                             )
+                                            if target_sample_rate and sample_rate != target_sample_rate:
+                                                audio_array = librosa.resample(audio_array, orig_sr=sample_rate, target_sr=target_sample_rate, res_type="soxr_qq")
+                                                sample_rate = target_sample_rate
+
                                             audio_filename = datetime.now(
                                                 timezone.utc
                                             ).strftime("%Y%m%d_%H%M%S%f.wav")
@@ -358,6 +373,7 @@ def pawpal_router(
                                             await ws_manager.send_audio(
                                                 websocket=websocket,
                                                 audio_data=tts_audio_data,
+                                                target_sample_rate=target_sample_rate
                                             )
                                             logger.info(
                                                 "Audio has been sent to client, server proceed to continue agentic chat"
@@ -408,20 +424,23 @@ def pawpal_router(
             ws_manager.disconnect(websocket=websocket)
 
     @router.websocket("/conversation-test")
-    async def conversation_test(websocket: WebSocket):
+    async def conversation_test(websocket: WebSocket, cue_action: bool = False):
         await websocket.accept()
         logger.info("Someone has connected to conversation test websocket")
 
         logger.info("Sending Audio to client using chunking")
+        if cue_action:
+            await websocket.send_text("speaker;")
         with open("tests/test.wav", "rb") as f:
             await websocket.send_bytes(f.read())
 
         logger.info("Trying to receive chunked audio from client")
+        if cue_action:
+            await websocket.send_text("microphone;")
         audio_bytes = await websocket.receive_bytes()
 
         logger.info("Received the audio successfully, trying to play")
         audio_array, sample_rate = sf.read(BytesIO(audio_bytes), dtype="int16")
-
         try:
             import sounddevice as sd
 
@@ -437,18 +456,23 @@ def pawpal_router(
         logger.info("Testing successfully been executed")
 
     @router.websocket("/conversation-chunking-test")
-    async def conversation_chunking_test(websocket: WebSocket):
+    async def conversation_chunking_test(websocket: WebSocket, cue_action: bool = False, target_sample_rate: Optional[int] = None):
         await ws_manager.connect(websocket=websocket)
         logger.info("Someone has connected to conversation chunking test websocket")
 
         logger.info("Sending Audio to client using chunking")
+        if cue_action:
+            await websocket.send_text("speaker;")
         with open("tests/test.wav", "rb") as f:
             await ws_manager.send_audio(
                 websocket=websocket,
                 audio_data=f.read(),
+                target_sample_rate=target_sample_rate
             )
 
         logger.info("Trying to receive chunked audio from client")
+        if cue_action:
+            await websocket.send_text("microphone;")
         audio_array, sample_rate = await ws_manager.recv_audio(websocket=websocket)
 
         logger.info("Received the audio successfully, trying to play")
@@ -467,7 +491,7 @@ def pawpal_router(
         logger.info("Testing successfully been executed")
 
     @router.websocket("/conversation-chunking-http-test")
-    async def conversation_chunking_http_test(websocket: WebSocket):
+    async def conversation_chunking_http_test(websocket: WebSocket, target_sample_rate: Optional[int] = None):
         await ws_manager.connect(websocket=websocket)
         logger.info(
             "Someone has connected to conversation chunking http test websocket"
@@ -481,7 +505,11 @@ def pawpal_router(
             test_audio_data = f.read()
 
         logger.info(f"Saving audio to '{STATIC_AUDIO_PATH}' as file")
-        audio_array, sample_rate = sf.read(BytesIO(test_audio_data), dtype="int16")
+        audio_array, sample_rate = sf.read(BytesIO(test_audio_data), dtype="float32")
+        if target_sample_rate and sample_rate != target_sample_rate:
+            audio_array = librosa.resample(audio_array, orig_sr=sample_rate, target_sr=target_sample_rate, res_type="soxr_qq")
+            sample_rate = target_sample_rate
+
         audio_filename = datetime.now(timezone.utc).strftime("test-%Y%m%d_%H%M%S%f.wav")
         sf.write(
             STATIC_AUDIO_PATH / audio_filename, audio_array, samplerate=sample_rate
@@ -515,9 +543,24 @@ def pawpal_router(
         logger.info("Testing successfully been executed")
 
     @router.get("/http-wav-response-test")
-    async def get_http_wav_response_test():
+    async def get_http_wav_response_test(target_sample_rate: Optional[int] = None):
         with open("tests/test1.wav", "rb") as f:
             wav_bytes = f.read()
+            if target_sample_rate:
+                audio_array, sample_rate = sf.read(BytesIO(wav_bytes), dtype="float32")
+                if sample_rate != target_sample_rate:
+                    audio_array = librosa.resample(audio_array, orig_sr=sample_rate, target_sr=target_sample_rate, res_type="soxr_qq")
+                    sample_rate = target_sample_rate
+
+                buffer = BytesIO()
+                sf.write(
+                    buffer,
+                    audio_array,
+                    sample_rate,
+                    format="WAV",
+                )
+                wav_bytes = buffer.getvalue()
+
             return Response(content=wav_bytes, media_type="audio/wav")
 
     @router.get("/http-wav-file-test")
