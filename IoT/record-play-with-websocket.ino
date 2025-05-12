@@ -8,12 +8,12 @@
 #include <ArduinoJson.h>
 
 // ==== WiFi Configs ====
-const char* ssid = "C-C2.4";
-const char* password = "QweR1357";
+const char* ssid = "First Home";
+const char* password = "tanyaAdeline";
 
-const char* websocket_server_address = "192.168.0.104";
+const char* websocket_server_address = "192.168.68.116";
 const uint16_t websocket_server_port = 11080;
-const char* websocket_path = "/api/v1/pawpal/conversation-chunking-test?cue_action=true";
+const char* websocket_path = "/api/v1/pawpal/conversation/cincayla?stream_audio=websocket";
 
 WebSocketsClient webSocket;
 bool shouldReconnect = false;
@@ -124,7 +124,7 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
             String message = String((char*)payload, length);
             Serial.printf("[WSc] Received Text: %s\n", message.c_str());
 
-            if (message.startsWith("microphone;")) {
+            if (message.startsWith("microphone")) {
                 Serial.println("[WSc] Received 'microphone;'. Signaling recording task to start.");
                 if (isPlayingSegment) {
                      Serial.println("Signaling playback segment to stop.");
@@ -153,9 +153,9 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
         }
 
         case WStype_BIN:
-            Serial.printf("[WSc] Received BIN message (%zu bytes). Processing for playback.\n", length);
+            // Serial.printf("[WSc] Received BIN message (%zu bytes). Processing for playback.\n", length);
              if (isRecordingActive) {
-                Serial.println("[WSc] Received BIN during recording. Signaling recording task to stop.");
+                // Serial.println("[WSc] Received BIN during recording. Signaling recording task to stop.");
                 startRecording = false;
                 vTaskDelay(pdMS_TO_TICKS(50));
              }
@@ -189,7 +189,7 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 
 // parse binary message, delimit JSON 
 bool parseAndProcessBinaryMessage(const uint8_t* data, size_t dataLength) {
-    Serial.println("Parsing binary message...");
+    // Serial.println("Parsing binary message...");
     const uint8_t* delimiterPos = (uint8_t*)memmem(data, dataLength, PLAYBACK_JSON_DELIMITER, PLAYBACK_JSON_DELIMITER_LEN);
 
     if (!delimiterPos) {
@@ -504,7 +504,7 @@ void initCodecSingleConfig() {
     codec.begin(&wire);
 
     es_adc_input_t adc_input_config = ADC_INPUT_LINPUT2_RINPUT2;
-    es_dac_output_t dac_output_config = (es_dac_output_t)(DAC_OUTPUT_LOUT1 | DAC_OUTPUT_ROUT1);=
+    es_dac_output_t dac_output_config = (es_dac_output_t)(DAC_OUTPUT_LOUT1 | DAC_OUTPUT_ROUT1);
 
     Serial.printf("Codec config: Sample Rate=%lu, Output=%u, Input=%u, Volume=90\n",
                   (uint32_t)COMMON_SAMPLE_RATE, dac_output_config, adc_input_config);
@@ -560,146 +560,183 @@ void initI2SDualMode() {
 
 
 // FreeRTOS Task for Audio Recording & Sending
+// Ensure outgoingSequence is declared ONLY ONCE globally:
+// volatile int outgoingSequence = 0; // Example global declaration (initialize in setup or top-level)
 void audioRecordTask(void* parameter) {
     Serial.println("Audio recording task started. Waiting for 'microphone;' command...");
+    const int LARGE_SEQ_NUMBER = 300000;
 
-    for (;;) {
+    for (;;) { // Task loop runs forever
+        Serial.printf("Task loop: Waiting for startRecording. outgoingSequence = %d\n", outgoingSequence);
+
         if (startRecording) {
+            Serial.println("Task loop: startRecording is true. Entering session setup.");
             isRecordingActive = true;
-            startRecording = false;
+            startRecording = false; // Consume the start command
 
-            Serial.println("Recording task: 'startRecording' is true. Preparing for recording session.");
+            Serial.printf("Task loop: Initial outgoingSequence upon entering setup = %d\n", outgoingSequence);
 
             unsigned long recordingStartTime = millis();
             size_t bytesReadStereo = 0;
             size_t bytesWrittenMono = 0;
 
             size_t totalExpectedMonoBytes = (COMMON_SAMPLE_RATE * (COMMON_BITS_PER_SAMPLE / 8) * 1 * REC_DURATION_MS) / 1000;
-
             int estimatedTotalSeq = (totalExpectedMonoBytes + REC_MONO_DATA_BYTES - 1) / REC_MONO_DATA_BYTES;
-            if (estimatedTotalSeq == 0 && REC_DURATION_MS > 0) estimatedTotalSeq = 1; // ensure at least 1 chunk if duration > 0
-             else if (estimatedTotalSeq == 0 && REC_DURATION_MS == 0) estimatedTotalSeq = 0;
+             if (estimatedTotalSeq == 0 && REC_DURATION_MS > 0) estimatedTotalSeq = 1;
+            else if (estimatedTotalSeq == 0 && REC_DURATION_MS == 0) estimatedTotalSeq = 0;
 
 
-            Serial.printf("Recording task: Starting %lu ms recording at %lu Hz. Estimated total mono bytes: %zu, Estimated total chunks: %d\n",
-                          REC_DURATION_MS, (uint32_t)COMMON_SAMPLE_RATE, totalExpectedMonoBytes, estimatedTotalSeq);
+            Serial.printf("Recording task: Starting %lu ms recording. Estimated total chunks (for duration): %d\n", REC_DURATION_MS, estimatedTotalSeq);
 
 
-            while (isRecordingActive && webSocket.isConnected() && (millis() - recordingStartTime < REC_DURATION_MS)) {
-                // read stereo data from I2S RX
+            // The main recording loop:
+            // Continue as long as active, connected, AND time not elapsed.
+            while (isRecordingActive && webSocket.isConnected() &&
+                   (millis() - recordingStartTime < REC_DURATION_MS))
+            {
+                // Read stereo data from I2S RX (timeout added)
                 esp_err_t readErr = i2s_read(I2S_PORT, recordStereoBuffer, REC_I2S_READ_BYTES, &bytesReadStereo, pdMS_TO_TICKS(50));
                 if (readErr != ESP_OK && readErr != ESP_ERR_TIMEOUT) {
-                    Serial.printf("Recording task: Error reading from I2S RX: %d\n", readErr);
+                    Serial.printf("Recording task: Error reading from I2S RX: %s (%d)\n", esp_err_to_name(readErr), readErr);
+                }
+                 if (readErr == ESP_ERR_TIMEOUT){
                 }
 
-                // only process and send if we read some stereo data
-                if (bytesReadStereo > 0) {
-                    size_t numStereoSamplesRead = bytesReadStereo / (COMMON_BITS_PER_SAMPLE / 8) / 2; 
-                    size_t numMonoBytesExtracted = numStereoSamplesRead * (COMMON_BITS_PER_SAMPLE / 8); 
-                    
-                     if (numMonoBytesExtracted > sizeof(recordMonoBuffer)) {
-                        Serial.printf("Recording task: Error: Extracted mono data size (%zu) exceeds buffer size (%zu).\n", numMonoBytesExtracted, sizeof(recordMonoBuffer));
-                        isRecordingActive = false; 
-                        break;
-                     }
 
-                    int16_t* stereoSamples = (int16_t*)recordStereoBuffer;
-                    int16_t* monoSamples = (int16_t*)recordMonoBuffer;
+                // only process and send if we read some stereo data successfully
+                if (bytesReadStereo > 0) {
+
+                    // --- START: Digital Gain and Mono Conversion ---
+                    float digital_gain_factor = 3.5f; // ADJUST THIS VALUE!
+                    int clip_counter = 0;
+
+                    size_t numStereoSamplesRead = bytesReadStereo / (COMMON_BITS_PER_SAMPLE / 8) / 2;
+                    size_t numMonoBytesExpected = numStereoSamplesRead * (COMMON_BITS_PER_SAMPLE / 8);
+
+                    if (numMonoBytesExpected > sizeof(recordMonoBuffer)) {
+                        Serial.printf("Recording task: Error: Extracted mono data size (%zu) would exceed buffer size (%zu).\n", numMonoBytesExpected, sizeof(recordMonoBuffer));
+                        isRecordingActive = false; // critical error, stop recording
+                        break;
+                    }
+
+                    int16_t* stereo_ptr = (int16_t*)recordStereoBuffer;
+                    int16_t* mono_ptr = (int16_t*)recordMonoBuffer;
                     bytesWrittenMono = 0;
 
                     for (size_t i = 0; i < numStereoSamplesRead; ++i) {
-                        *monoSamples++ = *stereoSamples; 
-                        stereoSamples += 2; 
-                        bytesWrittenMono += (COMMON_BITS_PER_SAMPLE / 8); 
+                        int16_t current_sample = stereo_ptr[0]; 
+                        
+                        float amplified_sample_float = (float)current_sample * digital_gain_factor;
+
+                        if (amplified_sample_float > 32767.0f) {
+                            current_sample = 32767;
+                            clip_counter++;
+                        } else if (amplified_sample_float < -32768.0f) {
+                            current_sample = -32768;
+                            clip_counter++;
+                        } else {
+                            current_sample = (int16_t)amplified_sample_float;
+                        }
+
+                        *mono_ptr++ = current_sample;
+
+                        stereo_ptr += 2;
+                        bytesWrittenMono += (COMMON_BITS_PER_SAMPLE / 8);
                     }
+                    // --- END: Digital Gain and Mono Conversion ---
+
 
                     // prepare metadata JSON
                     StaticJsonDocument<JSON_MAX_SIZE> jsonDoc;
-                    jsonDoc["seq"] = outgoingSequence + 1;
+
+                    jsonDoc["seq"] = outgoingSequence + 1; // Incremental sequence number (1, 2, 3, ...)
+                    jsonDoc["total_seq"] = LARGE_SEQ_NUMBER; // Total seq is a large number for non-final chunks
+
+                    Serial.printf("Recording task: Sending data chunk. seq=%d, total_seq=%d\n", outgoingSequence + 1, LARGE_SEQ_NUMBER);
+
                     jsonDoc["sample_rate"] = COMMON_SAMPLE_RATE;
                     jsonDoc["channels"] = 1;
                     jsonDoc["dtype"] = "int16";
-                    jsonDoc["total_seq"] = estimatedTotalSeq;
+
 
                     // serialize JSON into send buffer
                     size_t json_len = serializeJson(jsonDoc, wsSendBuffer, JSON_MAX_SIZE);
                     if (json_len == 0 || json_len >= JSON_MAX_SIZE) {
-                        Serial.println("Recording task: Error serializing JSON or JSON too large. Stopping recording.");
-                        isRecordingActive = false; 
-                        continue; 
+                        Serial.println("Recording task: Error serializing JSON or JSON too large. Signaling stop.");
+                        isRecordingActive = false;
+                        continue; // skip sending this chunk
                     }
 
                     memcpy(wsSendBuffer + json_len, JSON_DELIMITER, JSON_DELIMITER_LEN);
                     memcpy(wsSendBuffer + json_len + JSON_DELIMITER_LEN, recordMonoBuffer, bytesWrittenMono);
                     size_t total_msg_size = json_len + JSON_DELIMITER_LEN + bytesWrittenMono;
 
-                    // send the data to server
-                    if (webSocket.sendBIN(wsSendBuffer, total_msg_size)) {
+                   if (webSocket.sendBIN(wsSendBuffer, total_msg_size)) {
                         outgoingSequence++;
-                    } else {
+                        Serial.printf("Recording task: Sent chunk successfully. outgoingSequence (data chunks sent) is now %d.\n", outgoingSequence);
+                     } else {
                         Serial.println("Recording task: Failed to send WebSocket chunk. Signaling stop.");
-                        isRecordingActive = false;
+                        isRecordingActive = false; 
                     }
-
                 } else {
-                    // bytesReadStereo was 0 (likely due to timeout or nothing in DMA buffer)
-                    // if duration limit is reached in the next check, the loop will end anyway.
                 }
 
                 vTaskDelay(pdMS_TO_TICKS(1));
             } 
-
+            
             Serial.println("Recording task: Active recording loop ended.");
 
             if (millis() - recordingStartTime >= REC_DURATION_MS) {
                 Serial.println("Recording task: Duration limit reached.");
             } else if (!webSocket.isConnected()) {
                  Serial.println("Recording task: WebSocket disconnected.");
-            } else if (!isRecordingActive) { 
-                 Serial.println("Recording task: Stop signal received.");
+            } else if (!isRecordingActive) {
+                 Serial.println("Recording task: Stop signal received (isRecordingActive false).");
             }
 
 
-            // send a final chunk with total_seq if the server expects it to mark the end.
-            // with seq = total_seq
-            // relying on estimatedTotalSeq being correct
+            Serial.printf("Recording task: outgoingSequence value after while loop (total data chunks sent): %d\n", outgoingSequence);
 
-             if (webSocket.isConnected() && (outgoingSequence == estimatedTotalSeq) && estimatedTotalSeq > 0) {
-                  Serial.println("Recording task: Sending final empty chunk metadata.");
+
+             if (webSocket.isConnected() && outgoingSequence > 0) {
+                  Serial.printf("Recording task: Sending final empty chunk metadata. Actual total data chunks sent: %d.\n", outgoingSequence);
+
+                  Serial.printf("Recording task: Final metadata seq=%d, total_seq=%d\n", outgoingSequence, outgoingSequence);
                   StaticJsonDocument<JSON_MAX_SIZE> jsonDoc;
-                  jsonDoc["seq"] = estimatedTotalSeq;
+                  jsonDoc["seq"] = outgoingSequence; 
+                  jsonDoc["total_seq"] = outgoingSequence;
                   jsonDoc["sample_rate"] = COMMON_SAMPLE_RATE;
                   jsonDoc["channels"] = 1;
                   jsonDoc["dtype"] = "int16";
-                  jsonDoc["total_seq"] = estimatedTotalSeq;
+
 
                   size_t json_len = serializeJson(jsonDoc, wsSendBuffer, JSON_MAX_SIZE);
-                  if (json_len > 0 && json_len < JSON_MAX_SIZE) {
+                   if (json_len > 0 && json_len < JSON_MAX_SIZE) {
+                       // No audio data in this final chunk, just metadata and delimiter
                        memcpy(wsSendBuffer + json_len, JSON_DELIMITER, JSON_DELIMITER_LEN);
                        size_t total_msg_size = json_len + JSON_DELIMITER_LEN;
+
                        if (webSocket.sendBIN(wsSendBuffer, total_msg_size)) {
                            Serial.println("Recording task: Sent final chunk metadata successfully.");
-                       } else {
+                        } else {
                            Serial.println("Recording task: Failed to send final chunk metadata.");
                        }
                   } else {
                       Serial.println("Recording task: Error serializing final chunk metadata.");
                   }
-             } else if (!webSocket.isConnected()) {
-                  Serial.println("Recording task: WS disconnected, skipped sending final metadata.");
              } else {
-                  Serial.printf("Recording task: Not sending final metadata. outgoingSeq=%d, estimatedTotalSeq=%d.\n", outgoingSequence, estimatedTotalSeq);
+                  Serial.printf("Recording task: Not sending final metadata (disconnected or no data sent). Connected=%d, outgoingSeq=%d.\n", webSocket.isConnected(), outgoingSequence);
              }
 
 
             isRecordingActive = false;
+            Serial.println("Recording task: Session block finished. isRecordingActive = false.");
 
         } 
-
+        
         vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
-
 
 void connectWiFi() {
     Serial.printf("Connecting to WiFi %s\n", ssid);
@@ -758,8 +795,6 @@ void setup() {
             Serial.println("Audio Record Task created.");
         }
 
-        // audioPlaybackTask removed - playback is event driven in webSocketEvent
-
     } else {
         Serial.println("WiFi connection failed. Audio tasks will not start.");
     }
@@ -785,7 +820,7 @@ void loop() {
             lastReconnectAttempt = millis(); 
         } else {
             Serial.println("WiFi not connected, cannot attempt WebSocket reconnection.");
-            connectWifi()
+            connectWiFi();
         }
     }
 
