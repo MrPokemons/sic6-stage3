@@ -62,7 +62,7 @@ with st.form("child_profile_form"):
 
     saveConfiguration = st.form_submit_button("Simpan")
     if saveConfiguration:
-        st.session_state.configuration = True  
+        st.session_state.configuration = True
 
 if st.session_state.configuration:
     if not (
@@ -165,7 +165,7 @@ if st.session_state.configuration:
                 total_sessions=sessionsInput,
             )
 
-            st.json(convo_input.model_dump())  # show for debugging
+            # st.json(convo_input.model_dump())  # show for debugging
             resp = requests.post(
                 "http://localhost:11080/api/v1/pawpal/conversation/start",
                 json=convo_input.model_dump(),
