@@ -14,6 +14,8 @@ class StartConversationInput(BaseModel):
     selected_features: List[TopicFlowType]
     total_sessions: PositiveInt
 
+def normalize(value):
+    return value if value not in ["", None] else None
 
 if "configuration" not in st.session_state:
     st.session_state.configuration = False
@@ -32,8 +34,9 @@ st.title("⚙️ Pengaturan Percakapan")
 
 with st.form("child_profile_form"):
     st.subheader("Biodata Anak")
+    st.write("Opsional — nilai default akan digunakan jika tidak diisi")
     nameInput = st.text_input("🧒 Nama")
-    ageInput = st.number_input("🎂 Umur", min_value=4, max_value=8, step=1)
+    ageInput = st.number_input("🎂 Umur", min_value=4, max_value=8, step=1, value=6)
     genderInput = st.selectbox(
         "🚻 Jenis Kelamin", ["Pilih Jenis Kelamin", "Laki-laki", "Perempuan"]
     )
@@ -45,7 +48,6 @@ with st.form("child_profile_form"):
     else:
         deviceIdInput = st.text_input("⚙️ No. ID Perangkat", st.session_state.deviceId)
     st.session_state.deviceId = deviceIdInput
-    # durationInput = st.number_input("⏰ Durasi", min_value=3, step=2)
     sessionsInput = st.number_input("🗣️ Jumlah Sesi", min_value=1, step=1)
 
     featureOptions = [
@@ -58,38 +60,30 @@ with st.form("child_profile_form"):
         "💬 Jenis Interaksi", featureOptions, selection_mode="multi"
     )
 
-    # untuk styling nya nanti lagi
-    # st.markdown(
-    #     """<style>
-    #         button[data-testid="stBaseButton-pills"]{
-    #             height:200px;
-
-    #         }
-    #     </style>""",
-    #     unsafe_allow_html=True,
-    # )
     saveConfiguration = st.form_submit_button("Simpan")
     if saveConfiguration:
-        st.session_state.configuration = True  # Menampilkan form kedua
-# print("testtt => ", st.session_state.durationQuestion)
+        st.session_state.configuration = True  
 
 if st.session_state.configuration:
-    # if saveConfiguration:
     if not (
         nameInput
         and ageInput
-        # and genderInput
         and descriptionInput
-        and deviceIdInput
-        # and durationInput
-        and sessionsInput
+    ) or genderInput == "Pilih Jenis Kelamin":
+        st.info("Field kosong akan diisi dengan nilai default")
+
+    if not (
+        deviceIdInput
     ):
-        st.error("Semua kolom wajib diisi! Mohon dicek kembali.")
+        st.error("No ID perangkat harus diisi")
         st.stop()
 
-    if genderInput == "Pilih Jenis Kelamin":
-        st.error("Pilih salah satu jenis kelamin")
-        st.stop()
+    if not nameInput:
+        nameInput = "Adik"
+
+    genderInput = normalize(genderInput)
+    ageInput = normalize(ageInput)
+    descriptionInput = normalize(descriptionInput)
 
     if not (selectedFeatures):
         st.error("Pilih setidaknya salah satu interaksi")
@@ -121,6 +115,17 @@ if st.session_state.configuration:
 
         startConvo = st.form_submit_button("Mulai Percakapan")
 
+    durationTalkToMe = durationWouldYouRather = 0
+    questionMathGames = questionGuessTheSound = 0
+    if "talk_to_me" in selectedFeatures:
+        durationTalkToMe = durationInput
+    if "would_you_rather" in selectedFeatures:
+        durationWouldYouRather = durationInput
+    if "math_games" in selectedFeatures:
+        questionMathGames = questionInput
+    if "guess_the_sound" in selectedFeatures:
+        questionGuessTheSound = questionInput
+
     if startConvo:
         st.success("Percakapan dimulai!")
     else:
@@ -138,13 +143,17 @@ if st.session_state.configuration:
             )
 
             topic_param = TopicParams(
-                talk_to_me=TopicParams.TalkToMeParam(duration=durationInput * 60),
-                math_game=TopicParams.MathGameParam(total_question=questionInput),
+                talk_to_me=TopicParams.TalkToMeParam(
+                    duration=durationTalkToMe * 60
+                ),
+                math_game=TopicParams.MathGameParam(
+                    total_question=questionMathGames
+                ),
                 guess_the_sound=TopicParams.GuessTheSoundParam(
-                    total_question=questionInput
+                    total_question=questionGuessTheSound
                 ),
                 would_you_rather=TopicParams.WouldYouRatherParam(
-                    duration=durationInput * 60
+                    duration=durationWouldYouRather * 60
                 ),
             )
 
@@ -156,7 +165,7 @@ if st.session_state.configuration:
                 total_sessions=sessionsInput,
             )
 
-            # st.json(convo_input.model_dump())  # show for debugging
+            st.json(convo_input.model_dump())  # show for debugging
             resp = requests.post(
                 "http://localhost:11080/api/v1/pawpal/conversation/start",
                 json=convo_input.model_dump(),
@@ -170,10 +179,6 @@ if st.session_state.configuration:
 
 
 # -------------------
-# import streamlit as st
-# options = ["North", "East", "South", "West"]
-# selection = st.pills("Directions", options, selection_mode="multi")
-# st.markdown(f"Your selected options: {selection}.")
 st.markdown(
     """
     <style>
