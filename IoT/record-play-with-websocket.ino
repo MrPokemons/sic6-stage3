@@ -8,6 +8,10 @@
 #include <freertos/task.h>
 #include <ArduinoJson.h>
 
+// ==== WiFi Configs ====
+const char* ssid = "First Home";
+const char* password = "tanyaAdeline";
+
 const char* websocket_server_address = "192.168.68.113";
 const uint16_t websocket_server_port = 11080;
 const char* websocket_path = "/api/v1/pawpal/conversation/cincayla?stream_audio=websocket";
@@ -20,11 +24,14 @@ const unsigned long reconnectInterval = 5000;
 #define COMMON_SAMPLE_RATE 16000
 #define COMMON_BITS_PER_SAMPLE I2S_BITS_PER_SAMPLE_16BIT
 
+// ==== PINOUTS ====
+
 #define I2S_PORT        I2S_NUM_0
 #define I2S_WS          25
 #define I2S_SCK         27
 #define I2S_SD_OUT      26
 #define I2S_SD_IN       35
+#define TEST_LED_PIN    5
 
 es8388 codec;
 
@@ -574,6 +581,7 @@ void audioRecordTask(void* parameter) {
         if (startRecording) {
             Serial.println("Task loop: startRecording is true. Entering session setup.");
             isRecordingActive = true;
+            digitalWrite(TEST_LED_PIN, HIGH); // turn LED on
             startRecording = false; // Consume the start command
 
             // --- Debug Print 2 ---
@@ -629,6 +637,7 @@ void audioRecordTask(void* parameter) {
                     if (numMonoBytesExpected > sizeof(recordMonoBuffer)) {
                         Serial.printf("Recording task: Error: Extracted mono data size (%zu) would exceed buffer size (%zu).\n", numMonoBytesExpected, sizeof(recordMonoBuffer));
                         isRecordingActive = false; // Critical error, stop recording
+                        digitalWrite(TEST_LED_PIN, LOW);
                         break; // Exit while loop
                     }
 
@@ -689,6 +698,7 @@ void audioRecordTask(void* parameter) {
                     if (json_len == 0 || json_len >= JSON_MAX_SIZE) {
                         Serial.println("Recording task: Error serializing JSON or JSON too large. Signaling stop.");
                         isRecordingActive = false; // Critical error, stop recording
+                        digitalWrite(TEST_LED_PIN, LOW);
                         continue; // Skip sending this chunk
                     }
 
@@ -706,6 +716,7 @@ void audioRecordTask(void* parameter) {
                      } else {
                         Serial.println("Recording task: Failed to send WebSocket chunk. Signaling stop.");
                         isRecordingActive = false; // Stop recording on send failure
+                        digitalWrite(TEST_LED_PIN, LOW);
                      }
                 } else {
                     // bytesReadStereo was 0 (likely due to timeout or nothing in DMA buffer)
@@ -775,6 +786,7 @@ void audioRecordTask(void* parameter) {
 
             isRecordingActive = false; // Ensure this is false after the session block finishes
             Serial.println("Recording task: Session block finished. isRecordingActive = false.");
+            digitalWrite(TEST_LED_PIN, LOW);
 
         } // End of if (startRecording)
 
@@ -803,6 +815,12 @@ void setup() {
         Serial.println("\n✅ Connected to Wi-Fi!");
         Serial.print("IP Address: ");
         Serial.println(WiFi.localIP());
+
+        // LED pinout setup 
+        pinMode(TEST_LED_PIN, OUTPUT);
+        Serial.println("LED pin mode set to OUTPUT.");
+        digitalWrite(TEST_LED_PIN, LOW); // start with LED off
+
 
         initCodecSingleConfig();
         initI2SDualMode();
