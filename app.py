@@ -25,6 +25,7 @@ from src.services.tts import (
 )
 from src.services.nosql import MongoDBEngine
 
+from src.controllers.health import health_router
 from src.controllers.pawpal import pawpal_router
 from src.middleware import log_middleware
 
@@ -70,6 +71,14 @@ app = FastAPI()
 app.add_middleware(BaseHTTPMiddleware, dispatch=log_middleware)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+app.include_router(
+    health_router(
+        model=model,
+        stt_coll=stt_coll,
+        tts_coll=tts_coll,
+    )
+)
 
 app.include_router(
     pawpal_router(
