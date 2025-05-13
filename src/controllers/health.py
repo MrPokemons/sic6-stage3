@@ -35,7 +35,7 @@ def health_router(
     router = APIRouter(prefix="/api/v1/health", tags=["health"])
 
     @router.get("/test-model")
-    async def test_model(total_attempts: int = 3) -> HealthOverview:
+    async def test_model(total_attempts: int = 3, show_result: bool = True) -> HealthOverview:
         total_attempts = max(min(total_attempts, 5), 1)
         attempts: List[HealthTestAttempt] = []
         total_duration = timedelta(0)
@@ -57,7 +57,7 @@ def health_router(
                     start=_start_time,
                     end=_end_time,
                     duration=_duration,
-                    result=_result
+                    result=_result if show_result else f"...[{len(_result)} data]..."
                 )
             )
 
@@ -72,7 +72,7 @@ def health_router(
         )
 
     @router.get("/test-stt")
-    async def test_stt(total_attempts: int = 3, use_local: bool = True) -> HealthOverview:
+    async def test_stt(total_attempts: int = 3, use_local: bool = True, show_result: bool = True) -> HealthOverview:
         total_attempts = max(min(total_attempts, 5), 1)
         attempts: List[HealthTestAttempt] = []
         total_duration = timedelta(0)
@@ -99,7 +99,7 @@ def health_router(
                     start=_start_time,
                     end=_end_time,
                     duration=_duration,
-                    result=_result
+                    result=_result if show_result else f"...[{len(_result)} data]..."
                 )
             )
 
@@ -114,7 +114,7 @@ def health_router(
         )
 
     @router.get("/test-tts")
-    async def test_tts(total_attempts: int = 3, use_local: bool = True) -> HealthOverview:
+    async def test_tts(total_attempts: int = 3, use_local: bool = True, show_result: bool = True) -> HealthOverview:
         total_attempts = max(min(total_attempts, 5), 1)
         attempts: List[HealthTestAttempt] = []
         total_duration = timedelta(0)
@@ -139,7 +139,7 @@ def health_router(
                     start=_start_time,
                     end=_end_time,
                     duration=_duration,
-                    result=_result
+                    result=_result if show_result else f"...[{len(_result)} data]..."
                 )
             )
 
