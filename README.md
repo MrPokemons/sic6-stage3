@@ -216,3 +216,137 @@ This `device_id` is required during the registration or usage process to associa
 
 - **Demo Mode**  
   Enables read-only view of a sample session if the backend is offline.
+
+---
+
+# 🐾 PawPal Backend & Frontend – Dockerized Deployment
+
+This guide walks you through running both the backend (FastAPI) and frontend (Streamlit) using **Docker Compose**, with support for **MongoDB** and optional **Cloudflare Tunnel** integration for domain exposure.
+
+---
+
+## 🚀 Requirements
+
+Ensure the following tools are installed **on your host machine**:
+
+* [Docker & Docker Compose](https://docs.docker.com/get-docker/)
+* [Ollama](https://ollama.com/) – must be run separately outside Docker
+* A registered domain (if using Cloudflare Tunnel)
+
+---
+
+## 📁 Project Structure
+
+```
+.
+├── config/
+│   └── .env.prod         # Environment variables used by backend & frontend
+├── docker-compose.yml    # Basic setup (backend + frontend + MongoDB)
+├── docker-compose.tunnel.yml  # Adds Cloudflare Tunnel
+├── dashboard.py          # Streamlit frontend app
+├── app.py                # FastAPI backend app
+└── ...
+```
+
+---
+
+## 🔐 Environment Setup
+
+1. Copy the example environment file:
+
+```bash
+cp config/.env.example config/.env.prod
+```
+
+2. Fill in the required values, such as database connection, API keys, etc.
+
+> Ensure `MODEL__URL` if it's hosted locally, use `host.docker.internal` host instead `localhost`
+
+---
+
+## 🐳 Running with Docker Compose
+
+### 🔧 Standard Local Setup
+
+This starts the backend, frontend, and MongoDB locally:
+
+```bash
+docker compose up --build
+```
+
+> 🧠 Ollama must still be running outside the container:
+>
+> ```bash
+> ollama run qwen2.5:3b
+> ```
+
+* **FastAPI backend**: [http://localhost:11080](http://localhost:11080)
+* **Streamlit frontend**: [http://localhost:8501](http://localhost:8501)
+* **MongoDB** is internal-only (not exposed)
+
+---
+
+## 🌐 Running with Domain (Cloudflare Tunnel)
+
+To expose your app via a domain, you can use the extended compose file:
+
+1. Ensure your `.env.prod` is ready in the `config/` folder.
+
+2. Run:
+
+```bash
+docker compose -f docker-compose.tunnel.yml --env-file config/.env.prod up --build
+```
+
+3. The tunnel will start using your **Cloudflare token** set in the environment variable `CF_TUNNEL_TOKEN`.
+
+> If `CF_TUNNEL_TOKEN` is empty or missing, the tunnel service will not run.
+
+---
+
+## 🔗 Custom Domain Setup
+
+You must:
+
+* Own a domain connected to Cloudflare
+* Generate a Tunnel Token via [Cloudflare Dashboard → Zero Trust → Access → Tunnels](https://one.dash.cloudflare.com/)
+* Add the token to your `.env.prod`:
+
+  ```env
+  CF_TUNNEL_TOKEN=eyJh...your_token_here...
+  ```
+
+---
+
+## ⚙️ Backend & Frontend Configuration
+
+* **Environment Variables**:
+  Set via `.env.prod`, and passed automatically by Compose.
+
+* **Shared Volumes**:
+  Hugging Face cache and source code volumes are shared with the container.
+
+* **Networks**:
+
+  * `backend` for internal service-to-service communication and do connect to Cloudflare for IoT device,
+  * `frontend` for public-facing services (e.g., Streamlit, Cloudflare)
+
+---
+
+## 🧪 Development Tips
+
+* To shut down:
+
+```bash
+docker compose down
+```
+
+---
+
+## 🧠 Features Recap
+
+✅ Fully containerized
+✅ Optional cloud exposure via Cloudflare Tunnel
+✅ Ollama-compatible (run outside container)
+✅ Shared environment for backend & frontend
+✅ Secure MongoDB — isolated in `backend` network only
