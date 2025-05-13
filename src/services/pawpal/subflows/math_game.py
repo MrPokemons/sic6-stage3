@@ -130,8 +130,8 @@ class MathGame(Agentic):
         configurable = config["configurable"]
         _curr_config = configurable["feature_params"]["math_game"]
         total_question = _curr_config["total_question"]
-        LENGTH, MIN_VAL, MAX_VAL, NO_SUM_BELOW_ZERO = (
-            secrets.randbelow(2) + 2,
+        LENGTH_RANGE, MIN_VAL, MAX_VAL, NO_SUM_BELOW_ZERO = (    # TODO: later remove, need to add as the mathgame param
+            lambda: 2,  # TODO: will use the random length from topic params, currently for MVP purposes
             -3,
             8,
             True,
@@ -140,7 +140,7 @@ class MathGame(Agentic):
             MathQnA(
                 sequence=(
                     MathQnA.generate_sequence(
-                        length=LENGTH,
+                        length=LENGTH_RANGE(),  # TODO: later remove
                         min_val=MIN_VAL,
                         max_val=MAX_VAL,
                         no_sum_below_zero=NO_SUM_BELOW_ZERO,
@@ -200,7 +200,8 @@ class MathGame(Agentic):
                                 "The sum is only for showing you the answer, you are not suppose to show the answer or any explanation. "
                                 "Just provide the analogy question, don't use any literal number instead use in words, "
                                 "e.g. instead of '1' write it as 'one', '2' as 'two', '24' as 'twenty four', and so on. "
-                                "The ANALOGY OBJECT you are using must be CONSISTENT across the story."
+                                "The ANALOGY OBJECT you are using must be CONSISTENT across the story.\n"
+                                "MAKE THE ANALOGY SHORT & CONCISE, IT'S RANGING EITHER ONE OR TWO SENTENCES."  #   # TODO: later remove, temporary just to make it short
                             )
                             + PromptLoader().language_template.format(
                                 user_language=configurable["user"].get(
