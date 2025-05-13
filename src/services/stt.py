@@ -129,8 +129,12 @@ class SpeechToTextCollection:
     async def transcribe_raw_async(
         self,
         audio_data: bytes,
+        *,
+        force_local: bool = False
     ):
         try:
+            if force_local:
+                raise Exception("force use local")
             if self.deepgram is None:
                 raise ValueError("Deepgram STT not provided")
             self.logger.info("STT: using deepgram through asynchronous")

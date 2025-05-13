@@ -92,8 +92,10 @@ class TextToSpeechCollection:
         self.elevenlabs = elevenlabs
         self.logger = logger
 
-    async def synthesize_async(self, text: str) -> bytes:
+    async def synthesize_async(self, text: str, *, force_local: bool = False) -> bytes:
         try:
+            if force_local:
+                raise Exception("force use local")
             if self.elevenlabs is None:
                 raise ValueError("Elevenlabs not provided")
             self.logger.info("TTS: using elevenlabs asynchronous")
