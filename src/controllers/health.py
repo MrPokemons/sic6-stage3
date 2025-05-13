@@ -57,7 +57,7 @@ def health_router(
                     start=_start_time,
                     end=_end_time,
                     duration=_duration,
-                    result=_result if show_result else f"...[{len(_result)} data]..."
+                    result=_result if show_result else f"{len(_result)} chars..."
                 )
             )
 
@@ -99,7 +99,7 @@ def health_router(
                     start=_start_time,
                     end=_end_time,
                     duration=_duration,
-                    result=_result if show_result else f"...[{len(_result)} data]..."
+                    result=_result if show_result else f"{len(_result)} chars..."
                 )
             )
 
@@ -139,7 +139,7 @@ def health_router(
                     start=_start_time,
                     end=_end_time,
                     duration=_duration,
-                    result=_result if show_result else f"...[{len(_result)} data]..."
+                    result=_result if show_result else f"{len(_result)} chars..."
                 )
             )
 
