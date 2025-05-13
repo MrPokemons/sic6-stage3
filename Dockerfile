@@ -30,5 +30,4 @@ RUN pip install --no-cache /wheels/* && \
 COPY . .
 
 EXPOSE 11080
-
-CMD ["python", "app.py"]
+EXPOSE 8501
