@@ -241,8 +241,8 @@ Ensure the following tools are installed **on your host machine**:
 .
 ├── config/
 │   └── .env.prod         # Environment variables used by backend & frontend
-├── docker-compose.yml    # Basic setup (backend + frontend + MongoDB)
-├── docker-compose.tunnel.yml  # Adds Cloudflare Tunnel
+├── docker-compose.yaml    # Basic setup (backend + frontend + MongoDB)
+├── docker-compose-tunnel.yaml  # Adds Cloudflare Tunnel
 ├── dashboard.py          # Streamlit frontend app
 ├── app.py                # FastAPI backend app
 └── ...
@@ -295,7 +295,7 @@ To expose your app via a domain, you can use the extended compose file:
 2. Run:
 
 ```bash
-docker compose -f docker-compose.tunnel.yml --env-file config/.env.prod up --build
+docker compose -f docker-compose-tunnel.yaml --env-file config/.env.prod up --build
 ```
 
 3. The tunnel will start using your **Cloudflare token** set in the environment variable `CF_TUNNEL_TOKEN`.
