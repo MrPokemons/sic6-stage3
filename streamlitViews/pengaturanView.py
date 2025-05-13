@@ -2,10 +2,11 @@ import requests
 import streamlit as st
 from typing import List, Annotated
 from pydantic import BaseModel, PositiveInt
+from urllib.parse import urljoin
 from src.services.pawpal.schemas.user import UserData
 from src.services.pawpal.schemas.topic import TopicParams
 from src.services.pawpal.schemas.topic_flow import TopicFlowType
-
+from config.settings import SETTINGS
 
 class StartConversationInput(BaseModel):
     device_id: Annotated[str, "iot_device_id"]
@@ -167,7 +168,7 @@ if st.session_state.configuration:
 
             # st.json(convo_input.model_dump())  # show for debugging
             resp = requests.post(
-                "http://localhost:11080/api/v1/pawpal/conversation/start",
+                urljoin(SETTINGS.APP.DOMAIN, "/api/v1/pawpal/conversation/start"),
                 json=convo_input.model_dump(),
             )
             if resp.status_code != 200:

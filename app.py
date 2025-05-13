@@ -10,7 +10,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from langchain_ollama import ChatOllama
 
-from config.settings import Settings
+from config.settings import SETTINGS
 
 from src.services.pawpal import PawPal
 from src.services.stt import (
@@ -29,36 +29,33 @@ from src.controllers.pawpal import pawpal_router
 from src.middleware import log_middleware
 
 
-# Load Up Global ENV Configuration
-CONFIG = Settings()
-
 # Logging
-CONFIG.configure_logging()
+SETTINGS.configure_logging()
 app_logger = logging.getLogger(__name__)
 
 # Initialize Services
 mongodb_engine = MongoDBEngine(
-    uri=CONFIG.MONGODB.CONN_URI, db_name=CONFIG.MONGODB.DB_NAME
+    uri=SETTINGS.MONGODB.CONN_URI, db_name=SETTINGS.MONGODB.DB_NAME
 )
 
 # Speech to Text
 whisper_stt = WhisperSpeechToText()
-deepgram_stt = DeepgramSpeechToText(api_keys=CONFIG.DEEPGRAM.API_KEYS)
+deepgram_stt = DeepgramSpeechToText(api_keys=SETTINGS.DEEPGRAM.API_KEYS)
 stt_coll = SpeechToTextCollection(
     whisper=whisper_stt, deepgram=deepgram_stt, logger=app_logger
 )
 
 # LLM
 model = ChatOllama(
-    model=CONFIG.MODEL.NAME,
-    base_url=CONFIG.MODEL.URL,
+    model=SETTINGS.MODEL.NAME,
+    base_url=SETTINGS.MODEL.URL,
     num_ctx=2048 * 3,
     keep_alive=False,
 )
 
 # Text to Speech
 facebook_mms_tts = FacebookMMSTextToSpeech()
-elevenlabs_tts = ElevenlabsTextToSpeech(api_keys=CONFIG.ELEVENLABS.API_KEYS)
+elevenlabs_tts = ElevenlabsTextToSpeech(api_keys=SETTINGS.ELEVENLABS.API_KEYS)
 tts_coll = TextToSpeechCollection(
     facebook_mms=facebook_mms_tts, elevenlabs=elevenlabs_tts, logger=app_logger
 )

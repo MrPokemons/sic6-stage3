@@ -1,5 +1,5 @@
 import os
-from typing import Literal
+from typing import Literal, TypeAlias, Optional
 
 import logging
 from logging.config import dictConfig
@@ -13,12 +13,17 @@ if ENV_FILE is None:
     raise ValueError("You must set ENV_FILE in the environment")
 
 
+ENV_NAME_TYPE: TypeAlias = Literal["local", "devl", "prod"]
+
+
 class Settings(BaseSettings):
     class _App(BaseModel):
         CONTAINER_NAME: str
+        DOMAIN: str = "http://localhost:11080"
 
     class _MongoDB(BaseModel):
         CONN_URI: str
+        MOCK_CONN_URI: Optional[str] = None
         DB_NAME: str
 
     class _Model(BaseModel):
@@ -31,7 +36,7 @@ class Settings(BaseSettings):
     class _ElevenLabs(BaseModel):
         API_KEYS: str
 
-    ENV_TYPE: Literal["local", "development", "production"]
+    ENV_TYPE: ENV_NAME_TYPE
     APP: _App
     MONGODB: _MongoDB
     MODEL: _Model
@@ -103,3 +108,7 @@ class Settings(BaseSettings):
             logger = logging.getLogger(logger_name)
             if any(logger_name.startswith(disabled) for disabled in disabled_loggers):
                 logger.setLevel(logging.ERROR)
+
+
+SETTINGS = Settings()
+

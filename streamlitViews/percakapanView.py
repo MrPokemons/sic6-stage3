@@ -4,7 +4,8 @@ import streamlit as st
 from typing import List
 from pymongo import MongoClient
 from src.services.pawpal.schemas.document import ConversationDoc
-
+from urllib.parse import urljoin
+from config.settings import SETTINGS
 
 if "deviceId" not in st.session_state:
     st.session_state.deviceId = False
@@ -32,7 +33,7 @@ if st.session_state.deviceId:
     list_conversation = None
     try:
         resp = requests.get(
-            f"http://localhost:11080/api/v1/pawpal/conversation/{deviceId}/live",
+            urljoin(SETTINGS.APP.DOMAIN, f"/api/v1/pawpal/conversation/{deviceId}/live")
         )
         if resp.status_code == 200:
             list_conversation = resp.json()
@@ -40,10 +41,8 @@ if st.session_state.deviceId:
         pass
 
     # backend offline, connect to read-only demo purposes mongodb
-    if list_conversation is None:
-        _client = MongoClient(
-            "mongodb+srv://pawpal-demo-user:p78Q4EsqPfLmnvtb@sic-cluster.hcqho.mongodb.net/?retryWrites=true&w=majority&appName=SIC-Cluster"
-        )
+    if list_conversation is None and SETTINGS.MONGODB.MOCK_CONN_URI:
+        _client = MongoClient(SETTINGS.MONGODB.MOCK_CONN_URI)
         _db = _client["pawpal_v2"]
         _collection = _db["pawpal-conversation-2_1"]
         list_conversation: list = _collection.find({"device_id": deviceId}).to_list()
