@@ -17,7 +17,7 @@ const char* password = "tanyaAdeline";
 // const uint16_t websocket_server_port = 11080;
 
 // Domain Tunneling
-const char* websocket_server_address = "https://pawpal_demo_sic_backend.rwn.my.id/";
+const char* websocket_server_address = "pawpal_demo_sic_backend.rwn.my.id";
 const uint16_t websocket_server_port = 443;
 
 const char* websocket_path = "/api/v1/pawpal/conversation/cincayla?stream_audio=websocket";
