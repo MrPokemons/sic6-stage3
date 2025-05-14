@@ -8,11 +8,8 @@
 #include <freertos/task.h>
 #include <ArduinoJson.h>
 
-// ==== WiFi Configs ====
-const char* ssid = "First Home";
-const char* password = "tanyaAdeline";
 
-// Localhost
+// // Localhost
 // const char* websocket_server_address = "192.168.68.113";
 // const uint16_t websocket_server_port = 11080;
 
@@ -20,7 +17,7 @@ const char* password = "tanyaAdeline";
 const char* websocket_server_address = "pawpal_demo_sic_backend.rwn.my.id";
 const uint16_t websocket_server_port = 443;
 
-const char* websocket_path = "/api/v1/pawpal/conversation/cincayla?stream_audio=websocket";
+const char* websocket_path = "/api/v1/pawpal/conversation/cincayla?stream_audio=websocket&target_sample_rate=16000";
 
 WebSocketsClient webSocket;
 bool shouldReconnect = false;
@@ -812,7 +809,7 @@ void setup() {
 
     // reset saved settings (for testing) 
     // comment on production!!!!!
-    wm.resetSettings();
+    // wm.resetSettings();
     Serial.println("Attempting WiFi connection using WiFiManager...");
 
     bool res = wm.autoConnect("PawPal-WiFiManager");
