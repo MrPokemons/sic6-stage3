@@ -236,16 +236,24 @@ class MathGame(Agentic):
         last_session = state.verify_last_session(session_type="math_games")
 
         qna = state.get_next_question()
+        modified_datetime = datetime.now(timezone.utc)
         if qna is not None:
+            qna_messages = [AIMessage(content=[{"type": "text", "text": qna.question}])]
             state.add_message_to_last_session(
                 session_type="math_games",
-                messages=[AIMessage(content=[{"type": "text", "text": qna.question}])],
+                messages=qna_messages,
             )
             print(
                 "DEBUG MATHQNA ASK:", json.dumps(qna.model_dump(mode="json"), indent=2)
             )
             return Command(
-                update={"from_node": "ask_question", "next_node": "listening"},
+                update={
+                    "modified_datetime": modified_datetime,
+                    "messages": qna_messages,
+                    "sessions": state.get_sessions(deep=True),
+                    "from_node": "ask_question",
+                    "next_node": "listening"
+                },
                 goto="talk",
             )
 
@@ -287,7 +295,6 @@ class MathGame(Agentic):
             await model_with_session_result.ainvoke(last_session.get_messages())
         )
 
-        modified_datetime = datetime.now(timezone.utc)
         state.add_result_to_last_session(
             session_type="math_games",
             result=TopicResults.MathGameResult(
