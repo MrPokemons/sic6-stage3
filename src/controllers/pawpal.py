@@ -183,6 +183,7 @@ def pawpal_router(
         device_id: str,
         stream_audio: Literal["websocket", "http", "device"] = "websocket",
         target_sample_rate: Optional[int] = None,
+        debug_mode: bool = False,
     ):
         await ws_manager.connect(websocket=websocket)
         logger.info(f"Device '{device_id}' has connected to server")
@@ -395,6 +396,20 @@ def pawpal_router(
                                                 websocket=websocket
                                             )
                                         )
+
+                                        if debug_mode:
+                                            try:
+                                                import sounddevice as sd
+                                                sd.play(data=audio_array, samplerate=sample_rate)
+                                                sd.wait()
+                                            except OSError:
+                                                audio_filename = datetime.now(timezone.utc).strftime("test-debug_mode_on-%Y%m%d_%H%M%S%f.wav")
+                                                _fp = f"tests/{audio_filename}"
+                                                logger.info(
+                                                    f"failed to play due to unsupported OS, will just write to '{_fp}'"
+                                                )
+                                                sf.write(_fp, data=audio_array, samplerate=sample_rate)
+
                                         buffer = (
                                             BytesIO()
                                         )  # convert into bytes for processing to stt_coll
