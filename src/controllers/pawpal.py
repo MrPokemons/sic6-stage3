@@ -106,7 +106,7 @@ class ConnectionManager:
 
             if metadata["channels"] > 1:
                 chunk = chunk.reshape(-1, metadata["channels"])
-                chunk = chunk.mean(axis=1)  # convert into mono
+                # chunk = chunk.mean(axis=1)  # don't think the mono conversion is working
 
             chunk_sample_rate = metadata["sample_rate"]
             if sample_rate is None:  # first chunk's sample_rate will be the foundation for the rest of chunks
