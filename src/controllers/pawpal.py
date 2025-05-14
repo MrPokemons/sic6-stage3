@@ -97,7 +97,7 @@ class ConnectionManager:
         list_chunk: List[Optional[np.ndarray]] = None
         sample_rate = None
         while 1:
-            packet = await asyncio.wait_for(websocket.receive_bytes(), timeout=15)
+            packet = await asyncio.wait_for(websocket.receive_bytes(), timeout=40)
             self.logger.info("Received packet")
             metadata, chunk = self.message_packer.unpack(packet=packet)
             self.logger.info(f"Client's Metadata: {metadata}\n")
