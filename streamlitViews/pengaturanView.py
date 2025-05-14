@@ -50,6 +50,7 @@ with st.form("child_profile_form"):
         deviceIdInput = st.text_input("⚙️ No. ID Perangkat", st.session_state.deviceId)
     st.session_state.deviceId = deviceIdInput
     sessionsInput = st.number_input("🗣️ Jumlah Sesi", min_value=1, step=1)
+    
 
     featureOptions = [
         "👄 Talk To Me",
@@ -114,7 +115,15 @@ if st.session_state.configuration:
                 value=1,
             )
 
+        consentInput = st.checkbox(f"Saya, sebagai orang tua/wali dari {nameInput}, menyetujui anak saya untuk menggunakan Pawpal. Saya memahami bahwa data suara anak akan digunakan untuk interaksi dengan PawPal dan data tersebut akan dilindungi sesuai dengan peraturan yang berlaku. Saya memberikan persetujuan ini secara sadar dan dapat dibuktikan.")
+
         startConvo = st.form_submit_button("Mulai Percakapan")
+
+    if not (
+        consentInput
+    ):
+        st.error("Mohon untuk menyetujui persetujuan penggunaan PawPal")
+        st.stop()
 
     durationTalkToMe = durationWouldYouRather = 0
     questionMathGames = questionGuessTheSound = 0
