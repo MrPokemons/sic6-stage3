@@ -93,15 +93,15 @@ class ConnectionManager:
             packet = self.message_packer.pack(metadata=chunk_metadata, data=chunk)
             await websocket.send_bytes(packet)
 
-    async def recv_audio(self, websocket: WebSocket) -> Tuple[np.ndarray, int]:
-        list_chunk: List[Optional[np.ndarray]] = None
-        sample_rate = None
+    async def recv_audio(self, websocket: WebSocket) -> Tuple[np.ndarray, Optional[int]]:
+        list_chunk: List[Optional[np.ndarray]] = []
+        sample_rate: Optional[int] = None
         while 1:
             packet = await asyncio.wait_for(websocket.receive_bytes(), timeout=40)
             self.logger.info("Received packet")
             metadata, chunk = self.message_packer.unpack(packet=packet)
             self.logger.info(f"Client's Metadata: {metadata}\n")
-            if list_chunk is None:
+            if not list_chunk:  # empty
                 list_chunk = [None] * metadata["total_seq"]
 
             if metadata["channels"] > 1:

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, Union, List
 
 from uuid import UUID
 from bson.objectid import ObjectId
@@ -21,8 +21,8 @@ class Agentic(ABC):
     def build_workflow(cls) -> CompiledStateGraph: ...
 
     async def get_agent_results(
-        self, chat_id: Optional[ObjectId] = None, device_id: Optional[UUID] = None
-    ) -> dict:
+        self, chat_id: Optional[ObjectId] = None, device_id: Optional[Union[UUID, str]] = None
+    ) -> List[dict]:
         result_filter = {}
         if chat_id:
             result_filter["_id"] = chat_id
