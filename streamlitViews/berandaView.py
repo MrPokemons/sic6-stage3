@@ -150,7 +150,7 @@ if st.session_state.deviceId:
 
     if currentConversation.sessions:
         startDateTime = currentConversation.sessions[0].result.start_datetime
-        endDateTime = currentConversation.sessions[-1].result.modified_datetime
+        endDateTime = next(_ses for _ses in currentConversation.sessions[::-1] if _ses.result).result.modified_datetime
 
         startDate = (
             f"{startDateTime.day} {bulan[startDateTime.month]} {startDateTime.year}"
@@ -215,6 +215,9 @@ if st.session_state.deviceId:
         st.error("Sesi belum dimulai")
 
     for n, session in enumerate(currentConversation.sessions):
+        if session.result is None:
+            continue
+
         convoStartTime = session.result.start_datetime
         convoStartTimeDate = (
             f"{convoStartTime.day} {bulan[convoStartTime.month]} {convoStartTime.year}"
