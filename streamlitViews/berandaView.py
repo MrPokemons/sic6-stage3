@@ -164,7 +164,7 @@ if st.session_state.deviceId:
         startTime = startDateTime.strftime("%H:%M")
 
         endDate = f"{endDateTime.day} {bulan[endDateTime.month]} {endDateTime.year}"
-        endTime = startDateTime.strftime("%H:%M")
+        endTime = endDateTime.strftime("%H:%M")
 
         if startDate == endDate:
             st.markdown(
