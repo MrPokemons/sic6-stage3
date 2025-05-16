@@ -1,5 +1,6 @@
 import json
 import pandas as pd
+import pytz
 import plotly.express as px
 from typing import List
 from pathlib import Path
@@ -11,6 +12,9 @@ from pymongo import MongoClient
 
 from src.services.pawpal.schemas.document import ConversationDoc
 from config.settings import SETTINGS
+
+
+USER_TIMEZONE = pytz.timezone("Asia/Bangkok")
 
 ROOT_PATH = Path(__file__).parents[1]
 
@@ -142,15 +146,15 @@ if st.session_state.deviceId:
                 st.rerun()
 
     currentConversation: ConversationDoc = list_conversation[-page - 1]
-    currentDateTime = parser.isoparse(currentConversation.created_datetime)
+    currentDateTime = parser.isoparse(currentConversation.created_datetime).astimezone(USER_TIMEZONE)
     currentDate = (
         f"{currentDateTime.day} {bulan[currentDateTime.month]} {currentDateTime.year}"
     )
     currentTime = currentDateTime.strftime("%H:%M")
 
     if currentConversation.sessions:
-        startDateTime = currentConversation.sessions[0].result.start_datetime
-        endDateTime = next(_ses for _ses in currentConversation.sessions[::-1] if _ses.result).result.modified_datetime
+        startDateTime = currentConversation.sessions[0].result.start_datetime.astimezone(USER_TIMEZONE)
+        endDateTime = next(_ses for _ses in currentConversation.sessions[::-1] if _ses.result).result.modified_datetime.astimezone(USER_TIMEZONE)
 
         startDate = (
             f"{startDateTime.day} {bulan[startDateTime.month]} {startDateTime.year}"
@@ -218,13 +222,13 @@ if st.session_state.deviceId:
         if session.result is None:
             continue
 
-        convoStartTime = session.result.start_datetime
+        convoStartTime = session.result.start_datetime.astimezone(USER_TIMEZONE)
         convoStartTimeDate = (
             f"{convoStartTime.day} {bulan[convoStartTime.month]} {convoStartTime.year}"
         )
         convoStartTimeHour = convoStartTime.strftime("%H:%M")
 
-        convoEndTime = session.result.modified_datetime
+        convoEndTime = session.result.modified_datetime.astimezone(USER_TIMEZONE)
         convoEndTimeHour = convoEndTime.strftime("%H:%M")
 
         messageResult = []

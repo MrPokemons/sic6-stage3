@@ -1,4 +1,3 @@
-import json
 import requests
 import streamlit as st
 from typing import List
