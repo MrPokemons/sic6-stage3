@@ -133,6 +133,7 @@ if st.session_state.deviceId:
         with pageCol1:
             if st.button("←", disabled=st.session_state.page <= 0):
                 st.session_state.page -= 1
+                st.session_state.page = max(st.session_state.page, 0)
                 st.rerun()
 
         with pageCol2:
@@ -143,9 +144,10 @@ if st.session_state.deviceId:
                 "→", disabled=st.session_state.page >= len(list_conversation) - 1
             ):
                 st.session_state.page += 1
+                st.session_state.page = min(st.session_state.page, len(list_conversation) - 1)
                 st.rerun()
 
-    currentConversation: ConversationDoc = list_conversation[-page - 1]
+    currentConversation: ConversationDoc = list_conversation[page]
     currentDateTime = parser.isoparse(currentConversation.created_datetime).astimezone(USER_TIMEZONE)
     currentDate = (
         f"{currentDateTime.day} {bulan[currentDateTime.month]} {currentDateTime.year}"
