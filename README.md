@@ -33,6 +33,7 @@ The following libraries are used in the project:
 - [Arduino WebSockets by Markus Sattler](https://github.com/Links2004/arduinoWebSockets)
 - [ArduinoJSON](https://arduinojson.org)
 - [Arduino FreeRTOS](https://www.arduinolibraries.info/libraries/free-rtos)
+- [WiFi Manager](https://github.com/tzapu/WiFiManager)
 
 Library files can be found in the project directory:  
 📁 `IoT/libraries`
@@ -55,6 +56,10 @@ Click the ✅ **check mark** icon in the top-right corner of the IDE to verify t
 
 ### 6. Upload the Sketch & Run It  
 Click the ➡️ **arrow icon** (next to the check mark) to upload the sketch to your board and run it.
+
+### 7. Setup Wi-Fi Manager
+On another device, open Wi-Fi settings and connect to the 'PawPal-WifiManager' network.
+Then, follow the on-screen instructions to select a Wi-Fi network to connect the IoT board to.
 
 ---
 
