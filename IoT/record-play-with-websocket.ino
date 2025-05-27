@@ -799,7 +799,7 @@ void setup() {
         // ==== WS setup ====
         Serial.println("Connecting to WebSocket...");
         webSocket.onEvent(webSocketEvent);
-        webSocket.begin(websocket_server_address, websocket_server_port, websocket_path);
+        webSocket.beginSSL(websocket_server_address, websocket_server_port, websocket_path);
 
         // ==== FreeRTOS task for audio ====
         xTaskCreatePinnedToCore(
