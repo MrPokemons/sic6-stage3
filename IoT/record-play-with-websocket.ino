@@ -19,7 +19,7 @@ bool shouldReconnect = false;
 unsigned long lastReconnectAttempt = 0;
 const unsigned long reconnectInterval = 5000;
 
-#define COMMON_SAMPLE_RATE 16000
+#define COMMON_SAMPLE_RATE 8000
 #define COMMON_BITS_PER_SAMPLE I2S_BITS_PER_SAMPLE_16BIT
 
 // ==== PINOUTS ====
@@ -615,7 +615,7 @@ void audioRecordTask(void* parameter) {
                 if (bytesReadStereo > 0) {
 
                     // --- START: Digital Gain Application (No Conversion) ---
-                    float digital_gain_factor = 3.5f; // ADJUST THIS VALUE!
+                    float digital_gain_factor = 7.0f; // ADJUST THIS VALUE!
                     int clip_counter = 0;
 
                     size_t numStereoSamplesRead = bytesReadStereo / (COMMON_BITS_PER_SAMPLE / 8) / 2;
