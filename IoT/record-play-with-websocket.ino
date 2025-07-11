@@ -12,7 +12,7 @@
 const char* websocket_server_address = "pawpal_demo_sic_backend.rwn.my.id";
 const uint16_t websocket_server_port = 443;
 
-const char* websocket_path = "/api/v1/pawpal/conversation/cincayla?stream_audio=websocket&debug_mode=true&target_sample_rate=16000";
+const char* websocket_path = "/api/v1/pawpal/conversation/cincayla?stream_audio=websocket&debug_mode=true&target_sample_rate=8000";
 
 WebSocketsClient webSocket;
 bool shouldReconnect = false;
