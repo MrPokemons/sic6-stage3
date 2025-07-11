@@ -272,9 +272,7 @@ def pawpal_router(
                                         continue
 
                                     logger.info(f"Agentic sent Action: {_action}")
-                                    _action, _addons = f"{_action.strip('+')}+".split(
-                                        "+", 1
-                                    )
+                                    _action, _addons = _action.split("+", 1)
                                     if _action == "speaker":
                                         if _addons == "audio":
                                             _audio_array, _sample_rate = sf.read(
