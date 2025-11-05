@@ -1,6 +1,10 @@
 import time
+import logging
 from typing import Any, Optional
 from paho.mqtt import client as mqtt_client
+
+
+logger = logging.getLogger("mqtt")
 
 
 class CustomMQTTClient:
@@ -39,9 +43,9 @@ class CustomMQTTClient:
             properties: Optional[mqtt_client.Properties]
         ):
             if rc == 0:
-                print("Connected to MQTT Broker!")
+                logger.info("Connected to MQTT Broker!")
             else:
-                print(f"Failed to connect, return code {rc}")
+                logger.error(f"Failed to connect, return code {rc}")
 
         self._client.on_connect = on_connect
 
@@ -53,23 +57,23 @@ class CustomMQTTClient:
             rc: mqtt_client.ReasonCode,
             properties: Optional[mqtt_client.Properties]
         ):
-            print(f"Disconnected with result code {rc}")
+            logger.warning(f"Disconnected with result code {rc}")
             reconnect_count, reconnect_delay = 0, self.FIRST_RECONNECT_DELAY
             while reconnect_count < self.MAX_RECONNECT_COUNT:
-                print(f"Reconnecting in {reconnect_delay} seconds")
+                logger.info(f"Reconnecting in {reconnect_delay} seconds")
                 time.sleep(reconnect_delay)
 
                 try:
                     client.reconnect()
-                    print("Reconnected successfully")
+                    logger.info("Reconnected successfully")
                     return
                 except Exception as e:
-                    print(f"{repr(e)}. Reconnect failed. Retrying...")
+                    logger.warning(f"{repr(e)}. Reconnect failed. Retrying...")
 
                 reconnect_delay *= self.RECONNECT_RATE
                 reconnect_delay = min(reconnect_delay, self.MAX_RECONNECT_DELAY)
                 reconnect_count += 1
 
-            print(f"Reconnect failed after {reconnect_count} attemps. Exitting...")
+            logger.error(f"Reconnect failed after {reconnect_count} attemps. Exitting...")
 
         self._client.on_disconnect = on_disconnect

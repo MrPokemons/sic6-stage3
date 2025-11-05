@@ -36,12 +36,20 @@ class Settings(BaseSettings):
     class _ElevenLabs(BaseModel):
         API_KEYS: str
 
+    class _MQTT(BaseModel):
+        CLIENT_ID: str
+        BROKER_HOST: str
+        BROKER_PORT: int
+        USERNAME: str
+        PASSWORD: str
+
     ENV_TYPE: ENV_NAME_TYPE
     APP: _App
     MONGODB: _MongoDB
     MODEL: _Model
     DEEPGRAM: _DeepGram
     ELEVENLABS: _ElevenLabs
+    MQTT: _MQTT
 
     model_config = SettingsConfigDict(
         env_file=ENV_FILE,

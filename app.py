@@ -24,9 +24,10 @@ from src.services.tts import (
     TextToSpeechCollection,
 )
 from src.services.nosql import MongoDBEngine
+from src.services.mqtt import CustomMQTTClient
 
 from src.controllers.health import health_router
-from src.controllers.pawpal import pawpal_router
+from src.controllers import pawpal as pawpal_controller, pawpal_v2 as pawpal_v2_controller
 from src.middleware import log_middleware
 
 
@@ -38,6 +39,15 @@ app_logger = logging.getLogger(__name__)
 mongodb_engine = MongoDBEngine(
     uri=SETTINGS.MONGODB.CONN_URI, db_name=SETTINGS.MONGODB.DB_NAME
 )
+
+# MQTT Client
+mqtt_client = CustomMQTTClient(
+    client_id=SETTINGS.MQTT.CLIENT_ID,
+    broker_host=SETTINGS.MQTT.BROKER_HOST,
+    broker_port=SETTINGS.MQTT.BROKER_PORT,
+    username=SETTINGS.MQTT.USERNAME,
+    password=SETTINGS.MQTT.PASSWORD,
+).client
 
 # Speech to Text
 whisper_stt = WhisperSpeechToText()
@@ -81,7 +91,7 @@ app.include_router(
 )
 
 app.include_router(
-    pawpal_router(
+    pawpal_controller.pawpal_router(
         pawpal=pawpal,
         stt_coll=stt_coll,
         tts_coll=tts_coll,
@@ -89,8 +99,19 @@ app.include_router(
     )
 )
 
+app.include_router(
+    pawpal_v2_controller.pawpal_router(
+        pawpal=pawpal,
+        stt_coll=stt_coll,
+        tts_coll=tts_coll,
+        mqtt_client=mqtt_client,
+        logger=app_logger,
+    )
+)
+
 
 if __name__ == "__main__":
+    mqtt_client.loop_start()
     uvicorn.run(
         "app:app",
         host="0.0.0.0",
@@ -99,3 +120,4 @@ if __name__ == "__main__":
         ws_ping_interval=60,
         ws_ping_timeout=900,
     )
+    mqtt_client.loop_stop()
