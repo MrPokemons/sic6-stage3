@@ -1,9 +1,10 @@
+from typing import Any
 from paho.mqtt import client as mqtt_client
 from src.services.mqtt import CustomMQTTClient
 
 
 def subscribe(client: mqtt_client.Client, topic: str):
-    def on_message(client, userdata, msg):
+    def on_message(client: mqtt_client.Client, userdata: Any, msg: mqtt_client.MQTTMessage):
         print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
 
     client.subscribe(topic)
