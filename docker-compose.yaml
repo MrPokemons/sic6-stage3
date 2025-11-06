@@ -49,10 +49,9 @@ services:
     networks:
       - frontend
 
-  mqtt:
+  mosquitto-mqtt:
     image: eclipse-mosquitto
-    hostname: mosquitto
-    container_name: mosquitto
+    container_name: mosquitto-mqtt
     restart: unless-stopped
     ports:
       - "1883:1883"
