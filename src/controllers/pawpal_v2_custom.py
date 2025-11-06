@@ -1,4 +1,5 @@
 import math
+import asyncio
 import logging
 import librosa
 import numpy as np
@@ -12,12 +13,12 @@ from fastapi import status as http_status
 from fastapi.exceptions import HTTPException
 from fastapi.routing import APIRouter
 from pydantic import BaseModel, PositiveInt
-from fastapi_mqtt import FastMQTT
-from gmqtt import Client as MQTTClient
 
 from langgraph.types import Command, Interrupt
 from langgraph.graph import END
 from langgraph.graph.state import CompiledStateGraph
+
+from paho.mqtt import client as paho_mqtt_client
 
 from ..services.stt import SpeechToTextCollection
 from ..services.tts import TextToSpeechCollection
@@ -35,11 +36,6 @@ from ..utils.misc import secure_shuffle
 
 STATIC_AUDIO_PATH = Path(__file__).parents[2] / "static" / "audio"
 
-TOPIC_SPEAKER = "pawpal/{device_id}/speaker"
-TOPIC_COMMAND = "pawpal/{device_id}/command"
-TOPIC_RECORDING = "pawpal/{device_id}/recording"
-
-FORCE_LOCAL = True
 
 DEVICE_ID: TypeAlias = Annotated[str, "Iot Device ID"]
 
@@ -59,9 +55,13 @@ COMMAND_TYPE: TypeAlias = Literal["record"]
 
 
 class PawPalMQTTManager:
+    TOPIC_SPEAKER = "pawpal/{device_id}/speaker"
+    TOPIC_COMMAND = "pawpal/{device_id}/command"
+    TOPIC_RECORDING = "pawpal/{device_id}/recording"
+
     def __init__(
         self,
-        fast_mqtt: FastMQTT,
+        mqtt_client: paho_mqtt_client.Client,
         pawpal: PawPal,
         pawpal_workflow: CompiledStateGraph,
         stt_coll: SpeechToTextCollection,
@@ -73,7 +73,7 @@ class PawPalMQTTManager:
         if message_packer is None:
             message_packer = MessagePacker(separator=b"---ENDJSON---")
 
-        self.client = fast_mqtt
+        self.client = mqtt_client
         self.pawpal = pawpal
         self.pawpal_workflow = pawpal_workflow
         self.stt_coll = stt_coll
@@ -86,178 +86,183 @@ class PawPalMQTTManager:
 
     def publish_command(self, device_id: DEVICE_ID, command: COMMAND_TYPE):
         self.client.publish(
-            message_or_topic=TOPIC_COMMAND.format(device_id=device_id),
+            topic=self.TOPIC_COMMAND.format(device_id=device_id),
             payload=command,
             qos=2,
         )
 
-    async def subscribe_recording_on_message(self, topic: str, payload: bytes):
-        device_id: DEVICE_ID = topic.split("/", 2)[1]
-        if device_id not in self.recording_packet_stream:
-            self.recording_packet_stream[device_id] = []
+    def subscribe_recording(self):
+        def on_message(client: paho_mqtt_client.Client, userdata: Any, msg: paho_mqtt_client.MQTTMessage):
+            device_id: DEVICE_ID = msg.topic.split("/", 2)[1]
+            if device_id not in self.recording_packet_stream:
+                self.recording_packet_stream[device_id] = []
 
-        _metadata, _chunk = self.message_packer.unpack(packet=payload)
+            _metadata, _chunk = self.message_packer.unpack(packet=msg.payload)
 
-        self.recording_packet_stream[device_id].append((_metadata, _chunk))
+            self.recording_packet_stream[device_id].append((_metadata, _chunk))
 
-        if _metadata["seq"] != _metadata["total_seq"]:
-            return  # audio streaming in progress
+            if _metadata["seq"] != _metadata["total_seq"]:
+                return  # audio streaming in progress
 
-        # audio streaming completed, assembling in progress
-        sample_rate: Optional[int] = None
-        list_chunk: List[np.ndarray] = []
-        for curr_metadata, curr_chunk in sorted(self.recording_packet_stream[device_id], key=lambda x: x[0]["seq"]):
-            if curr_metadata["channels"] > 1:
-                curr_chunk = curr_chunk.reshape(-1, curr_metadata["channels"])
-                # chunk = chunk.mean(axis=1)  # don't think the mono conversion is working
+            # audio streaming completed, assembling in progress
+            sample_rate: Optional[int] = None
+            list_chunk: List[np.ndarray] = []
+            for curr_metadata, curr_chunk in sorted(self.recording_packet_stream[device_id], key=lambda x: x[0]["seq"]):
+                if curr_metadata["channels"] > 1:
+                    curr_chunk = curr_chunk.reshape(-1, curr_metadata["channels"])
+                    # chunk = chunk.mean(axis=1)  # don't think the mono conversion is working
 
-            curr_chunk_sample_rate = curr_metadata["sample_rate"]
-            if sample_rate is None:  # first chunk's sample_rate will be the foundation for the rest of chunks
-                sample_rate = curr_chunk_sample_rate
-            elif curr_chunk_sample_rate != sample_rate:
-                curr_chunk = librosa.resample(curr_chunk, orig_sr=curr_chunk_sample_rate, target_sr=sample_rate, res_type="soxr_qq")
+                curr_chunk_sample_rate = curr_metadata["sample_rate"]
+                if sample_rate is None:  # first chunk's sample_rate will be the foundation for the rest of chunks
+                    sample_rate = curr_chunk_sample_rate
+                elif curr_chunk_sample_rate != sample_rate:
+                    curr_chunk = librosa.resample(curr_chunk, orig_sr=curr_chunk_sample_rate, target_sr=sample_rate, res_type="soxr_qq")
 
-            list_chunk.append(curr_chunk)
+                list_chunk.append(curr_chunk)
 
-        audio_array = np.concatenate(
-            [_c for _c in list_chunk if isinstance(_c, np.ndarray)]
-        )
-
-        # TODO: need to resume the workflow
-        buffer = BytesIO()
-
-        sf.write(
-            buffer,
-            audio_array,
-            sample_rate,
-            format="WAV",
-        )
-        self.logger.info(
-            "Audio has been received, parsing to STT model"
-        )
-
-        user_answer = await self.stt_coll.transcribe_raw_async(
-            buffer.getvalue(),
-            force_local=FORCE_LOCAL,
-        )
-        self.logger.info(
-            f'Done parsing, continue chat with new user answer "{user_answer}".'
-        )
-        workflow_input = Command(resume=user_answer)
-
-        docs = await self.pawpal.get_agent_results(device_id=device_id)
-        active_convo_docs: List[ConversationDoc] = [
-            convo_doc
-            for convo_doc in sorted(
-                [ConversationDoc.model_validate(doc) for doc in docs],
-                key=lambda convo_doc: convo_doc.created_datetime,
+            audio_array = np.concatenate(
+                [_c for _c in list_chunk if isinstance(_c, np.ndarray)]
             )
-            if convo_doc.ongoing  # filter the only ongoing
-        ]
-        if not active_convo_docs:
-            return # should we return err?
 
-        curr_convo = active_convo_docs[0]
+            # TODO: need to resume the workflow
+            buffer = BytesIO()
 
-        workflow_config = ConfigSchema(
-            configurable=ConfigurableSchema(
-                thread_id=curr_convo.id,
-                device_id=curr_convo.device_id,
-                user=curr_convo.user,
-                feature_params=curr_convo.feature_params,
+            sf.write(
+                buffer,
+                audio_array,
+                sample_rate,
+                format="WAV",
             )
-        )
-        keep_running = True
-        while keep_running:
-            async for _subgraph, event in self.pawpal_workflow.astream(
-                input=workflow_input,
-                config=workflow_config,
-                stream_mode="updates",
-                subgraphs=True,
-            ):
-                event: Dict[str, Union[dict, list, tuple]]
-                for node, state in event.items():
-                    if node == "talk":
-                            continue
+            self.logger.info(
+                "Audio has been received, parsing to STT model"
+            )
 
-                    if (
-                        node
-                        not in TopicFlowNodeType.__args__  # to handle if exit subflow, can trigger keep_running false instead waiting for check_session
-                        and isinstance(state, dict)
-                        and state.get("next_node") == END
-                        and not _subgraph
-                    ):
-                        keep_running = False
+            user_answer = asyncio.run(self.stt_coll.transcribe_raw_async(
+                buffer.getvalue()
+            ))
+            self.logger.info(
+                f'Done parsing, continue chat with new user answer "{user_answer}".'
+            )
+            workflow_input = Command(resume=user_answer)
 
-                    if node != "__interrupt__":
-                        continue
+            docs = asyncio.run(self.pawpal.get_agent_results(device_id=device_id))
+            active_convo_docs: List[ConversationDoc] = [
+                convo_doc
+                for convo_doc in sorted(
+                    [ConversationDoc.model_validate(doc) for doc in docs],
+                    key=lambda convo_doc: convo_doc.created_datetime,
+                )
+                if convo_doc.ongoing  # filter the only ongoing
+            ]
+            if not active_convo_docs:
+                return # should we return err?
 
-                    for interrupt_ in state:
-                        interrupt_: Interrupt
-                        list_interrupts: List[InterruptSchema] = (
-                            interrupt_.value
-                        )
-                        for interrupt_schema in list_interrupts:
-                            _action = interrupt_schema["action"]
-                            if _action not in InterruptAction.__args__:
-                                self.logger.warning(
-                                    "Unknown interrupt action '{_action}'"
-                                )
+            curr_convo = active_convo_docs[0]
+
+            workflow_config = ConfigSchema(
+                configurable=ConfigurableSchema(
+                    thread_id=curr_convo.id,
+                    device_id=curr_convo.device_id,
+                    user=curr_convo.user,
+                    feature_params=curr_convo.feature_params,
+                )
+            )
+            keep_running = True
+            while keep_running:
+                for _subgraph, event in self.pawpal_workflow.stream(
+                    input=workflow_input,
+                    config=workflow_config,
+                    stream_mode="updates",
+                    subgraphs=True,
+                ):
+                    event: Dict[str, Union[dict, list, tuple]]
+                    for node, state in event.items():
+                        if node == "talk":
                                 continue
 
-                            self.logger.info(f"Agentic sent Action: {_action}")
-                            _action, _addons = f"{_action.strip('+')}+".split(
-                                "+", 1
+                        if (
+                            node
+                            not in TopicFlowNodeType.__args__  # to handle if exit subflow, can trigger keep_running false instead waiting for check_session
+                            and isinstance(state, dict)
+                            and state.get("next_node") == END
+                            and not _subgraph
+                        ):
+                            keep_running = False
+
+                        if node != "__interrupt__":
+                            continue
+
+                        for interrupt_ in state:
+                            interrupt_: Interrupt
+                            list_interrupts: List[InterruptSchema] = (
+                                interrupt_.value
                             )
-                            _addons = _addons.strip("+")
-                            if _action == "speaker":
-                                if _addons == "audio":
-                                    _audio_array, _sample_rate = sf.read(
-                                        interrupt_schema["message"],
-                                        dtype="float32",
+                            for interrupt_schema in list_interrupts:
+                                _action = interrupt_schema["action"]
+                                if _action not in InterruptAction.__args__:
+                                    self.logger.warning(
+                                        "Unknown interrupt action '{_action}'"
                                     )
-                                    _audio_buffer = BytesIO()
-                                    sf.write(
-                                        _audio_buffer,
-                                        data=_audio_array,
-                                        samplerate=_sample_rate,
-                                        format="WAV",
-                                    )
-                                    tts_audio_data = _audio_buffer.getvalue()
-                                else:
-                                    tts_audio_data = (
-                                        await self.tts_coll.synthesize_async(
+                                    continue
+
+                                self.logger.info(f"Agentic sent Action: {_action}")
+                                _action, _addons = f"{_action.strip('+')}+".split(
+                                    "+", 1
+                                )
+                                _addons = _addons.strip("+")
+                                if _action == "speaker":
+                                    if _addons == "audio":
+                                        _audio_array, _sample_rate = sf.read(
                                             interrupt_schema["message"],
-                                            force_local=FORCE_LOCAL,
+                                            dtype="float32",
                                         )
+                                        _audio_buffer = BytesIO()
+                                        sf.write(
+                                            _audio_buffer,
+                                            data=_audio_array,
+                                            samplerate=_sample_rate,
+                                            format="WAV",
+                                        )
+                                        tts_audio_data = _audio_buffer.getvalue()
+                                    else:
+                                        tts_audio_data = (
+                                            asyncio.run(self.tts_coll.synthesize_async(
+                                                interrupt_schema["message"],
+                                            ))
+                                        )
+
+                                    self.logger.info("Sending audio to device")
+                                    self.publish_speaker(
+                                        device_id=curr_convo.device_id,
+                                        audio_data=tts_audio_data,
+                                        target_sample_rate=curr_convo.target_sample_rate,
+                                    )
+                                    self.logger.info(
+                                        "Audio has been sent to client, server proceed to continue agentic chat"
                                     )
 
-                                self.logger.info("Sending audio to device")
-                                self.publish_speaker(
-                                    device_id=curr_convo.device_id,
-                                    audio_data=tts_audio_data,
-                                    target_sample_rate=curr_convo.target_sample_rate,
-                                )
-                                self.logger.info(
-                                    "Audio has been sent to client, server proceed to continue agentic chat"
-                                )
+                                    workflow_input = Command(resume="")
+                                elif _action == "microphone":
+                                    """
+                                    server will confirm to client we will need microphone, then client will stream us with chunking
+                                    """
+                                    self.publish_command(
+                                        device_id=curr_convo.device_id,
+                                        command="record",
+                                    )
+                                    self.logger.info(
+                                        "Request audio recorded from microphone"
+                                    )
+                                    keep_running = False
 
-                                workflow_input = Command(resume="")
-                            elif _action == "microphone":
-                                """
-                                server will confirm to client we will need microphone, then client will stream us with chunking
-                                """
-                                self.publish_command(
-                                    device_id=curr_convo.device_id,
-                                    command="record",
-                                )
-                                self.logger.info(
-                                    "Request audio recorded from microphone"
-                                )
-                                keep_running = False
+            # cleaning up
+            self.recording_packet_stream.pop(device_id)
 
-        # cleaning up
-        self.recording_packet_stream.pop(device_id)
+        self.client.subscribe(
+            topic=self.TOPIC_RECORDING.format(device_id="+"),
+            qos=2,  # due to "The QoS Negotiation Rule", mostly qos=0 until the last one will be qos=2 by the publisher as well
+        )
+        self.client.on_message = on_message
 
     def publish_speaker(self, device_id: DEVICE_ID, audio_data: bytes, *, target_sample_rate: Optional[int] = None):
         audio_array, sample_rate = sf.read(BytesIO(audio_data), dtype="float32")
@@ -279,7 +284,7 @@ class PawPalMQTTManager:
             )
             packet = self.message_packer.pack(metadata=chunk_metadata, data=chunk)
             self.client.publish(
-                message_or_topic=TOPIC_SPEAKER.format(device_id=device_id),
+                topic=self.TOPIC_SPEAKER.format(device_id=device_id),
                 payload=packet,
                 qos=2 if seq + 1 == total_seq else 0,
             )
@@ -290,36 +295,22 @@ class PawPalMQTTManager:
 
 def pawpal_router(
     pawpal: PawPal,
-    fast_mqtt: FastMQTT,
+    mqtt_client: paho_mqtt_client.Client,
     stt_coll: SpeechToTextCollection,
     tts_coll: TextToSpeechCollection,
     logger: logging.Logger,
 ):
-    router = APIRouter(prefix="/api/v2/pawpal", tags=["pawpal-v2"])
+    router = APIRouter(prefix="/api/v2/pawpal-custom", tags=["pawpal-v2-custom"])
     pawpal_workflow = pawpal.build_workflow()
-
     mqtt_manager = PawPalMQTTManager(
-        fast_mqtt=fast_mqtt,
+        mqtt_client=mqtt_client,
         pawpal=pawpal,
         pawpal_workflow=pawpal_workflow,
         stt_coll=stt_coll,
         tts_coll=tts_coll,
         logger=logger,
     )
-
-    # due to "The QoS Negotiation Rule", mostly qos=0 until the last one will be qos=2 by the publisher as well
-    @fast_mqtt.subscribe(TOPIC_RECORDING.format(device_id="+"), qos=2)
-    async def pawpal_recording_data(client: MQTTClient, topic: str, payload: bytes, qos: int, properties: Any):
-        logger.info(f"PawPal Server Subscribe Recording: {repr(topic)}, {repr(payload)}, {repr(qos)}, {repr(properties)}")
-
-    @fast_mqtt.on_message()
-    async def message(client: MQTTClient, topic: str, payload: bytes, qos: int, properties: Any):
-        logger.info(f"Received message: {repr(topic)}, {repr(qos)}, {repr(properties)}")
-        if (
-            (_t := (topic.rsplit("/", 1) or [""])[-1])
-            and (_t == "recording")
-        ):
-            await mqtt_manager.subscribe_recording_on_message(topic=topic, payload=payload)
+    mqtt_manager.subscribe_recording()
 
     @router.get("/conversation/{device_id}")
     async def get_conversations(device_id: str) -> List[ConversationOutput]:
@@ -448,7 +439,6 @@ def pawpal_router(
                                     tts_audio_data = (
                                         await tts_coll.synthesize_async(
                                             interrupt_schema["message"],
-                                            force_local=FORCE_LOCAL,
                                         )
                                     )
 
