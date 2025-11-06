@@ -300,7 +300,7 @@ def pawpal_router(
     tts_coll: TextToSpeechCollection,
     logger: logging.Logger,
 ):
-    router = APIRouter(prefix="/api/v2/pawpal", tags=["pawpal"])
+    router = APIRouter(prefix="/api/v2/pawpal", tags=["pawpal-v2"])
     pawpal_workflow = pawpal.build_workflow()
     mqtt_manager = PawPalMQTTManager(
         mqtt_client=mqtt_client,
