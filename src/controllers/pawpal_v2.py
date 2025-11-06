@@ -478,4 +478,12 @@ def pawpal_router(
 
         return new_conversation_doc
 
+    @router.delete("/conversation/{device_id}", status_code=http_status.HTTP_204_NO_CONTENT)
+    async def delete_ongoing_conversation(device_id: str):
+        docs = await pawpal.get_agent_results(device_id=device_id)
+        for _doc in docs:
+            _convo_doc = ConversationDoc.model_validate(_doc)
+            if _convo_doc.ongoing:
+                await pawpal.delete_agent_conversation(convo_doc_id=_convo_doc.id)
+
     return router
