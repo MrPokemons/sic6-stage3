@@ -57,7 +57,7 @@ COMMAND_TYPE: TypeAlias = Literal["record"]
 class PawPalMQTTManager:
     TOPIC_SPEAKER = "pawpal/{device_id}/speaker"
     TOPIC_COMMAND = "pawpal/{device_id}/command"
-    TOPIC_RECORDING = "pawpal/+/recording"
+    TOPIC_RECORDING = "pawpal/{device_id}/recording"
 
     def __init__(
         self,
@@ -259,7 +259,7 @@ class PawPalMQTTManager:
             self.recording_packet_stream.pop(device_id)
 
         self.client.subscribe(
-            topic=self.TOPIC_RECORDING,
+            topic=self.TOPIC_RECORDING.format(device_id="+"),
             qos=2,  # due to "The QoS Negotiation Rule", mostly qos=0 until the last one will be qos=2 by the publisher as well
         )
         self.client.on_message = on_message
