@@ -29,6 +29,7 @@ class ConversationDoc(BaseModel):
     created_datetime: str = Field(
         default_factory=lambda: datetime.now(timezone.utc).isoformat()
     )
+    target_sample_rate: Optional[int] = None
 
     @property
     def ongoing(self):
