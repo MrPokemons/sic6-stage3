@@ -1,6 +1,6 @@
 import time
 import logging
-from typing import Any, Optional
+from typing import Any, Optional, Literal
 from paho.mqtt import client as mqtt_client
 
 
@@ -20,10 +20,12 @@ class CustomMQTTClient:
         broker_port: int = 1883,
         username: str = "username",
         password: str = "password",
+        transport: Literal["tcp", "websockets", "unix"] = "tcp"
     ):
         self._client = mqtt_client.Client(
             client_id=client_id,
             callback_api_version=mqtt_client.CallbackAPIVersion.VERSION2,
+            transport=transport,
         )
         self._client.username_pw_set(username, password)
         self._setup_on_connect()
