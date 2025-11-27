@@ -1,81 +1,64 @@
 import streamlit as st
+from streamlitViews.language_utils import render_language_toggle, get_current_language
+from streamlitViews.translations import get_text
 
-st.title("🐾 Tentang PawPal")
-st.subheader("Playful Adaptive IoT and AI Learning Companion")
+# Render language toggle in sidebar
+render_language_toggle()
+
+# Get current language
+lang = get_current_language()
+
+st.title(get_text("tentang.title", lang))
+st.subheader(get_text("tentang.subtitle", lang))
 
 with st.container():
-    st.write(
-        "PawPal adalah boneka pintar interaktif berbasis IoT dan AI yang dirancang untuk mengurangi screen time dan mendorong interaksi bermakna bagi anak-anak. Menggunakan teknologi speech-to-text, natural language understanding, dan text-to-speech, PawPal berkomunikasi secara alami dalam Bahasa Indonesia. Dengan fitur pembelajaran adaptif, percakapan interaktif, dan permainan edukatif, PawPal mendukung perkembangan kognitif dan emosional anak melalui pengalaman bermain sambil belajar yang aman dan menyenangkan. Semua interaksi diproses melalui server cloud yang andal dan aman."
-    )
+    st.write(get_text("tentang.description", lang))
 
 with st.container():
-    st.subheader("🌟 Fitur Utama")
+    st.subheader(get_text("tentang.main_features", lang))
     col1, col2 = st.columns(2)
     with col1:
         with st.expander("👄 Talk To Me"):
-            st.write(
-                "Percakapan natural yang membantu anak mengekspresikan diri dan mengembangkan keterampilan sosial-emosional."
-            )
+            st.write(get_text("tentang.talk_to_me_desc", lang))
         with st.expander("🖐️ Math Adventures"):
-            st.write(
-                "Permainan pemecahan masalah interaktif yang membangun konsep dasar matematika melalui cerita yang seru."
-            )
+            st.write(get_text("tentang.math_adventures_desc", lang))
     with col2:
         with st.expander("🔊 Guess The Sound"):
-            st.write(
-                "Permainan edukatif yang dirancang untuk membantu anak-anak melatih kemampuan mendengar dan mengenali suara."
-            )
+            st.write(get_text("tentang.guess_the_sound_desc", lang))
         with st.expander("❓ Would you Rather"):
-            st.write(
-                "Pertanyaan ringan dan imajinatif yang mendorong pemikiran kritis dan kreativitas anak."
-            )
-    # st.write("PawPal menghadirkan berbagai aktivitas berbasis suara yang menarik untuk membuat proses belajar menjadi menyenangkan dan interaktif: \n1. Talk to Me \nPercakapan natural yang membantu anak mengekspresikan diri dan mengembangkan keterampilan sosial-emosional. \n2. Math Adventures Permainan pemecahan masalah interaktif yang membangun konsep dasar matematika melalui cerita yang seru. \n3. Spelling Games Latihan mengeja yang dipandu suara untuk memperkuat kosakata dan pengenalan huruf. \n4. Would you Rather Pertanyaan ringan dan imajinatif yang mendorong pemikiran kritis dan kreativitas anak.")
+            st.write(get_text("tentang.would_you_rather_desc", lang))
 
 with st.container():
-    st.subheader("🎯 Pengguna PawPal")
-    st.write(
-        "PawPal dirancang khusus untuk anak usia 4 hingga 8 tahun, dengan aktivitas yang sesuai usia untuk mendukung pembelajaran dan interaksi yang menyenangkan tanpa layar."
-    )
+    st.subheader(get_text("tentang.target_users", lang))
+    st.write(get_text("tentang.target_users_desc", lang))
 
 with st.container():
-    st.subheader('📥 Apa fungsi input "Durasi"?')
+    st.subheader(get_text("tentang.duration_function", lang))
     col1, col2 = st.columns(2)
     with col1:
         with st.container(border=True, height=110):
-            st.write("Durasi menentukan total waktu bermain anak bersama PawPal.")
+            st.write(get_text("tentang.duration_desc1", lang))
     with col2:
         with st.container(border=True, height=110):
-            st.write(
-                "Misalnya, jika Anda mengatur durasi 30 menit, maka PawPal akan berinteraksi selama total 30 menit, terbagi dalam sesi yang Anda tentukan."
-            )
+            st.write(get_text("tentang.duration_desc2", lang))
 
 with st.container():
-    st.subheader('🧩 Apa fungsi input "Sesi"?')
+    st.subheader(get_text("tentang.session_function", lang))
     col1, col2 = st.columns(2)
     with col1:
         with st.container(border=True, height=160):
-            # st.write("")
-            st.write(
-                "Sesi menentukan berapa jenis aktivitas berbeda yang akan dimainkan PawPal dalam satu periode."
-            )
+            st.write(get_text("tentang.session_desc1", lang))
     with col2:
         with st.container(border=True, height=160):
             st.markdown(
-                "Contoh, "
-                "jika Anda memasukkan 2 sesi, maka PawPal bisa menjalankan:<br>"
-                '📌 10 menit bermain "Talk to Me"<br>'
-                '📌 7 pertanyaan untuk bermain "Math Adventures"',
+                get_text("tentang.session_desc2", lang),
                 unsafe_allow_html=True,
             )
-    st.write(
-        "Ini memberikan variasi agar anak tidak bosan dan tetap belajar secara menyenangkan."
-    )
+    st.write(get_text("tentang.session_desc3", lang))
 
 with st.container():
-    st.subheader("💬 Apakah bisa dikustom sesuai kebutuhan anak?")
-    st.write(
-        "Tentu saja! Anda bisa memilih dan mengatur kombinasi fitur berdasarkan jumlah sesi yang diinginkan, sesuai mood, kebiasaan, atau perkembangan anak Anda."
-    )
+    st.subheader(get_text("tentang.customizable", lang))
+    st.write(get_text("tentang.customizable_desc", lang))
 
 
 st.markdown(

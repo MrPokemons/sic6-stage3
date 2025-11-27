@@ -12,11 +12,19 @@ from pymongo import MongoClient
 
 from src.services.pawpal.schemas.document import ConversationDoc
 from config.settings import SETTINGS
+from streamlitViews.language_utils import render_language_toggle, get_current_language
+from streamlitViews.translations import get_text, get_month, get_emotion, get_answer_category
 
 
 USER_TIMEZONE = pytz.timezone("Asia/Bangkok")
 
 ROOT_PATH = Path(__file__).parents[1]
+
+# Render language toggle in sidebar
+render_language_toggle()
+
+# Get current language
+lang = get_current_language()
 
 if "deviceId" not in st.session_state:
     st.session_state.deviceId = None
@@ -25,22 +33,6 @@ if "page" not in st.session_state:
     st.session_state.page = 0
 
 
-# analytics data declaration here
-bulan = {
-    1: "Januari",
-    2: "Februari",
-    3: "Maret",
-    4: "April",
-    5: "Mei",
-    6: "Juni",
-    7: "Juli",
-    8: "Agustus",
-    9: "September",
-    10: "Oktober",
-    11: "November",
-    12: "Desember",
-}
-
 title_map = {
     "talk_to_me": ("👄", "Talk To Me"),
     "math_games": ("🖐️", "Math Adventure"),
@@ -48,29 +40,12 @@ title_map = {
     "would_you_rather": ("❓", "Would You Rather"),
 }
 
-emotion_map = {
-    "Happy": "😄 Bahagia",
-    "Sad": "😢 Sedih",
-    "Angry": "😠 Marah",
-    "Afraid": "😨 Takut",
-    "Embarrassed": "",
-    "Loving": "😍 Sayang",
-    "Confused": "😕 Bingung",
-    "Frustrated": "😣 Frustrasi",
-    "Confident": "😎 Percaya Diri",
-    "Proud": "😇 Bangga",
-    "Jealous": "😤 Cemburu",
-    "Relieved": "😌 Lega",
-    "Tired": "😫 Lelah",
-    "Excited": "🤗 Semangat",
-    "Nervous": "😬 Gugup",
-    "Disappointed": "🥺 Kecewa",
-    "Amazed": "🤩 Kagum",
-    "Bored": "😐 Bosan",
-    "Doubtful": "🫤 Ragu",
+# Create color map based on current language
+color_map = {
+    get_answer_category("Benar", lang): "green",
+    get_answer_category("Salah", lang): "red",
+    get_answer_category("Tidak Menjawab", lang): "gray"
 }
-
-color_map = {"Benar": "green", "Salah": "red", "Tidak Menjawab": "gray"}
 
 
 # st.title("PawPal 🐾")
@@ -78,10 +53,10 @@ st.image(ROOT_PATH / "streamlitViews" / "image" / "logo.png")
 
 with st.form("device_id_form"):
     deviceIdInput = st.text_input(
-        "No. ID Perangkat", value=st.session_state.deviceId or ""
+        get_text("common.device_id", lang), value=st.session_state.deviceId or ""
     )
     st.session_state.deviceId = deviceIdInput
-    saveDeviceId = st.form_submit_button("Cari percakapan terakhir")
+    saveDeviceId = st.form_submit_button(get_text("common.search_last_conversation", lang))
 
 if st.session_state.deviceId:
     deviceId = st.session_state.deviceId
@@ -112,10 +87,8 @@ if st.session_state.deviceId:
             pass
 
     if not list_conversation:
-        st.error("No conversation ever recorded from the provided device id")
-        st.info(
-            "Jika anda ingin melihat demo tampilan dan backend harus tidak berjalan, dapat menggunakan device_id `cincayla`"
-        )
+        st.error(get_text("beranda.no_conversation", lang))
+        st.info(get_text("beranda.demo_info", lang))
         st.stop()
 
     list_conversation: List[ConversationDoc] = [
@@ -137,7 +110,7 @@ if st.session_state.deviceId:
                 st.rerun()
 
         with pageCol2:
-            st.subheader("Riwayat Percakapan")
+            st.subheader(get_text("beranda.conversation_history", lang))
 
         with pageCol3:
             if st.button(
@@ -150,7 +123,7 @@ if st.session_state.deviceId:
     currentConversation: ConversationDoc = list_conversation[page]
     currentDateTime = parser.isoparse(currentConversation.created_datetime).astimezone(USER_TIMEZONE)
     currentDate = (
-        f"{currentDateTime.day} {bulan[currentDateTime.month]} {currentDateTime.year}"
+        f"{currentDateTime.day} {get_month(currentDateTime.month, lang)} {currentDateTime.year}"
     )
     currentTime = currentDateTime.strftime("%H:%M")
 
@@ -159,11 +132,11 @@ if st.session_state.deviceId:
         endDateTime = next(_ses for _ses in currentConversation.sessions[::-1] if _ses.result).result.modified_datetime.astimezone(USER_TIMEZONE)
 
         startDate = (
-            f"{startDateTime.day} {bulan[startDateTime.month]} {startDateTime.year}"
+            f"{startDateTime.day} {get_month(startDateTime.month, lang)} {startDateTime.year}"
         )
         startTime = startDateTime.strftime("%H:%M")
 
-        endDate = f"{endDateTime.day} {bulan[endDateTime.month]} {endDateTime.year}"
+        endDate = f"{endDateTime.day} {get_month(endDateTime.month, lang)} {endDateTime.year}"
         endTime = endDateTime.strftime("%H:%M")
 
         if startDate == endDate:
@@ -218,7 +191,7 @@ if st.session_state.deviceId:
             """,
             unsafe_allow_html=True,
         )
-        st.error("Sesi belum dimulai")
+        st.error(get_text("beranda.session_not_started", lang))
 
     for n, session in enumerate(currentConversation.sessions):
         if session.result is None:
@@ -226,7 +199,7 @@ if st.session_state.deviceId:
 
         convoStartTime = session.result.start_datetime.astimezone(USER_TIMEZONE)
         convoStartTimeDate = (
-            f"{convoStartTime.day} {bulan[convoStartTime.month]} {convoStartTime.year}"
+            f"{convoStartTime.day} {get_month(convoStartTime.month, lang)} {convoStartTime.year}"
         )
         convoStartTimeHour = convoStartTime.strftime("%H:%M")
 
@@ -250,23 +223,23 @@ if st.session_state.deviceId:
         # SHOW DATA
 
         _icon, _title = title_map.get(session.type)
-        title_modified = "Sesi " + str(n + 1) + " - " + _title
+        title_modified = get_text("beranda.session", lang) + " " + str(n + 1) + " - " + _title
 
         with st.expander(title_modified, icon=_icon):
             col1, col2 = st.columns(2)
 
             with col1:
-                st.subheader("Tanggal dan Waktu")
+                st.subheader(get_text("beranda.date_and_time", lang))
                 with st.container(border=True):
                     st.write(
                         f"🗓️ {convoStartTimeDate}  ⏰ {convoStartTimeHour} - {convoEndTimeHour} WIB"
                     )
             with col2:
-                st.subheader("Perasaan")
+                st.subheader(get_text("beranda.feeling", lang))
                 with st.container(border=True):
-                    st.write(emotion_map.get(session.result.extraction.emotion))
+                    st.write(get_emotion(session.result.extraction.emotion, lang))
 
-            st.subheader("Transkrip Percakapan")
+            st.subheader(get_text("beranda.conversation_transcript", lang))
             with st.container(height=500):
                 for msg in messageResult:
                     with st.chat_message(msg["sender"]):
@@ -276,11 +249,11 @@ if st.session_state.deviceId:
             if session_result is None:
                 continue
 
-            st.subheader("Ringkasan")
+            st.subheader(get_text("beranda.summary", lang))
             st.write(session_result.extraction.overview)
 
             with st.container():
-                st.subheader("Poin Utama")
+                st.subheader(get_text("beranda.key_points", lang))
                 for keypoint in session_result.extraction.keypoints:
                     st.write("✨ ", keypoint)
 
@@ -291,7 +264,7 @@ if st.session_state.deviceId:
 
                 listEquation = []
                 listAttemp = []
-                st.subheader("Hasil Menghitung")
+                st.subheader(get_text("beranda.math_results", lang))
 
                 for i, qna in enumerate(session_result.list_qna):
                     listAnswer = []
@@ -310,7 +283,7 @@ if st.session_state.deviceId:
                             "✅" if correction else ("⚪" if answer is None else "❌")
                         )
                         if answer is None:
-                            answer = "Tidak Menjawab"
+                            answer = get_answer_category("Tidak Menjawab", lang)
                         listAnswer.append(answer)
                         listCorrection.append(correction)
 
@@ -322,9 +295,9 @@ if st.session_state.deviceId:
                     listCorrection_fmt = ", ".join(map(str, listCorrection)).strip()
                     listEquation.append(
                         {
-                            "Pertanyaan": equation_fmt,
-                            "Jawaban Anak": listAnswer_fmt,
-                            "Koreksi": listCorrection_fmt,
+                            get_text("beranda.question", lang): equation_fmt,
+                            get_text("beranda.child_answer", lang): listAnswer_fmt,
+                            get_text("beranda.correction", lang): listCorrection_fmt,
                         }
                     )
 
@@ -337,10 +310,10 @@ if st.session_state.deviceId:
 
                     listAttemp.append(
                         {
-                            "Percobaan": "Pertanyaan " + str(i + 1),
-                            "Benar": listCorrection.count("✅"),
-                            "Salah": listCorrection.count("❌"),
-                            "Tidak Menjawab": listCorrection.count("⚪"),
+                            get_text("beranda.attempt", lang): get_text("beranda.question", lang) + " " + str(i + 1),
+                            get_answer_category("Benar", lang): listCorrection.count("✅"),
+                            get_answer_category("Salah", lang): listCorrection.count("❌"),
+                            get_answer_category("Tidak Menjawab", lang): listCorrection.count("⚪"),
                         }
                     )
                     # st.write(listCorrection)
@@ -352,15 +325,19 @@ if st.session_state.deviceId:
                 st.table(equationResultTable)
 
                 data = {
-                    "Kategori": ["Benar", "Salah", "Tidak Menjawab"],
-                    "Jumlah": [totalCorrect, totalWrong, totalBlank],
+                    get_text("beranda.category", lang): [
+                        get_answer_category("Benar", lang),
+                        get_answer_category("Salah", lang),
+                        get_answer_category("Tidak Menjawab", lang)
+                    ],
+                    get_text("beranda.total", lang): [totalCorrect, totalWrong, totalBlank],
                 }
                 fig = px.pie(
                     data,
-                    names="Kategori",
-                    values="Jumlah",
-                    title="Persentase Akurasi",
-                    color="Kategori",
+                    names=get_text("beranda.category", lang),
+                    values=get_text("beranda.total", lang),
+                    title=get_text("beranda.accuracy_percentage", lang),
+                    color=get_text("beranda.category", lang),
                     color_discrete_map=color_map,
                 )
                 st.plotly_chart(fig, key="math_games-pie_chart")
@@ -368,18 +345,22 @@ if st.session_state.deviceId:
                 # Show Bar Chart
                 df = pd.DataFrame(listAttemp)
                 df_long = df.melt(
-                    id_vars="Percobaan",
-                    value_vars=["Benar", "Salah", "Tidak Menjawab"],
-                    var_name="Kategori",
-                    value_name="Jumlah Pertanyaan",
+                    id_vars=get_text("beranda.attempt", lang),
+                    value_vars=[
+                        get_answer_category("Benar", lang),
+                        get_answer_category("Salah", lang),
+                        get_answer_category("Tidak Menjawab", lang)
+                    ],
+                    var_name=get_text("beranda.category", lang),
+                    value_name=get_text("beranda.total_questions", lang),
                 )
                 fig = px.bar(
                     df_long,
-                    x="Percobaan",
-                    y="Jumlah Pertanyaan",
-                    color="Kategori",
+                    x=get_text("beranda.attempt", lang),
+                    y=get_text("beranda.total_questions", lang),
+                    color=get_text("beranda.category", lang),
                     color_discrete_map=color_map,
-                    title="Akurasi Jawaban pada Setiap Percobaan Matematika",
+                    title=get_text("beranda.accuracy_per_attempt", lang),
                 )
                 st.plotly_chart(fig, key="math_games-bar_chart")
 
@@ -391,7 +372,7 @@ if st.session_state.deviceId:
                 listSound = []  # i guess assuming the sound is fixed?
                 listAttemp = []
                 listGuessSound = []
-                st.subheader("Hasil Menebak")
+                st.subheader(get_text("beranda.guess_results", lang))
 
                 for i, qna in enumerate(session_result.list_qna):
                     listAnswer = []
@@ -403,7 +384,7 @@ if st.session_state.deviceId:
                             "✅" if correction else ("⚪" if answer is None else "❌")
                         )
                         if answer is None:
-                            answer = "Tidak Menjawab"
+                            answer = get_answer_category("Tidak Menjawab", lang)
                         listAnswer.append(answer)
                         listCorrection.append(correction)
 
@@ -413,9 +394,9 @@ if st.session_state.deviceId:
                     listCorrection_fmt = ", ".join(map(str, listCorrection)).strip()
                     listGuessSound.append(
                         {
-                            "Sound": qna.sound_path,
-                            "Jawaban Anak": listAnswer_fmt,
-                            "Koreksi": listCorrection_fmt,
+                            get_text("beranda.sound", lang): qna.sound_path,
+                            get_text("beranda.child_answer", lang): listAnswer_fmt,
+                            get_text("beranda.correction", lang): listCorrection_fmt,
                         }
                     )
 
@@ -428,36 +409,36 @@ if st.session_state.deviceId:
 
                     listAttemp.append(
                         {
-                            "Percobaan": "Suara " + str(i + 1),
-                            "Benar": listCorrection.count("✅"),
-                            "Salah": listCorrection.count("❌"),
-                            "Tidak Menjawab": listCorrection.count("⚪"),
+                            get_text("beranda.attempt", lang): get_text("beranda.sound", lang) + " " + str(i + 1),
+                            get_answer_category("Benar", lang): listCorrection.count("✅"),
+                            get_answer_category("Salah", lang): listCorrection.count("❌"),
+                            get_answer_category("Tidak Menjawab", lang): listCorrection.count("⚪"),
                         }
                     )
 
                 col1, col2, col3 = st.columns(3)
                 with col1:
-                    st.write("###### Suara")
+                    st.write(f"###### {get_text('beranda.sound', lang)}")
                     for guessSound in listGuessSound:
-                        st.audio(guessSound["Sound"])
+                        st.audio(guessSound[get_text("beranda.sound", lang)])
                 with col2:
-                    st.write("###### Jawaban Anak")
+                    st.write(f"###### {get_text('beranda.child_answer', lang)}")
                     for guessSound in listGuessSound:
                         st.markdown(
                             f"""
                             <div style="border:1px solid #ccc; padding:10px; border-radius:5px; ">
-                                {guessSound["Jawaban Anak"]}
+                                {guessSound[get_text("beranda.child_answer", lang)]}
                             </div>
                             """,
                             unsafe_allow_html=True,
                         )
                 with col3:
-                    st.write("###### Koreksi")
+                    st.write(f"###### {get_text('beranda.correction', lang)}")
                     for guessSound in listGuessSound:
                         st.markdown(
                             f"""
                             <div style="border:1px solid #ccc; padding:10px; border-radius:5px; ">
-                                {guessSound["Koreksi"]}
+                                {guessSound[get_text("beranda.correction", lang)]}
                             </div>
                             """,
                             unsafe_allow_html=True,
@@ -465,15 +446,19 @@ if st.session_state.deviceId:
 
                 # show pie chart
                 data = {
-                    "Kategori": ["Benar", "Salah", "Tidak Menjawab"],
-                    "Jumlah": [totalCorrect, totalWrong, totalBlank],
+                    get_text("beranda.category", lang): [
+                        get_answer_category("Benar", lang),
+                        get_answer_category("Salah", lang),
+                        get_answer_category("Tidak Menjawab", lang)
+                    ],
+                    get_text("beranda.total", lang): [totalCorrect, totalWrong, totalBlank],
                 }
                 fig = px.pie(
                     data,
-                    names="Kategori",
-                    values="Jumlah",
-                    title="Persentase Akurasi",
-                    color="Kategori",
+                    names=get_text("beranda.category", lang),
+                    values=get_text("beranda.total", lang),
+                    title=get_text("beranda.accuracy_percentage", lang),
+                    color=get_text("beranda.category", lang),
                     color_discrete_map=color_map,
                 )
                 st.plotly_chart(fig, key="guess_the_sound-pie_chart")
@@ -481,18 +466,22 @@ if st.session_state.deviceId:
                 # Show Bar Chart
                 df = pd.DataFrame(listAttemp)
                 df_long = df.melt(
-                    id_vars="Percobaan",
-                    value_vars=["Benar", "Salah", "Tidak Menjawab"],
-                    var_name="Kategori",
-                    value_name="Jumlah Pertanyaan",
+                    id_vars=get_text("beranda.attempt", lang),
+                    value_vars=[
+                        get_answer_category("Benar", lang),
+                        get_answer_category("Salah", lang),
+                        get_answer_category("Tidak Menjawab", lang)
+                    ],
+                    var_name=get_text("beranda.category", lang),
+                    value_name=get_text("beranda.total_questions", lang),
                 )
                 fig = px.bar(
                     df_long,
-                    x="Percobaan",
-                    y="Jumlah Pertanyaan",
-                    color="Kategori",
+                    x=get_text("beranda.attempt", lang),
+                    y=get_text("beranda.total_questions", lang),
+                    color=get_text("beranda.category", lang),
                     color_discrete_map=color_map,
-                    title="Akurasi Jawaban pada Setiap Percobaan Menebak Suara",
+                    title=get_text("beranda.accuracy_per_sound", lang),
                 )
                 st.plotly_chart(fig, key="guess_the_sound-bar_chart")
 

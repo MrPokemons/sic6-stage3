@@ -7,6 +7,8 @@ from src.services.pawpal.schemas.user import UserData
 from src.services.pawpal.schemas.topic import TopicParams
 from src.services.pawpal.schemas.topic_flow import TopicFlowType
 from config.settings import SETTINGS
+from streamlitViews.language_utils import render_language_toggle, get_current_language
+from streamlitViews.translations import get_text
 
 class StartConversationInput(BaseModel):
     device_id: Annotated[str, "iot_device_id"]
@@ -17,6 +19,12 @@ class StartConversationInput(BaseModel):
 
 def normalize(value):
     return value if value not in ["", None] else None
+
+# Render language toggle in sidebar
+render_language_toggle()
+
+# Get current language
+lang = get_current_language()
 
 if "configuration" not in st.session_state:
     st.session_state.configuration = False
@@ -31,26 +39,31 @@ dummyMsg = [
     {"sender": "user", "text": "Oke siap~"},
 ]
 
-st.title("⚙️ Pengaturan Percakapan")
+st.title(get_text("pengaturan.title", lang))
 
 with st.form("child_profile_form"):
-    st.subheader("Biodata Anak")
-    st.write("Opsional — nilai default akan digunakan jika tidak diisi")
-    nameInput = st.text_input("🧒 Nama")
-    ageInput = st.number_input("🎂 Umur", min_value=4, max_value=8, step=1, value=6)
+    st.subheader(get_text("pengaturan.child_profile", lang))
+    st.write(get_text("pengaturan.optional_info", lang))
+    nameInput = st.text_input(get_text("pengaturan.name", lang))
+    ageInput = st.number_input(get_text("pengaturan.age", lang), min_value=4, max_value=8, step=1, value=6)
     genderInput = st.selectbox(
-        "🚻 Jenis Kelamin", ["Pilih Jenis Kelamin", "Laki-laki", "Perempuan"]
+        get_text("pengaturan.gender", lang),
+        [
+            get_text("pengaturan.select_gender", lang),
+            get_text("pengaturan.male", lang),
+            get_text("pengaturan.female", lang)
+        ]
     )
-    descriptionInput = st.text_area("🚲 Deskripsi Anak (hobi dan minat, kepribadian)")
+    descriptionInput = st.text_area(get_text("pengaturan.description", lang))
 
-    st.subheader("Konfigurasi Percakapan")
+    st.subheader(get_text("pengaturan.conversation_config", lang))
     if not st.session_state.deviceId:
-        deviceIdInput = st.text_input("⚙️ No. ID Perangkat", "")
+        deviceIdInput = st.text_input(get_text("common.device_id", lang), "")
     else:
-        deviceIdInput = st.text_input("⚙️ No. ID Perangkat", st.session_state.deviceId)
+        deviceIdInput = st.text_input(get_text("common.device_id", lang), st.session_state.deviceId)
     st.session_state.deviceId = deviceIdInput
-    sessionsInput = st.number_input("🗣️ Jumlah Sesi", min_value=1, step=1)
-    
+    sessionsInput = st.number_input(get_text("pengaturan.total_sessions", lang), min_value=1, step=1)
+
 
     featureOptions = [
         "👄 Talk To Me",
@@ -59,10 +72,10 @@ with st.form("child_profile_form"):
         "❓ Would You Rather",
     ]
     selectedFeatures = st.pills(
-        "💬 Jenis Interaksi", featureOptions, selection_mode="multi"
+        get_text("pengaturan.interaction_type", lang), featureOptions, selection_mode="multi"
     )
 
-    saveConfiguration = st.form_submit_button("Simpan")
+    saveConfiguration = st.form_submit_button(get_text("common.save", lang))
     if saveConfiguration:
         st.session_state.configuration = True
 
@@ -71,13 +84,13 @@ if st.session_state.configuration:
         nameInput
         and ageInput
         and descriptionInput
-    ) or genderInput == "Pilih Jenis Kelamin":
-        st.info("Field kosong akan diisi dengan nilai default")
+    ) or genderInput == get_text("pengaturan.select_gender", lang):
+        st.info(get_text("pengaturan.empty_fields_info", lang))
 
     if not (
         deviceIdInput
     ):
-        st.error("No ID perangkat harus diisi")
+        st.error(get_text("pengaturan.device_id_required", lang))
         st.stop()
 
     if not nameInput:
@@ -88,7 +101,7 @@ if st.session_state.configuration:
     descriptionInput = normalize(descriptionInput)
 
     if not (selectedFeatures):
-        st.error("Pilih setidaknya salah satu interaksi")
+        st.error(get_text("pengaturan.select_interaction", lang))
         st.stop()
 
     topic_map = {
@@ -104,25 +117,25 @@ if st.session_state.configuration:
     with st.form("duration_and_total_question"):
         if "talk_to_me" in selectedFeatures or "would_you_rather" in selectedFeatures:
             durationInput = st.select_slider(
-                "⏰ Durasi Interaksi dalam Menit (Talk To Me, Would You Rather)",
+                get_text("pengaturan.duration_label", lang),
                 options=range(1, 31),
                 value=1,
             )
         if "math_games" in selectedFeatures or "guess_the_sound" in selectedFeatures:
             questionInput = st.select_slider(
-                "🙋‍♂️ Jumlah Pertanyaan (Math Adventure, Guess The Sound)",
+                get_text("pengaturan.questions_label", lang),
                 options=range(1, 31),
                 value=1,
             )
 
-        consentInput = st.checkbox(f"Saya, sebagai orang tua/wali dari {nameInput}, menyetujui anak saya untuk menggunakan Pawpal. Saya memahami bahwa data suara anak akan digunakan untuk interaksi dengan PawPal dan data tersebut akan dilindungi sesuai dengan peraturan yang berlaku. Saya memberikan persetujuan ini secara sadar dan dapat dibuktikan.")
+        consentInput = st.checkbox(get_text("pengaturan.consent_text", lang, name=nameInput))
 
-        startConvo = st.form_submit_button("Mulai Percakapan")
+        startConvo = st.form_submit_button(get_text("common.start_conversation", lang))
 
     if not (
         consentInput
     ):
-        st.error("Mohon untuk menyetujui persetujuan penggunaan PawPal")
+        st.error(get_text("pengaturan.consent_required", lang))
         st.stop()
 
     durationTalkToMe = durationWouldYouRather = 0
@@ -137,12 +150,15 @@ if st.session_state.configuration:
         questionGuessTheSound = questionInput
 
     if startConvo:
-        st.success("Percakapan dimulai!")
+        st.success(get_text("pengaturan.conversation_started", lang))
     else:
-        st.info("Konfigurasi sudah sesuai? Klik tombol mulai percakapan!")
+        st.info(get_text("pengaturan.ready_to_start", lang))
 
     if startConvo:
-        gender_map = {"Laki-laki": "male", "Perempuan": "female"}
+        gender_map = {
+            get_text("pengaturan.male", lang): "male",
+            get_text("pengaturan.female", lang): "female"
+        }
         try:
             user_data = UserData(
                 name=nameInput,
@@ -182,10 +198,10 @@ if st.session_state.configuration:
             )
             if resp.status_code != 200:
                 resp.raise_for_status()
-            st.success("Berhasil menginput konfigurasi percakapan baru!!")
+            st.success(get_text("pengaturan.success_message", lang))
         except Exception:
-            st.warning("Jika Backend tidak berjalan, fitur ini tidak dapat dipakai.")
-            st.error("Backend tidak aktif, fitur ini tidak dapat digunakan, mohon untuk menyalakan servernya dengan mengikuti panduan.")
+            st.warning(get_text("pengaturan.backend_offline_warning", lang))
+            st.error(get_text("pengaturan.backend_offline_error", lang))
 
 
 # -------------------

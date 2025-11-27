@@ -5,6 +5,14 @@ from pymongo import MongoClient
 from src.services.pawpal.schemas.document import ConversationDoc
 from urllib.parse import urljoin
 from config.settings import SETTINGS
+from streamlitViews.language_utils import render_language_toggle, get_current_language
+from streamlitViews.translations import get_text
+
+# Render language toggle in sidebar
+render_language_toggle()
+
+# Get current language
+lang = get_current_language()
 
 if "deviceId" not in st.session_state:
     st.session_state.deviceId = False
@@ -16,14 +24,14 @@ dummyMsg = [
     {"sender": "user", "text": "Oke siap~"},
 ]
 
-st.title("🤖 Percakapan Saat Ini 🧒")
+st.title(get_text("percakapan.title", lang))
 
 with st.form("device_id_form"):
     deviceIdInput = st.text_input(
-        "No. ID Perangkat", value=st.session_state.deviceId or ""
+        get_text("common.device_id", lang), value=st.session_state.deviceId or ""
     )
     st.session_state.deviceId = deviceIdInput
-    saveDeviceId = st.form_submit_button("Cari percakapan saat ini")
+    saveDeviceId = st.form_submit_button(get_text("common.search_current_conversation", lang))
 
 
 if st.session_state.deviceId:
@@ -56,7 +64,7 @@ if st.session_state.deviceId:
     #         pass
 
     if not list_conversation:
-        st.error("No Live conversation ongoing in this device id")
+        st.error(get_text("percakapan.no_live_conversation", lang))
         st.stop()
 
     list_conversation: List[ConversationDoc] = [
@@ -70,7 +78,7 @@ if st.session_state.deviceId:
     liveConversation = list_live_conversation[0]
 
     if not liveConversation.sessions:
-        st.error("Sesi belum dimulai")
+        st.error(get_text("percakapan.session_not_started", lang))
         st.stop()
 
     lastSession = liveConversation.sessions[-1]
