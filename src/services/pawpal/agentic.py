@@ -40,6 +40,11 @@ class Agentic(ABC):
             collection_name=self.COLLECTION_NAME, doc=conv_doc_dict
         )
 
+    async def delete_agent_conversation(self, convo_doc_id: str):
+        await self.mongodb_engine.delete_doc(
+            collection_name=self.COLLECTION_NAME, doc=convo_doc_id
+        )
+
     @classmethod
     def set_model(cls, model: BaseChatModel):
         cls.model = model

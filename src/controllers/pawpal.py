@@ -138,7 +138,7 @@ def pawpal_router(
     tts_coll: TextToSpeechCollection,
     logger: logging.Logger,
 ):
-    router = APIRouter(prefix="/api/v1/pawpal", tags=["pawpal"])
+    router = APIRouter(prefix="/api/v1/pawpal", tags=["pawpal-v1"])
     pawpal_workflow = pawpal.build_workflow()
     ws_manager = ConnectionManager(logger=logger)
 
