@@ -50,6 +50,7 @@ class Settings(BaseSettings):
     DEEPGRAM: _DeepGram
     ELEVENLABS: _ElevenLabs
     MQTT: _MQTT
+    ENABLE_MQTT: bool = False
 
     model_config = SettingsConfigDict(
         env_file=ENV_FILE,

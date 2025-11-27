@@ -14,7 +14,6 @@ from langchain_ollama import ChatOllama
 
 from config.settings import SETTINGS
 
-from src.services.mqtt import fast_mqtt
 from src.services.pawpal import PawPal
 from src.services.stt import (
     WhisperSpeechToText,
@@ -29,8 +28,12 @@ from src.services.tts import (
 from src.services.nosql import MongoDBEngine
 
 from src.controllers.health import health_router
-from src.controllers import pawpal as pawpal_controller, pawpal_v2 as pawpal_v2_controller
+from src.controllers import pawpal as pawpal_controller
 from src.middleware import log_middleware
+
+if SETTINGS.ENABLE_MQTT:
+    from src.services.mqtt import fast_mqtt
+    from src.controllers import pawpal_v2 as pawpal_v2_controller
 
 
 # Logging
@@ -39,9 +42,11 @@ app_logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def _lifespan(_app: FastAPI):
-    await fast_mqtt.mqtt_startup()
+    if SETTINGS.ENABLE_MQTT:
+        await fast_mqtt.mqtt_startup()
     yield
-    await fast_mqtt.mqtt_shutdown()
+    if SETTINGS.ENABLE_MQTT:
+        await fast_mqtt.mqtt_shutdown()
 
 
 # Initialize Services
@@ -99,15 +104,16 @@ app.include_router(
     )
 )
 
-app.include_router(
-    pawpal_v2_controller.pawpal_router(
-        pawpal=pawpal,
-        stt_coll=stt_coll,
-        tts_coll=tts_coll,
-        fast_mqtt=fast_mqtt,
-        logger=app_logger,
+if SETTINGS.ENABLE_MQTT:
+    app.include_router(
+        pawpal_v2_controller.pawpal_router(
+            pawpal=pawpal,
+            stt_coll=stt_coll,
+            tts_coll=tts_coll,
+            fast_mqtt=fast_mqtt,
+            logger=app_logger,
+        )
     )
-)
 
 
 if __name__ == "__main__":
